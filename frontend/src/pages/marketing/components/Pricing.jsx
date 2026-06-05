@@ -27,7 +27,7 @@ export default function Pricing() {
         "Weekly Consolidated Reports",
         "99.9% Uptime Guarantee"
       ],
-      cta: isHindi ? "कांस्य परीक्षण शुरू करें" : "Launch Bronze Trial",
+      cta: isHindi ? "शुरू करें" : "Get Started",
       popular: false
     },
     {
@@ -52,7 +52,7 @@ export default function Pricing() {
         "Advanced Analytics Dashboard",
         "Priority 24/7 Server Support"
       ],
-      cta: isHindi ? "रजत परीक्षण शुरू करें" : "Launch Silver Trial",
+      cta: isHindi ? "शुरू करें" : "Get Started",
       popular: true
     },
     {
@@ -77,7 +77,7 @@ export default function Pricing() {
         "Custom Payment Gateway binding",
         "Dedicated Account Executive"
       ],
-      cta: isHindi ? "उद्यम बिक्री से संपर्क करें" : "Contact Enterprise Sales",
+      cta: isHindi ? "संपर्क करें" : "Contact Sales",
       popular: false
     }
   ];
@@ -180,7 +180,7 @@ export default function Pricing() {
                   </a>
                 ) : (
                   <Link
-                    to="/app/login"
+                    to="/contact"
                     className={`w-full block py-4 text-center rounded font-semibold text-sm transition-all active:scale-95 shimmer-btn ${plan.popular ? 'bg-[var(--color-amber)] text-black hover:bg-[var(--color-amber-light)] shadow-md' : 'border border-white/10 bg-white/5 text-[#F5F0EB] hover:bg-white/10 hover:border-white/20'}`}
                   >
                     {plan.cta}
