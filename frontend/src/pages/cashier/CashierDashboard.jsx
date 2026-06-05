@@ -518,22 +518,13 @@ export default function CashierDashboard() {
   const totalSalesToday = salesHistory.reduce((sum, o) => sum + o.total, 0);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-body relative">
-      {/* PWA Install Banner */}
-      <PWAInstallBanner
-        role="cashier"
-        restaurantName={restaurantName}
-        installPrompt={installPrompt}
-        handleInstall={handleInstall}
-      />
-      
       {/* SCOPED CSS PRINT LAYOUT */}
       <style>{`
         #print-receipt-section {
           display: none;
         }
         @media print {
-          /* Hide all dashboard content except the print-receipt-section */
-          body > #root > div > *:not(#print-receipt-section) {
+          .no-print {
             display: none !important;
           }
           body > #root > div {
@@ -708,8 +699,17 @@ export default function CashierDashboard() {
         </div>
       )}
 
-      {/* Main Header bar */}
-      <header className="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex-shrink-0 no-print shadow-sm">
+      <div className="flex-1 flex flex-col no-print">
+        {/* PWA Install Banner */}
+        <PWAInstallBanner
+          role="cashier"
+          restaurantName={restaurantName}
+          installPrompt={installPrompt}
+          handleInstall={handleInstall}
+        />
+
+        {/* Main Header bar */}
+        <header className="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex-shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
           {agencySettings.logo_url ? (
             <img src={agencySettings.logo_url} alt="Agency Logo" className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200" />
@@ -1324,6 +1324,8 @@ export default function CashierDashboard() {
         tableNumber={selectedTable?.number}
         existingOrderId={activeOrder?.id}
       />
+
+      </div>
 
     </div>
   );

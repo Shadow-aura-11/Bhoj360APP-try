@@ -650,7 +650,8 @@ export default function WaiterDashboard() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-slate-800 flex flex-col font-body">
-      {/* PWA Install Banner */}
+      <div className="flex-1 flex flex-col no-print">
+        {/* PWA Install Banner */}
       <PWAInstallBanner
         role="waiter"
         restaurantName={restaurantName}
@@ -1601,14 +1602,15 @@ export default function WaiterDashboard() {
         );
       })()}
 
+      </div>
+
       {/* Scoped printer style sheets */}
       <style>{`
         #print-receipt-section {
           display: none;
         }
         @media print {
-          /* Hide all dashboard content except the active print section */
-          body > #root > div > *:not(#print-kot-section):not(#print-receipt-section) {
+          .no-print {
             display: none !important;
           }
           body > #root > div {

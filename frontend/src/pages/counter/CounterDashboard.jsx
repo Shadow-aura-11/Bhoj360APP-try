@@ -345,7 +345,8 @@ export default function CounterDashboard() {
 
   return (
     <div className="min-h-screen bg-rose-50/20 text-slate-800 flex flex-col font-body">
-      {/* PWA Install Banner */}
+      <div className="flex-1 flex flex-col no-print">
+        {/* PWA Install Banner */}
       <PWAInstallBanner
         role="counter"
         restaurantName={restaurantName}
@@ -597,11 +598,12 @@ export default function CounterDashboard() {
         <span>Active: <strong className="text-orange-600 font-mono">{preparingOrders.length}</strong></span>
       </footer>
 
+      </div>
+
       {/* Printer Scoped CSS and Print Ticket Layout */}
       <style>{`
         @media print {
-          /* Hide all dashboard content except the print-kot-section */
-          body > #root > div > *:not(#print-kot-section) {
+          .no-print {
             display: none !important;
           }
           body > #root > div {
