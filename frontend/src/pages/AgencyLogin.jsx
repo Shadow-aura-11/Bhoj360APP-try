@@ -381,14 +381,14 @@ export default function AgencyLogin() {
   const [showSetupPw, setShowSetupPw] = useState(false);
 
   // Password step
-  const [email, setEmail] = useState('aman@8299443154.com');
-  const [password, setPassword] = useState('aman3154');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [otpFallback, setOtpFallback] = useState(false);
 
   // OTP step
-  const [otp, setOtp] = useState(['3', '1', '5', '4', '0', '0']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const otpRefs = useRef([]);
   const [resendCountdown, setResendCountdown] = useState(0);
 
@@ -449,7 +449,7 @@ export default function AgencyLogin() {
       const { data } = await agencyApi.post('/auth/login', { email, password });
       setSessionId(data.sessionId);
       setOtpFallback(data.fallback);
-      setOtp(['3', '1', '5', '4', '0', '0']);
+      setOtp(['', '', '', '', '', '']);
       setStep(STEP_OTP);
       setResendCountdown(60);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
@@ -525,7 +525,7 @@ export default function AgencyLogin() {
       setSessionId(data.sessionId);
       setOtpFallback(data.fallback);
       setResendCountdown(60);
-      setOtp(['3', '1', '5', '4', '0', '0']);
+      setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
       toast.success('New code generated!');
     } catch (err) {
@@ -643,14 +643,6 @@ export default function AgencyLogin() {
               <p className="al-title">Welcome back</p>
               <p className="al-subtitle">Enter your agency credentials to continue.</p>
 
-              <div className="al-notice" style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)', color: '#d4a574', marginBottom: '20px', textAlign: 'left' }}>
-                <span className="font-bold block mb-1">Demo Credentials:</span>
-                <div className="space-y-0.5 text-xs font-mono">
-                  <div>Email: <span className="text-white selection:bg-amber-500/20">aman@8299443154.com</span></div>
-                  <div>Pass: <span className="text-white selection:bg-amber-500/20">aman3154</span></div>
-                </div>
-              </div>
-
               <div className="al-field">
                 <label className="al-label">Email Address</label>
                 <input
@@ -697,13 +689,6 @@ export default function AgencyLogin() {
               <p className="al-subtitle">
                 Enter the 6-digit code sent to your <strong>registered email address</strong>. It expires in 5 minutes.
               </p>
-
-              <div className="al-notice" style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)', color: '#d4a574', marginBottom: '20px', textAlign: 'left' }}>
-                <span className="font-bold block mb-1">2FA Verification Code:</span>
-                <div className="text-xs font-mono">
-                  Code: <span className="text-white selection:bg-amber-500/20">315400</span>
-                </div>
-              </div>
 
               {otpFallback && (
                 <div className="al-notice">

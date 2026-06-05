@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { agencyApi } from '../api/client';
 import toast from 'react-hot-toast';
+import Nav from './marketing/components/Nav';
+import Footer from './marketing/components/Footer';
+import FloatingWhatsApp from '../components/shared/FloatingWhatsApp';
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
@@ -418,26 +421,13 @@ export default function ContactPage() {
   return (
     <>
       <style>{styles}</style>
-      <div className="cp-root">
-        <div className="cp-orb cp-orb-1" />
-        <div className="cp-orb cp-orb-2" />
+      <div className="tableos-landing min-h-screen flex flex-col justify-between bg-[#080808] text-[#F5F0EB] relative">
+        <div className="noise-overlay"></div>
+        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[rgba(212,146,10,0.03)] blur-[100px] pointer-events-none"></div>
 
-        {/* Nav */}
-        <nav className="cp-nav">
-          <Link to="/" className="cp-nav-brand">
-            <div className="cp-nav-logo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                <polyline points="9,22 9,12 15,12 15,22" />
-              </svg>
-            </div>
-            <span className="cp-nav-name">Bhoj360</span>
-          </Link>
-          <div className="cp-nav-links">
-            <Link to="/" className="cp-nav-link">Home</Link>
-            <Link to="/app/login" className="cp-nav-btn">Dashboard →</Link>
-          </div>
-        </nav>
+        <Nav />
+        <FloatingWhatsApp />
+        <main className="flex-grow pt-32 pb-20 relative z-10 w-full">
 
         {/* Hero */}
         <div className="cp-hero">
@@ -598,21 +588,17 @@ export default function ContactPage() {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
-              <p className="cp-info-title">Already a Customer?</p>
+              <p className="cp-info-title">Restaurant Staff Login?</p>
               <p className="cp-info-body">
-                Log into your{' '}
-                <a href="/app/login">Agency Dashboard</a>
-                {' '}for direct access to support resources and account management.
+                Please use the custom private link provided by your restaurant administrator to access your waiter, kitchen, or cashier terminals.
               </p>
             </div>
           </div>
         </div>
+      </main>
 
-        {/* Footer */}
-        <footer className="cp-foot">
-          © {new Date().getFullYear()} Bhoj360 · <Link to="/">Home</Link> · <Link to="/app/login">Dashboard</Link>
-        </footer>
-      </div>
-    </>
-  );
+      <Footer />
+    </div>
+  </>
+);
 }
