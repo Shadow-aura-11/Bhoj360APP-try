@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Smartphone, Copy, Share2, Check, QrCode, X, Download,
   MessageSquare, Mail, ExternalLink, Info, ChevronDown, ChevronUp
@@ -73,11 +73,11 @@ function QRModal({ role, restaurantName, restaurantId, onClose }) {
   };
 
   const whatsappMsg = encodeURIComponent(
-    `Hi! Please install the *${restaurantName} ${role.name}* app on your phone:\n👉 ${fullUrl}\n\nOpen this link in Chrome and tap "Install App" or "Add to Home Screen".`
+    `Hi! Please install the *${restaurantName} ${role.name}* app on your phone:\n👉 ${fullUrl}\n\nOpen this link on your phone and tap "Install" to add it to your home screen.`
   );
   const smsMsg = encodeURIComponent(`Install ${restaurantName} ${role.name}: ${fullUrl}`);
   const emailSubject = encodeURIComponent(`Install ${restaurantName} ${role.name} App`);
-  const emailBody = encodeURIComponent(`Hi,\n\nPlease install the ${restaurantName} ${role.name} app:\n${fullUrl}\n\nOpen this link in Chrome and tap "Install App" when prompted.\n\nThanks`);
+  const emailBody = encodeURIComponent(`Hi,\n\nPlease install the ${restaurantName} ${role.name} app:\n${fullUrl}\n\nOpen this link on your phone and tap "Install" to install the app.\n\nThanks`);
 
   return (
     <div
@@ -163,9 +163,8 @@ function QRModal({ role, restaurantName, restaurantId, onClose }) {
             <div>
               <p className="text-[10px] font-bold text-indigo-700 mb-1">Staff Install Instructions</p>
               <ol className="text-[10px] text-indigo-600 space-y-1 list-decimal list-inside leading-relaxed">
-                <li>Open the link on a mobile device in Chrome/Safari</li>
-                <li>Tap <strong>"Install App"</strong> on the screen that appears</li>
-                <li>If no button shows: tap browser menu → <strong>"Add to Home Screen"</strong></li>
+                <li>Open the link on a mobile device in a compatible browser (like Chrome or Safari)</li>
+                <li>Tap <strong>"Install"</strong> on the screen that appears to add to home screen</li>
               </ol>
             </div>
           </div>
@@ -179,7 +178,6 @@ function RoleCard({ role, restaurantName, restaurantId }) {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const navigate = useNavigate();
 
   const fullUrl = `${window.location.origin}/r/${restaurantId}/login?role=${role.roleParam}`;
   const qrThumbUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=10&data=${encodeURIComponent(fullUrl)}`;
@@ -275,16 +273,6 @@ function RoleCard({ role, restaurantName, restaurantId }) {
             <ExternalLink className="w-3 h-3" />
             Open Install Page
           </a>
-
-          {/* Download App button */}
-          <button
-            onClick={() => navigate(`/r/${restaurantId}/admin/app-downloads`, { state: { role: role.role } })}
-            className="w-full py-2.5 px-4 flex items-center justify-center gap-2 text-white text-xs font-bold rounded-xl transition-all hover:opacity-90 shadow-sm"
-            style={{ backgroundColor: role.color }}
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download Mobile App
-          </button>
         </div>
       </div>
 
@@ -337,7 +325,7 @@ export default function StaffMobileApps() {
                 Staff Mobile Apps — Sharing Center
               </h3>
               <p className="text-slate-500 text-xs mt-1 leading-relaxed max-w-xl">
-                Share role-specific install links with your staff. They scan the QR code or open the link on their phone, tap <strong>"Install App"</strong>, and the app is saved to their home screen — no App Store needed.
+                Share role-specific install links with your staff. They scan the QR code or open the link on their phone, tap <strong>"Install"</strong>, and the app is saved to their home screen — no App Store needed.
               </p>
             </div>
           </div>
@@ -346,8 +334,8 @@ export default function StaffMobileApps() {
           <div className="mt-5 grid grid-cols-3 gap-3">
             {[
               { step: '1', label: 'Share link or QR', icon: '📤' },
-              { step: '2', label: 'Staff opens in Chrome', icon: '🌐' },
-              { step: '3', label: 'Taps "Install App"', icon: '📲' },
+              { step: '2', label: 'Staff opens on phone', icon: '🌐' },
+              { step: '3', label: 'Taps "Install"', icon: '📲' },
             ].map((s) => (
               <div key={s.step} className="flex flex-col items-center text-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-2xl mb-1">{s.icon}</span>

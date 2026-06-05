@@ -66,7 +66,7 @@ export default function Login() {
     setIsIOS(ios);
     setIsStandalone(standalone);
 
-    // Show manual install guide box for mobile users if they aren't already running in standalone mode
+    // Make the install button always visible on mobile if not standalone!
     if (/iPhone|iPad|iPod|Android/i.test(ua) && !standalone) {
       setShowInstallBtn(true);
     }
@@ -172,48 +172,27 @@ export default function Login() {
       setDeferredPrompt(null);
       window.deferredPrompt = null;
       setShowInstallBtn(false);
-    } else if (isIOS) {
-      toast((t) => (
-        <div className="flex flex-col gap-1 text-slate-800">
-          <span className="font-bold text-xs text-indigo-600">To install on iPhone/iPad:</span>
-          <span className="text-[11px] leading-relaxed text-slate-600">
-            1. Tap the Safari browser's <strong>Share</strong> button (📤) at the bottom.<br />
-            2. Scroll down and tap <strong>Add to Home Screen</strong> (➕).
-          </span>
-        </div>
-      ), { 
-        duration: 10000, 
-        id: 'ios-install-toast',
-        style: {
-          background: '#ffffff',
-          color: '#1e293b',
-          border: '2px solid #6366f1',
-          borderRadius: '1.25rem',
-          padding: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-        }
-      });
     } else {
-      toast((t) => (
-        <div className="flex flex-col gap-1 text-slate-800">
-          <span className="font-bold text-xs text-indigo-600">To install on your device:</span>
-          <span className="text-[11px] leading-relaxed text-slate-600">
-            1. Tap the browser menu (three dots <strong>⋮</strong> at top right or share button).<br />
-            2. Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.
-          </span>
-        </div>
-      ), { 
-        duration: 10000, 
-        id: 'android-install-toast',
-        style: {
-          background: '#ffffff',
-          color: '#1e293b',
-          border: '2px solid #6366f1',
-          borderRadius: '1.25rem',
-          padding: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+      toast.loading("Preparing installation...", { id: 'pwa-login-install', duration: 1800 });
+      let elapsed = 0;
+      const interval = setInterval(async () => {
+        const currentPrompt = window.deferredPrompt || deferredPrompt;
+        if (currentPrompt) {
+          clearInterval(interval);
+          toast.dismiss('pwa-login-install');
+          currentPrompt.prompt();
+          const { outcome } = await currentPrompt.userChoice;
+          console.log(`PWA installation outcome: ${outcome}`);
+          setDeferredPrompt(null);
+          window.deferredPrompt = null;
+          setShowInstallBtn(false);
         }
-      });
+        elapsed += 150;
+        if (elapsed >= 1800) {
+          clearInterval(interval);
+          toast.dismiss('pwa-login-install');
+        }
+      }, 150);
     }
   };
 

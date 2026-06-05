@@ -85,11 +85,13 @@ export function usePWA(restaurantName, roleName, logoUrl) {
   }, []);
 
   const handleInstall = async () => {
-    if (!installPrompt) return false;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
+    const prompt = installPrompt || window.deferredPrompt;
+    if (!prompt) return false;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
     if (outcome === 'accepted') {
       setInstallPrompt(null);
+      window.deferredPrompt = null;
       setIsInstalled(true);
       return true;
     }

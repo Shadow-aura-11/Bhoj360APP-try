@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Download, Info, Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { createApi } from '../api/client';
 import { usePWA } from '../hooks/usePWA';
 
@@ -13,8 +13,6 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
   const [logoUrl, setLogoUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [isPreparing, setIsPreparing] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -36,11 +34,8 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
   }, [restaurantId]);
 
   useEffect(() => {
-    // Detect iOS
-    const ua = navigator.userAgent;
-    setIsIOS(/iPhone|iPad|iPod/i.test(ua));
-
     // Force open in Chrome on Android if in-app browser (like WhatsApp, Instagram) is detected
+    const ua = navigator.userAgent;
     const isAndroid = /android/i.test(ua);
     const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line|Snapchat/i.test(ua);
 
@@ -88,8 +83,8 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
       // Trigger prompt
       await handleInstall();
     } else {
-      // Show manual instructions
-      setShowInstructions(true);
+      // Direct redirection to the login page without displaying any compatibility text
+      handleLoginRedirect();
     }
   };
 
@@ -123,85 +118,40 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
         </div>
 
         {/* Dynamic Installer UI */}
-        {!showInstructions ? (
-          <>
-            <p className="text-slate-400 text-xs leading-relaxed mb-8 max-w-xs mx-auto">
-              Install the terminal app directly onto your home screen for instant loading, full screen view, and persistent staff login.
-            </p>
+        <p className="text-slate-400 text-xs leading-relaxed mb-8 max-w-xs mx-auto">
+          Install the terminal app directly onto your home screen for instant loading, full screen view, and persistent staff login.
+        </p>
 
-            <div className="space-y-4">
-              <button
-                onClick={handleInstallClick}
-                disabled={isPreparing}
-                className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-80 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#4f46e5' }}
-              >
-                {isPreparing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Preparing Installation...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5 animate-bounce" />
-                    <span>Install {roleName} App</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="text-left space-y-5">
-            <div className="p-4 bg-slate-800/40 border border-slate-700/50 rounded-2xl">
-              <div className="flex gap-2.5 items-start mb-3">
-                <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-                <h4 className="font-bold text-sm text-slate-200">How to Install manually:</h4>
-              </div>
-              
-              {isIOS ? (
-                <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1 leading-relaxed">
-                  <li>Tap the browser's <strong>Share</strong> button (📤) in Safari.</li>
-                  <li>Scroll down the menu and select <strong>Add to Home Screen</strong> (➕).</li>
-                  <li>Click <strong>Add</strong> at top right to finalize the install.</li>
-                </ol>
-              ) : (
-                <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1 leading-relaxed">
-                  <li>Tap the browser menu icon (<strong>three dots ⋮</strong> at top right).</li>
-                  <li>Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
-                  <li>Confirm the installation prompt on your screen.</li>
-                </ol>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowInstructions(false)}
-                className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-305 text-xs font-bold rounded-xl transition-all"
-              >
-                Back to Install
-              </button>
-              <button
-                onClick={handleLoginRedirect}
-                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-indigo-600/10"
-                style={{ backgroundColor: '#4f46e5' }}
-              >
-                Go to Login
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="space-y-4">
+          <button
+            onClick={handleInstallClick}
+            disabled={isPreparing}
+            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-80 disabled:cursor-not-allowed"
+            style={{ backgroundColor: '#4f46e5' }}
+          >
+            {isPreparing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Preparing Installation...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5 animate-bounce" />
+                <span>Install {roleName} App</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {/* Subtle Skip Web Fallback Link */}
-        {!showInstructions && (
-          <div className="mt-8">
-            <button
-              onClick={handleLoginRedirect}
-              className="text-[11px] text-slate-500 hover:text-indigo-400 font-semibold transition-all hover:underline"
-            >
-              Continue to Web Version (No Install)
-            </button>
-          </div>
-        )}
+        <div className="mt-8">
+          <button
+            onClick={handleLoginRedirect}
+            className="text-[11px] text-slate-500 hover:text-indigo-400 font-semibold transition-all hover:underline"
+          >
+            Continue to Web Version (No Install)
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 text-slate-600 text-[10px] font-mono tracking-widest uppercase">

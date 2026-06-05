@@ -14,7 +14,8 @@
  *  - handleInstall: function from usePWA
  */
 import React, { useState, useEffect } from 'react';
-import { Download, X, ChevronDown, ChevronUp, Smartphone } from 'lucide-react';
+import { Download, X, Smartphone } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ROLE_CONFIG = {
   admin:   { label: 'Admin Portal',        color: '#d97706', light: '#fffbeb', border: '#fde68a', text: '#92400e' },
@@ -29,9 +30,7 @@ const INSTALLED_KEY = 'pwa_installed';
 export default function PWAInstallBanner({ role, restaurantName, installPrompt, handleInstall }) {
   const cfg = ROLE_CONFIG[role] || ROLE_CONFIG.waiter;
   const [dismissed, setDismissed] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Check if already in standalone mode
@@ -40,9 +39,6 @@ export default function PWAInstallBanner({ role, restaurantName, installPrompt, 
       setIsInstalled(true);
       return;
     }
-
-    // Detect iOS
-    setIsIOS(/iPhone|iPad|iPod/i.test(navigator.userAgent));
 
     // Check if this role banner was dismissed this session
     const wasDismissed = sessionStorage.getItem(DISMISS_KEY(role));
@@ -55,22 +51,44 @@ export default function PWAInstallBanner({ role, restaurantName, installPrompt, 
   };
 
   const handleClickInstall = async () => {
-    if (installPrompt) {
+    const prompt = installPrompt || window.deferredPrompt;
+    if (prompt) {
       const success = await handleInstall();
       if (success) {
         localStorage.setItem(INSTALLED_KEY, '1');
         setIsInstalled(true);
       }
     } else {
-      setShowInstructions(true);
+      toast.loading("Preparing installation...", { id: 'pwa-install-status', duration: 1800 });
+      let elapsed = 0;
+      const interval = setInterval(async () => {
+        const currentPrompt = window.deferredPrompt || installPrompt;
+        if (currentPrompt) {
+          clearInterval(interval);
+          toast.dismiss('pwa-install-status');
+          currentPrompt.prompt();
+          const { outcome } = await currentPrompt.userChoice;
+          if (outcome === 'accepted') {
+            localStorage.setItem(INSTALLED_KEY, '1');
+            setIsInstalled(true);
+          }
+        }
+        elapsed += 150;
+        if (elapsed >= 1800) {
+          clearInterval(interval);
+          toast.dismiss('pwa-install-status');
+          const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+          if (isStandalone) {
+            localStorage.setItem(INSTALLED_KEY, '1');
+            setIsInstalled(true);
+          }
+        }
+      }, 150);
     }
   };
 
-  // Don't show if: installed, dismissed, or not on mobile and no native prompt
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // Show the banner if not installed and not dismissed on the dashboards
   if (isInstalled || dismissed) return null;
-  // On desktop, only show if there's an actual install prompt
-  if (!isMobile && !installPrompt) return null;
 
   return (
     <div
@@ -91,9 +109,7 @@ export default function PWAInstallBanner({ role, restaurantName, installPrompt, 
               Install {restaurantName} {cfg.label}
             </p>
             <p className="text-[10px] text-slate-500 leading-snug">
-              {installPrompt
-                ? 'Add to home screen for instant access & persistent login'
-                : 'Tap below to install this app on your phone'}
+              Add to home screen for instant access & persistent login
             </p>
           </div>
         </div>
@@ -115,46 +131,6 @@ export default function PWAInstallBanner({ role, restaurantName, installPrompt, 
           </button>
         </div>
       </div>
-
-      {/* Expandable manual instructions */}
-      {showInstructions && (
-        <div className="px-4 pb-4 pt-1 border-t" style={{ borderColor: cfg.border }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: cfg.text }}>
-            How to install manually:
-          </p>
-          {isIOS ? (
-            <ol className="text-[11px] text-slate-600 space-y-1.5 list-decimal list-inside leading-relaxed">
-              <li>Tap the Safari <strong>Share</strong> button (📤) at the bottom of the browser</li>
-              <li>Scroll down and tap <strong>"Add to Home Screen"</strong> (➕)</li>
-              <li>Tap <strong>"Add"</strong> at the top right to finish</li>
-            </ol>
-          ) : (
-            <ol className="text-[11px] text-slate-600 space-y-1.5 list-decimal list-inside leading-relaxed">
-              <li>Tap the browser menu (<strong>⋮ three dots</strong>) at the top right</li>
-              <li>Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong></li>
-              <li>Confirm the installation prompt that appears</li>
-            </ol>
-          )}
-          <button
-            onClick={() => setShowInstructions(false)}
-            className="mt-3 text-[10px] font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-1"
-          >
-            <ChevronUp className="w-3 h-3" /> Hide instructions
-          </button>
-        </div>
-      )}
-
-      {/* Show instructions toggle when no native prompt */}
-      {!installPrompt && !showInstructions && isMobile && (
-        <button
-          onClick={() => setShowInstructions(true)}
-          className="w-full pb-2 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
-          style={{ color: cfg.text }}
-        >
-          <ChevronDown className="w-3 h-3" />
-          Show install instructions
-        </button>
-      )}
     </div>
   );
 }
