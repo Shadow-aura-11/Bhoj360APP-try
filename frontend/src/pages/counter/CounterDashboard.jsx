@@ -695,7 +695,7 @@ export default function CounterDashboard() {
                       <tr>
                         <td colSpan="2" className="pl-3 text-[9px] text-slate-500 italic pb-1" style={{ paddingLeft: '8px' }}>
                           {itemAddons.map((ad, idx) => (
-                            <div key={idx}>+ {ad.name}</div>
+                            <div key={idx}>+ {ad.name} {ad.quantity > 1 ? `(x${ad.quantity})` : ''}</div>
                           ))}
                         </td>
                       </tr>

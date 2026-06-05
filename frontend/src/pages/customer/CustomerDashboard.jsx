@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Coffee, Clipboard, Compass, ArrowRight, Bell, Soup, Utensils, Award, History, Clock, X, RefreshCw, CreditCard, DollarSign, LogOut } from 'lucide-react';
+import { Coffee, Clipboard, Compass, ArrowRight, Bell, Soup, Utensils, Award, History, Clock, X, RefreshCw, CreditCard, DollarSign, LogOut, Filter } from 'lucide-react';
 import { createApi } from '../../api/client';
 import { useSocket } from '../../hooks/useSocket';
 import StatusBadge from '../../components/shared/StatusBadge';
@@ -87,7 +87,27 @@ export default function CustomerDashboard() {
           const exists = currentAddons.some((a) => a.id === addon.id);
           const nextAddons = exists
             ? currentAddons.filter((a) => a.id !== addon.id)
-            : [...currentAddons, addon];
+            : [...currentAddons, { ...addon, quantity: 1 }];
+          return { ...cartItem, addons: nextAddons };
+        }
+        return cartItem;
+      })
+    );
+  };
+
+  const updateCartItemAddonQty = (itemId, addonId, amount) => {
+    setCart((prev) =>
+      prev.map((cartItem) => {
+        if (cartItem.menu_item_id === itemId) {
+          const nextAddons = (cartItem.addons || [])
+            .map((ad) => {
+              if (ad.id === addonId) {
+                const nextQty = (ad.quantity || 1) + amount;
+                return nextQty > 0 ? { ...ad, quantity: nextQty } : null;
+              }
+              return ad;
+            })
+            .filter(Boolean);
           return { ...cartItem, addons: nextAddons };
         }
         return cartItem;
@@ -675,8 +695,13 @@ export default function CustomerDashboard() {
         {/* Menu Tab */}
         {activeTab === 'menu' && (
           <div className="space-y-6">
-            <div className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-print">
-              {categories.map((c) => (
+            <div className="flex items-center gap-2 no-print">
+              <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full flex-shrink-0 text-xs font-extrabold shadow-sm">
+                <Filter className="w-3.5 h-3.5" />
+                <span>Filter</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2 scroll-smooth flex-1">
+                {categories.map((c) => (
                 <button
                   key={c}
                   onClick={() => setSelectedCat(c)}
@@ -690,6 +715,7 @@ export default function CustomerDashboard() {
                 </button>
               ))}
             </div>
+          </div>
 
             {/* Grid menu with Photos */}
             <div className="space-y-3">
@@ -824,7 +850,7 @@ export default function CustomerDashboard() {
                           placeholder="Instructions (e.g., extra spicy...)"
                           className="flex-1 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-650 focus:outline-none"
                         />
-                        <span className="text-xs font-mono font-bold text-slate-700 font-mono">₹{(item.price + (item.addons || []).reduce((s, ad) => s + ad.price, 0)) * item.quantity}</span>
+                        <span className="text-xs font-mono font-bold text-slate-700 font-mono">₹{(item.price + (item.addons || []).reduce((s, ad) => s + ad.price * (ad.quantity || 1), 0)) * item.quantity}</span>
                       </div>
                       
                       {(() => {
@@ -834,12 +860,12 @@ export default function CustomerDashboard() {
                         return (
                           <div className="mt-1 pl-2 border-l-2 border-slate-200 space-y-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Add-ons:</span>
-                            <div className="flex flex-col gap-1.5">
-                              {availableAddons.map((ad) => {
-                                const isSelected = (item.addons || []).some((a) => a.id === ad.id);
+                                             {availableAddons.map((ad) => {
+                                const cartAddon = (item.addons || []).find((a) => a.id === ad.id);
+                                const isSelected = !!cartAddon;
                                 return (
-                                  <label key={ad.id} className="flex items-center justify-between text-xs text-slate-650 cursor-pointer select-none">
-                                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                                  <div key={ad.id} className="flex items-center justify-between text-xs text-slate-650 select-none py-0.5">
+                                    <label className="flex items-center gap-1.5 font-semibold text-slate-700 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={isSelected}
@@ -847,14 +873,37 @@ export default function CustomerDashboard() {
                                         className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
                                       />
                                       <span>{ad.name}</span>
+                                    </label>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-slate-450 font-bold">+₹{ad.price * (cartAddon?.quantity || 1)}</span>
+                                      {isSelected && (
+                                        <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => updateCartItemAddonQty(item.menu_item_id, ad.id, -1)}
+                                            className="w-4.5 h-4.5 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center font-bold text-[10px]"
+                                          >
+                                            -
+                                          </button>
+                                          <span className="text-[10px] font-mono font-bold text-slate-800 px-0.5 w-3 text-center">
+                                            {cartAddon.quantity || 1}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => updateCartItemAddonQty(item.menu_item_id, ad.id, 1)}
+                                            className="w-4.5 h-4.5 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center font-bold text-[10px]"
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
-                                    <span className="font-mono text-slate-450 font-bold">+₹{ad.price}</span>
-                                  </label>
+                                  </div>
                                 );
                               })}
                             </div>
-                          </div>
-                        );
+                          );
                       })()}
                     </div>
                   ))}
@@ -862,7 +911,7 @@ export default function CustomerDashboard() {
 
                 <div className="flex justify-between items-center pt-3 border-t border-slate-100 font-bold text-sm text-emerald-950">
                   <span className="text-slate-500 font-medium">Basket Total</span>
-                  <span className="text-base font-bold font-mono text-emerald-600">₹{cart.reduce((sum, i) => sum + (i.price + (i.addons || []).reduce((s, ad) => s + ad.price, 0)) * i.quantity, 0)}</span>
+                  <span className="text-base font-bold font-mono text-emerald-600">₹{cart.reduce((sum, i) => sum + (i.price + (i.addons || []).reduce((s, ad) => s + ad.price * (ad.quantity || 1), 0)) * i.quantity, 0)}</span>
                 </div>
 
                 <div className="space-y-3">
@@ -1092,7 +1141,7 @@ export default function CustomerDashboard() {
               <span className="text-[10px] text-emerald-450 font-bold block uppercase tracking-wider">
                 {cart.reduce((sum, i) => sum + i.quantity, 0)} {cart.reduce((sum, i) => sum + i.quantity, 0) === 1 ? 'item' : 'items'} selected
               </span>
-              <span className="text-sm font-black font-mono">₹{cart.reduce((sum, i) => sum + (i.price + (i.addons || []).reduce((s, ad) => s + ad.price, 0)) * i.quantity, 0)}</span>
+              <span className="text-sm font-black font-mono">₹{cart.reduce((sum, i) => sum + (i.price + (i.addons || []).reduce((s, ad) => s + ad.price * (ad.quantity || 1), 0)) * i.quantity, 0)}</span>
             </div>
             <button
               onClick={() => setActiveTab('order')}

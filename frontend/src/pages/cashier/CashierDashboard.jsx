@@ -627,8 +627,8 @@ export default function CashierDashboard() {
                     <div className="pl-3 text-[7.5px] text-slate-700 italic space-y-0.5" style={{ paddingLeft: '8px' }}>
                       {itemAddons.map((ad, idx) => (
                         <div key={idx} className="flex justify-between">
-                          <span>+ {ad.name}</span>
-                          <span>₹{(ad.price * item.quantity).toFixed(2)} (Incl.)</span>
+                          <span>+ {ad.name} {ad.quantity > 1 ? `(x${ad.quantity})` : ''}</span>
+                          <span>₹{(ad.price * (ad.quantity || 1) * item.quantity).toFixed(2)} (Incl.)</span>
                         </div>
                       ))}
                     </div>

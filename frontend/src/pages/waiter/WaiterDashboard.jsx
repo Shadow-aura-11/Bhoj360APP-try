@@ -1725,8 +1725,8 @@ export default function WaiterDashboard() {
                     <div className="pl-3 text-[7.5px] text-slate-700 italic space-y-0.5" style={{ paddingLeft: '8px' }}>
                       {itemAddons.map((ad, idx) => (
                         <div key={idx} className="flex justify-between">
-                          <span>+ {ad.name}</span>
-                          <span>₹{(ad.price * item.quantity).toFixed(2)} (Incl.)</span>
+                          <span>+ {ad.name} {ad.quantity > 1 ? `(x${ad.quantity})` : ''}</span>
+                          <span>₹{(ad.price * (ad.quantity || 1) * item.quantity).toFixed(2)} (Incl.)</span>
                         </div>
                       ))}
                     </div>
@@ -1878,7 +1878,7 @@ export default function WaiterDashboard() {
                           <tr>
                             <td colSpan="2" className="pl-3 text-[9px] text-slate-500 italic pb-1" style={{ paddingLeft: '8px' }}>
                               {itemAddons.map((ad, idx) => (
-                                <div key={idx}>+ {ad.name}</div>
+                                <div key={idx}>+ {ad.name} {ad.quantity > 1 ? `(x${ad.quantity})` : ''}</div>
                               ))}
                             </td>
                           </tr>
