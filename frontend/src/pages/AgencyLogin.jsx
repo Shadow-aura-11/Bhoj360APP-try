@@ -411,7 +411,16 @@ export default function AgencyLogin() {
   }, [resendCountdown]);
 
   async function checkStatus() {
-    setStep(STEP_PASSWORD);
+    try {
+      const { data } = await agencyApi.get('/auth/status');
+      if (data && data.hasPassword) {
+        setStep(STEP_PASSWORD);
+      } else {
+        setStep(STEP_SETUP);
+      }
+    } catch (err) {
+      setStep(STEP_PASSWORD);
+    }
   }
 
   // ── Setup ────────────────────────────────────────────────────
