@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function ShowcasePage() {
+  useDocumentMetadata(
+    'Bhoj360 Showcase - Live Smart POS & Restaurant Analytics Dashboard',
+    'See Bhoj360 in active operations. Explore our cashier POS console, waiter terminals, kitchen display systems, and analytics dashboard.'
+  );
+
   const { lang, t } = useLanguage();
   const isHindi = lang === 'hi';
 
@@ -80,8 +86,8 @@ export default function ShowcasePage() {
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi
-                ? "Bhoj360 इंटरफ़ेस को परिचालन रूप से मजबूत और अत्यंत सुंदर बनाया गया है। नीचे हमारे मुख्य संचालन मॉड्यूल देखें।"
-                : "Explore how Bhoj360 operates across active staff terminals and customer layouts, built to streamline orders and eliminate communication delays."
+                ? "Bhoj360 स्मार्ट पीओएस (Smart POS) और बिलिंग मशीन सॉफ्टवेयर के साथ रेस्तरां ऑर्डर मैनेजमेंट सिस्टम को लाइव देखें। हमारे व्यापक रेस्तरां एनालिटिक्स डैशबोर्ड के साथ संचालन और राजस्व पर नज़र रखें।"
+                : "Explore how Bhoj360 acts as a complete restaurant order management system with smart POS features and billing machine software. Track operational performance using our restaurant analytics dashboard."
               }
             </p>
           </div>

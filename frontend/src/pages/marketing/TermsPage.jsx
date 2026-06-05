@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function TermsPage() {
+  useDocumentMetadata(
+    'Terms of Service - Bhoj360 Restaurant POS Software',
+    'Read the Terms of Service for Bhoj360. Understand the usage agreements, subscription licensing, and isolated node container policies.'
+  );
+
   const { lang } = useLanguage();
   const isHindi = lang === 'hi';
 

@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function PrivacyPolicyPage() {
+  useDocumentMetadata(
+    'Privacy Policy - Bhoj360 Restaurant POS Software',
+    'Read the privacy policy of Bhoj360. Learn how we handle, secure, and isolate your restaurant business data and customer information.'
+  );
+
   const { lang } = useLanguage();
   const isHindi = lang === 'hi';
 

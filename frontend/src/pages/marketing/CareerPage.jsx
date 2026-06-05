@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function CareerPage() {
+  useDocumentMetadata(
+    'Careers at Bhoj360 - Build the Future of Hospitality Technology',
+    'Join the Bhoj360 team and shape the future of cloud restaurant management. Explore open opportunities in sales, engineering, product design, and customer success.'
+  );
+
   const { lang } = useLanguage();
   const isHindi = lang === 'hi';
 
@@ -128,8 +134,8 @@ export default function CareerPage() {
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi
-                ? "Bhoj360 में, हम आतिथ्य क्षेत्र के सबसे जटिल परिचालन मुद्दों को हल करने के लिए समर्पित हैं। हमारे मिशन में शामिल हों और हमारी बिक्री या तकनीकी टीम का हिस्सा बनें।"
-                : "Join a fast-growing, mission-driven team dedicated to simplifying operations and building beautiful software tools for restaurants globally."
+                ? "Bhoj360 में, हम आतिथ्य तकनीक (Hospitality Technology) और क्लाउड रेस्तरां प्रबंधन (Cloud Restaurant Management) के सबसे जटिल परिचालन मुद्दों को हल करने के लिए समर्पित हैं। हमारे मिशन में शामिल हों और हमारे अभिनव रेस्तरां सॉफ्टवेयर (Restaurant Software) का हिस्सा बनें।"
+                : "Join a fast-growing, mission-driven team dedicated to simplifying cloud restaurant management, innovating hospitality technology, and building beautiful restaurant software tools globally."
               }
             </p>
           </div>

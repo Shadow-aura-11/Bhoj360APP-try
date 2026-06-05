@@ -6,8 +6,14 @@ import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { agencyApi } from '../../api/client';
 import { useLanguage } from '../../hooks/useLanguage';
 import toast from 'react-hot-toast';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function BlogPage() {
+  useDocumentMetadata(
+    'Bhoj360 Blog - Restaurant Industry Insights & Growth Strategies',
+    'Read the latest insights, tips, and trends on restaurant analytics, digital transformation, inventory control, and restaurant marketing campaigns.'
+  );
+
   const { lang, t } = useLanguage();
   const isHindi = lang === 'hi';
   

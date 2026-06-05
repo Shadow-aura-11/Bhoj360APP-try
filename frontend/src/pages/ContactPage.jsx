@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import Nav from './marketing/components/Nav';
 import Footer from './marketing/components/Footer';
 import FloatingWhatsApp from '../components/shared/FloatingWhatsApp';
+import useDocumentMetadata from '../hooks/useDocumentMetadata';
+import { useLanguage } from '../hooks/useLanguage';
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
@@ -386,6 +388,14 @@ const SUBJECTS = [
 ];
 
 export default function ContactPage() {
+  useDocumentMetadata(
+    'Contact Bhoj360 - Request a Demo or Get Smart POS Support',
+    'Get in touch with Bhoj360 sales and support teams. Request a personalized live demo or ask questions about our cloud-based restaurant management software.'
+  );
+
+  const { lang } = useLanguage();
+  const isHindi = lang === 'hi';
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -429,19 +439,19 @@ export default function ContactPage() {
         <FloatingWhatsApp />
         <main className="flex-grow pt-32 pb-20 relative z-10 w-full">
 
-        {/* Hero */}
-        <div className="cp-hero">
-          <div className="cp-hero-tag">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-            </svg>
-            Get in touch
-          </div>
-          <h1 className="cp-hero-title">
-            We'd love to <em>hear from you</em>
+        {/* Standardized Page Header */}
+        <div className="max-w-4xl mx-auto px-6 md:px-12 space-y-4 mb-12 text-left">
+          <span className="text-[11px] font-mono tracking-[0.25em] text-[var(--color-amber)] uppercase block">
+            {isHindi ? "संपर्क करें" : "Contact Us"}
+          </span>
+          <h1 className="text-4xl md:text-6xl font-serif text-[#F5F0EB] leading-tight">
+            {isHindi ? "हम आपसे संपर्क करना चाहेंगे।" : "We'd love to hear from you."}
           </h1>
-          <p className="cp-hero-sub">
-            Have a question, want a demo, or need support? Send us a message and our team will get back to you within 24 hours.
+          <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
+            {isHindi
+              ? "चाहे आपके पास कोई प्रश्न हो, डेमो की आवश्यकता हो, या कैफ़े, बार, या फ़ूड एंड बेवरेज मैनेजमेंट के लिए सहायता की आवश्यकता हो — हमारी टीम सहायता के लिए तैयार है।"
+              : "Have a question, want a demo, or need support with your cafe management software, bar management software, or food & beverage management operations? Our team will get back to you within 24 hours."
+            }
           </p>
         </div>
 

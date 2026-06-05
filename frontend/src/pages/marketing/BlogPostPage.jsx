@@ -6,6 +6,7 @@ import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { agencyApi } from '../../api/client';
 import { useLanguage } from '../../hooks/useLanguage';
 import toast from 'react-hot-toast';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
@@ -14,6 +15,11 @@ export default function BlogPostPage() {
 
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useDocumentMetadata(
+    blog ? `${blog.title} - Bhoj360 Blog` : 'Loading Article... - Bhoj360 Blog',
+    blog ? blog.excerpt || 'Read this article on Bhoj360 Blog.' : 'Loading article details...'
+  );
 
   useEffect(() => {
     const fetchBlog = async () => {

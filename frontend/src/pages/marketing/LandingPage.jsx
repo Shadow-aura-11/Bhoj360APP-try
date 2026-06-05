@@ -13,10 +13,17 @@ import Testimonials from './components/Testimonials';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import CTA from './components/CTA';
+import SEOSection from './components/SEOSection';
 import Footer from './components/Footer';
 import DemoModal from './components/DemoModal';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function LandingPage() {
+  useDocumentMetadata(
+    'Bhoj360 - Cloud Restaurant POS & Management Software Platform',
+    'Looking for the best restaurant POS software? Bhoj360 is a cloud-based restaurant billing, table, menu, and real-time inventory management software designed to automate operations.'
+  );
+  
   const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [cursorActive, setCursorActive] = useState(false);
   
@@ -153,6 +160,8 @@ export default function LandingPage() {
       <FAQ />
       
       <CTA onWatchDemo={() => setIsDemoOpen(true)} />
+
+      <SEOSection />
       
       <Footer />
 

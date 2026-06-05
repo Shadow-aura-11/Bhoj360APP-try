@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function AboutPage() {
+  useDocumentMetadata(
+    'About Bhoj360 - Next-Gen Cloud Restaurant Management Technology',
+    'Learn how Bhoj360 is architecting the future of dining. Explore our cloud restaurant management technology, decentralized node architecture, and core values.'
+  );
+
   const { lang } = useLanguage();
   const isHindi = lang === 'hi';
 
@@ -40,8 +46,8 @@ export default function AboutPage() {
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi 
-                ? "Bhoj360 एक अगली पीढ़ी का रेस्तरां प्रौद्योगिकी मंच है, जिसे भारतीय आतिथ्य उद्योग के लिए ग्राउंड-अप से डिजाइन किया गया है। हम केवल एक सॉफ्टवेयर नहीं हैं, हम आधुनिक रेस्तरां के लिए एक पूर्ण परिचालन इंजन हैं।"
-                : "Bhoj360 is a next-generation restaurant technology platform engineered from the ground up to power modern hospitality groups with decentralized, isolated node architecture."
+                ? "Bhoj360 एक अगली पीढ़ी का रेस्तरां ऑटोमेशन और प्रौद्योगिकी मंच है, जिसे भारतीय आतिथ्य उद्योग के लिए ग्राउंड-अप से डिजाइन किया गया है। हम केवल एक सॉफ्टवेयर नहीं हैं, हम आधुनिक रेस्तरां के डिजिटल रूपांतरण के लिए एक पूर्ण परिचालन इंजन हैं।"
+                : "Bhoj360 is a next-generation restaurant automation and hospitality technology platform engineered from the ground up to drive restaurant digital transformation using decentralized, isolated node architecture."
               }
             </p>
           </div>

@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function FeaturesPage() {
+  useDocumentMetadata(
+    'Bhoj360 Features - Cloud POS, Table & Inventory Management Tools',
+    'Discover the powerful restaurant automation tools built into Bhoj360. Features include split billing, dynamic UPI QR codes, interactive floorplans, and real-time inventory tracking.'
+  );
+
   const { lang, t } = useLanguage();
   const isHindi = lang === 'hi';
 
@@ -48,8 +54,8 @@ export default function FeaturesPage() {
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi
-                ? "Bhoj360 परिचालन दक्षता को अधिकतम करने और ग्राहक संतुष्टि को बढ़ाने के लिए उपकरणों का एक शक्तिशाली सेट प्रदान करता है।"
-                : "Explore the comprehensive features that make Bhoj360 the premium orchestration engine for standalone tables and multi-restaurant networks alike."
+                ? "Bhoj360 ऑर्डर मैनेजमेंट, टेबल मैनेजमेंट, किचन मैनेजमेंट और रियल-टाइम इन्वेंट्री को एकीकृत करने के लिए स्वचालित वर्कफ़्लो प्रदान करता है। हमारे ऑल-इन-वन रेस्तरां सॉफ़्टवेयर के साथ परिचालन को सुव्यवस्थित करें।"
+                : "Bhoj360 provides automated workflows that integrate order management, table management, menu management, and real-time inventory tracking. Streamline your operations with our premium QR menu solution for restaurants."
               }
             </p>
           </div>

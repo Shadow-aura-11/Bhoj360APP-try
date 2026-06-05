@@ -3,8 +3,14 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import FloatingWhatsApp from '../../components/shared/FloatingWhatsApp';
 import { useLanguage } from '../../hooks/useLanguage';
+import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function RefundPolicyPage() {
+  useDocumentMetadata(
+    'Refund Policy - Bhoj360 Cloud Restaurant Software',
+    'Review the refund and subscription cancellation terms for Bhoj360 software services, packages, and custom agency offerings.'
+  );
+
   const { lang } = useLanguage();
   const isHindi = lang === 'hi';
 
