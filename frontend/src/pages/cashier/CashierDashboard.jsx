@@ -195,6 +195,17 @@ export default function CashierDashboard() {
   // Receipt printing states
   const [receiptOrder, setReceiptOrder] = useState(null);
 
+  // Trigger print when receiptOrder is set
+  useEffect(() => {
+    if (receiptOrder) {
+      const timer = setTimeout(() => {
+        window.print();
+        setReceiptOrder(null);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [receiptOrder]);
+
   // Double tap gesture state
   const [lastTap, setLastTap] = useState({ tableId: null, time: 0 });
 
@@ -451,11 +462,6 @@ export default function CashierDashboard() {
       setSelectedTable(null);
       refreshOrders();
       refreshTables();
-
-      // Trigger automatic printing after a short delay
-      setTimeout(() => {
-        window.print();
-      }, 500);
     } catch (err) {
       console.error(err);
       toast.error('Failed to settle order');
@@ -466,9 +472,6 @@ export default function CashierDashboard() {
 
   const handlePrintReceipt = (order) => {
     setReceiptOrder(order);
-    setTimeout(() => {
-      window.print();
-    }, 200);
   };
 
   const handleDeleteHistory = async (e) => {
@@ -529,17 +532,26 @@ export default function CashierDashboard() {
           display: none;
         }
         @media print {
-          body * {
-            visibility: hidden;
+          /* Hide all dashboard content except the print-receipt-section */
+          body > #root > div > *:not(#print-receipt-section) {
+            display: none !important;
           }
-          #print-receipt-section, #print-receipt-section * {
-            visibility: visible;
+          body > #root > div {
+            min-height: auto !important;
+            height: auto !important;
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          html, body {
+            height: auto !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
           }
           #print-receipt-section {
             display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
             width: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'};
             padding: 2mm;
             background: white !important;
@@ -547,10 +559,11 @@ export default function CashierDashboard() {
             font-family: monospace !important;
             font-size: ${config?.printing?.hardware?.size === '58mm' ? '8.5px' : '10px'} !important;
             line-height: 1.3 !important;
-            box-sizing: border-box;
+            box-sizing: border-box !important;
           }
-          .no-print {
-            display: none !important;
+          @page {
+            size: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'} auto;
+            margin: 0;
           }
         }
       `}</style>

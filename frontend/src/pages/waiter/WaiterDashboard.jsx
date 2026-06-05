@@ -1607,38 +1607,38 @@ export default function WaiterDashboard() {
           display: none;
         }
         @media print {
-          /* Hide everything except the active print section */
-          body * {
-            visibility: hidden;
+          /* Hide all dashboard content except the active print section */
+          body > #root > div > *:not(#print-kot-section):not(#print-receipt-section) {
+            display: none !important;
           }
-          ${printOrder ? `
-          #print-kot-section, #print-kot-section * {
-            visibility: visible;
+          body > #root > div {
+            min-height: auto !important;
+            height: auto !important;
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          html, body {
+            height: auto !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
           }
           #print-kot-section {
-            position: absolute;
-            left: 0;
-            top: 0;
+            display: block !important;
             width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
             margin: 0;
             padding: 5px;
-            background: white;
-            color: black;
-            font-family: monospace;
+            background: white !important;
+            color: black !important;
+            font-family: monospace !important;
             font-size: ${printerSettings.size === '58mm' ? '8.5px' : '10px'} !important;
             line-height: 1.3 !important;
             box-sizing: border-box !important;
           }
-          ` : ''}
-          ${receiptOrder ? `
-          #print-receipt-section, #print-receipt-section * {
-            visibility: visible;
-          }
           #print-receipt-section {
             display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
             width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
             padding: 2mm;
             background: white !important;
@@ -1646,9 +1646,8 @@ export default function WaiterDashboard() {
             font-family: monospace !important;
             font-size: ${printerSettings.size === '58mm' ? '8.5px' : '10px'} !important;
             line-height: 1.3 !important;
-            box-sizing: border-box;
+            box-sizing: border-box !important;
           }
-          ` : ''}
           @page {
             size: ${printerSettings.size === '58mm' ? '58mm' : '80mm'} auto;
             margin: 0;
