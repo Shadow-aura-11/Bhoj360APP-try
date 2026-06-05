@@ -80,10 +80,10 @@ export default function Nav() {
           </button>
           
           <Link
-            to="/app/login"
+            to="/contact"
             className="shimmer-btn px-5 py-2 rounded bg-[var(--color-amber)] text-black font-semibold text-sm transition-all hover:bg-[var(--color-amber-light)] active:scale-95 flex items-center gap-2"
           >
-            {t('launch_console')}
+            {lang === 'en' ? 'Get Started' : 'शुरू करें'}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -124,11 +124,11 @@ export default function Nav() {
             </Link>
           ))}
           <Link
-            to="/app/login"
+            to="/contact"
             onClick={() => setMobileMenuOpen(false)}
             className="mt-6 px-10 py-3 rounded bg-[var(--color-amber)] text-black font-semibold text-lg hover:bg-[var(--color-amber-light)] active:scale-95 transition-all shadow-md"
           >
-            {t('launch_console')}
+            {lang === 'en' ? 'Get Started' : 'शुरू करें'}
           </Link>
         </div>
       </div>

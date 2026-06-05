@@ -643,6 +643,14 @@ export default function AgencyLogin() {
               <p className="al-title">Welcome back</p>
               <p className="al-subtitle">Enter your agency credentials to continue.</p>
 
+              <div className="al-notice" style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)', color: '#d4a574', marginBottom: '20px', textAlign: 'left' }}>
+                <span className="font-bold block mb-1">Demo Credentials:</span>
+                <div className="space-y-0.5 text-xs font-mono">
+                  <div>Email: <span className="text-white selection:bg-amber-500/20">aman@8299443154.com</span></div>
+                  <div>Pass: <span className="text-white selection:bg-amber-500/20">aman3154</span></div>
+                </div>
+              </div>
+
               <div className="al-field">
                 <label className="al-label">Email Address</label>
                 <input
@@ -689,6 +697,13 @@ export default function AgencyLogin() {
               <p className="al-subtitle">
                 Enter the 6-digit code sent to your <strong>registered email address</strong>. It expires in 5 minutes.
               </p>
+
+              <div className="al-notice" style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)', color: '#d4a574', marginBottom: '20px', textAlign: 'left' }}>
+                <span className="font-bold block mb-1">2FA Verification Code:</span>
+                <div className="text-xs font-mono">
+                  Code: <span className="text-white selection:bg-amber-500/20">315400</span>
+                </div>
+              </div>
 
               {otpFallback && (
                 <div className="al-notice">

@@ -63,8 +63,8 @@ export default function Footer() {
                 </li>
               ))}
               <li>
-                <Link to="/app/login" className="text-xs text-[rgba(245,240,235,0.65)] hover:text-[var(--color-amber)] transition-colors duration-300">
-                  {t('launch_console')}
+                <Link to="/contact" className="text-xs text-[rgba(245,240,235,0.65)] hover:text-[var(--color-amber)] transition-colors duration-300">
+                  {lang === 'hi' ? 'डेमो बुक करें' : 'Book a Demo'}
                 </Link>
               </li>
             </ul>
@@ -110,10 +110,13 @@ export default function Footer() {
           <p className="text-center md:text-left">
             {t('footer_copyright', { year: new Date().getFullYear() })}
           </p>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-6">
             <a href="https://twitter.com/bhoj360" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-amber)] transition-colors">Twitter</a>
             <a href="https://github.com/bhoj360" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-amber)] transition-colors">GitHub</a>
             <a href="https://linkedin.com/company/bhoj360" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-amber)] transition-colors">LinkedIn</a>
+            <Link to="/app/login" className="opacity-10 hover:opacity-100 hover:text-[var(--color-amber)] transition-all text-[10px] select-none cursor-default ml-2">
+              Agency Console
+            </Link>
           </div>
         </div>
 

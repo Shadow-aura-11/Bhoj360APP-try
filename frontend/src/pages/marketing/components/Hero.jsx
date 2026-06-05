@@ -147,10 +147,10 @@ export default function Hero({ onWatchDemo }) {
             {/* Premium CTA Buttons */}
             <div className="flex flex-wrap gap-4 items-center">
               <Link
-                to="/app/login"
+                to="/contact"
                 className="shimmer-btn px-8 py-4 rounded bg-[var(--color-amber)] text-black font-semibold text-base transition-all hover:bg-[var(--color-amber-light)] active:scale-95 shadow-[0_4px_20px_rgba(212,146,10,0.25)] flex items-center gap-3"
               >
-                {t('launch_console')}
+                {t('lang') === 'hi' ? 'डेमो बुक करें' : 'Book a Demo'}
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>

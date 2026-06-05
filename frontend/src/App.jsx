@@ -43,6 +43,10 @@ import FloatingWhatsApp from './components/shared/FloatingWhatsApp';
 
 // Agency auth route guard
 function AgencyProtectedRoute({ children }) {
+  const token = localStorage.getItem('agency_token');
+  if (!token) {
+    return <Navigate to="/app/login" replace />;
+  }
   return children;
 }
 
@@ -138,7 +142,7 @@ export default function App() {
         <Route path="/contact" element={<ContactPage />} />
 
         {/* Agency Auth */}
-        <Route path="/app/login" element={<Navigate to="/app" replace />} />
+        <Route path="/app/login" element={<AgencyLogin />} />
 
         {/* Agency Dashboard (protected) */}
         <Route
