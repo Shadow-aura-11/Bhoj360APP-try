@@ -234,7 +234,7 @@ export default function DemoModal({ isOpen, onClose }) {
 
             {/* Role / Step Tag */}
             <span className="text-[10px] font-mono tracking-widest text-[var(--color-amber)] uppercase block">
-              {steps[currentStep].role} — STEP {currentStep + 1} OF 5
+              {steps[currentStep].role} - STEP {currentStep + 1} OF 5
             </span>
 
             {/* Title */}

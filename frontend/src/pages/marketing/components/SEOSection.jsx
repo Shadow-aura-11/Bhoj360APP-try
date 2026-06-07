@@ -106,20 +106,7 @@ export default function SEOSection() {
                 </p>
               </div>
 
-              {/* Keyword Cloud (Subtle tag display for SEO semantic weights) */}
-              <div className="mt-6 pt-4 border-t border-white/5">
-                <span className="text-[10px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Target Keywords:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {topic.keywords.map((kw, i) => (
-                    <span 
-                      key={i} 
-                      className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400"
-                    >
-                      {kw}
-                    </span>
-                  ))}
-                </div>
-              </div>
+
             </div>
           ))}
         </div>

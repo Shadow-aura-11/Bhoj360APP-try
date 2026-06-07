@@ -101,7 +101,7 @@ export default function ReservationTimeline({ reservations = [], tables = [], da
         }}
       >
         <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#f1f5f9' }}>
-          Reservation Timeline — {format(viewDate, 'EEEE, MMM d, yyyy')}
+          Reservation Timeline - {format(viewDate, 'EEEE, MMM d, yyyy')}
         </h3>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {Object.entries(STATUS_COLORS).map(([status, color]) => (
@@ -232,7 +232,7 @@ export default function ReservationTimeline({ reservations = [], tables = [], da
                       <div
                         key={res.id || ri}
                         onClick={() => onReservationClick?.(res)}
-                        title={`${res.customerName || res.customer_name || 'Guest'} — ${res.status}`}
+                        title={`${res.customerName || res.customer_name || 'Guest'} - ${res.status}`}
                         style={{
                           position: 'absolute',
                           left: `${Math.max(0, left)}px`,

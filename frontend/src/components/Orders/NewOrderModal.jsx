@@ -190,7 +190,7 @@ export default function NewOrderModal({
         <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-white flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold font-display text-slate-800">
-              {existingOrderId ? `Add Items to Order #${existingOrderId}` : `New Order — Table ${tableNumber}`}
+              {existingOrderId ? `Add Items to Order #${existingOrderId}` : `New Order - Table ${tableNumber}`}
             </h2>
             <span className="text-xs text-slate-400 font-semibold font-mono uppercase tracking-wider block mt-0.5">
               Role: Waiter / Staff Entry

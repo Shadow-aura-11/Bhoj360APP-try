@@ -714,7 +714,7 @@ export default function AgencyDashboard() {
     const existing = deleteState[id];
 
     if (existing && existing.countdown === 0) {
-      // Confirmed — proceed with deletion
+      // Confirmed - proceed with deletion
       clearInterval(existing.timer);
       setDeleteState(prev => { const s = { ...prev }; delete s[id]; return s; });
       agencyApi.delete(`/restaurants/${id}`)

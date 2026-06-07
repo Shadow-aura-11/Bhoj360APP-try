@@ -324,7 +324,7 @@ export default function Login() {
       {/* Background Mesh Gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(217,119,6,0.03),transparent_40%),radial-gradient(circle_at_70%_70%,rgba(99,102,241,0.03),transparent_40%)]" />
 
-      {/* Built by credit — desktop: top-left clickable link; mobile: bottom footer plain text */}
+      {/* Built by credit - desktop: top-left clickable link; mobile: bottom footer plain text */}
       {agencyName && (
         <>
           {/* Desktop: positioned at top-left */}
@@ -552,7 +552,7 @@ export default function Login() {
                     <>
                       <div className="text-center mb-4">
                         <span className="text-[10px] font-bold text-amber-750 uppercase tracking-wider block">
-                          Customer Login — Step 1
+                          Customer Login - Step 1
                         </span>
                         <p className="text-xs text-slate-500 mt-1">Please enter your 10-digit phone number to continue</p>
                       </div>
@@ -593,7 +593,7 @@ export default function Login() {
                     <>
                       <div className="text-center mb-4">
                         <span className="text-[10px] font-bold text-amber-755 uppercase tracking-wider block">
-                          Customer Login — Step 2
+                          Customer Login - Step 2
                         </span>
                         <p className="text-xs text-slate-500 mt-1">Please enter your assigned table number below</p>
                       </div>

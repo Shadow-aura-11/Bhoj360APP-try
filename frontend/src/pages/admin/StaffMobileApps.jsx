@@ -322,10 +322,10 @@ export default function StaffMobileApps() {
             </div>
             <div>
               <h3 className="font-display font-bold text-lg text-slate-800">
-                Staff Mobile Apps — Sharing Center
+                Staff Mobile Apps - Sharing Center
               </h3>
               <p className="text-slate-500 text-xs mt-1 leading-relaxed max-w-xl">
-                Share role-specific install links with your staff. They scan the QR code or open the link on their phone, tap <strong>"Install"</strong>, and the app is saved to their home screen — no App Store needed.
+                Share role-specific install links with your staff. They scan the QR code or open the link on their phone, tap <strong>"Install"</strong>, and the app is saved to their home screen - no App Store needed.
               </p>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function StaffMobileApps() {
             <div>
               <h4 className="font-bold text-sm text-slate-800 mb-1">About PWA Staff Apps</h4>
               <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
-                These are <strong>Progressive Web Apps (PWA)</strong> — they install from the browser directly to the home screen on any device (Android, iPhone, tablet, or Windows). 
+                These are <strong>Progressive Web Apps (PWA)</strong> - they install from the browser directly to the home screen on any device (Android, iPhone, tablet, or Windows). 
                 No App Store approval needed. Apps update automatically when you deploy changes.
                 Each role gets its own app with a persistent login that stays active on the device.
               </p>

@@ -1,5 +1,5 @@
 /**
- * PWAInstallBanner — Shows a dismissible install notification on dashboards.
+ * PWAInstallBanner - Shows a dismissible install notification on dashboards.
  *
  * Renders:
  *  - A sticky top banner when `beforeinstallprompt` is available (one-click native install)

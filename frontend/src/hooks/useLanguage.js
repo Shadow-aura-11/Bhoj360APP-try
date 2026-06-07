@@ -14,7 +14,7 @@ const translations = {
     hero_tag: "Decentralized Restaurant Engine",
     hero_title_1: "Next-Gen Restaurant POS,",
     hero_title_2: "De-centralized Node Architecture.",
-    hero_desc: "Bhoj360 provisions isolated, high-performance database containers for each restaurant. Fast waiter routing, KDS streams, split billing, and UPI codes — all in one unified ecosystem.",
+    hero_desc: "Bhoj360 provisions isolated, high-performance database containers for each restaurant. Fast waiter routing, KDS streams, split billing, and UPI codes - all in one unified ecosystem.",
     get_started: "Get Started",
     // pricing
     pricing_matrix: "Pricing Matrix",
@@ -57,7 +57,7 @@ const translations = {
     hero_tag: "विकेंद्रीकृत भोजनालय इंजन",
     hero_title_1: "अगली पीढ़ी का रेस्तरां पीओएस,",
     hero_title_2: "विकेंद्रीकृत नोड आर्किटेक्चर।",
-    hero_desc: "Bhoj360 प्रत्येक रेस्तरां के लिए अलग, उच्च प्रदर्शन वाले डेटाबेस कंटेनर प्रदान करता है। तेज़ वेटर रूटिंग, केडीएस स्ट्रीम, स्प्लिट बिलिंग और यूपीआई कोड — सब कुछ एक एकीकृत पारिस्थितिकी तंत्र में।",
+    hero_desc: "Bhoj360 प्रत्येक रेस्तरां के लिए अलग, उच्च प्रदर्शन वाले डेटाबेस कंटेनर प्रदान करता है। तेज़ वेटर रूटिंग, केडीएस स्ट्रीम, स्प्लिट बिलिंग और यूपीआई कोड - सब कुछ एक एकीकृत पारिस्थितिकी तंत्र में।",
     get_started: "शुरू करें",
     // pricing
     pricing_matrix: "मूल्य निर्धारण मैट्रिक्स",

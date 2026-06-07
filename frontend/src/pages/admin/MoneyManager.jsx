@@ -301,7 +301,7 @@ export default function MoneyManager() {
                               <span className="block text-[10px] text-slate-400 font-mono">{order.customer_phone}</span>
                             </div>
                           ) : (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-slate-400">-</span>
                           )}
                         </td>
                         <td className="py-3">

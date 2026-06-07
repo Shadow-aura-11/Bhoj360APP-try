@@ -14,7 +14,7 @@ agencyApi.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 responses — redirect to login
+// Handle 401 responses - redirect to login
 agencyApi.interceptors.response.use(
   (response) => response,
   (error) => {

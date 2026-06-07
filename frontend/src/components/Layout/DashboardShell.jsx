@@ -185,7 +185,7 @@ export default function DashboardShell({
           </div>
         </header>
 
-        {/* PWA Install Banner — shown after login */}
+        {/* PWA Install Banner - shown after login */}
         <PWAInstallBanner
           role={role}
           restaurantName={restaurantName}

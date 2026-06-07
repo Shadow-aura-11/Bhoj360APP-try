@@ -449,7 +449,7 @@ export default function ContactPage() {
           </h1>
           <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
             {isHindi
-              ? "चाहे आपके पास कोई प्रश्न हो, डेमो की आवश्यकता हो, या कैफ़े, बार, या फ़ूड एंड बेवरेज मैनेजमेंट के लिए सहायता की आवश्यकता हो — हमारी टीम सहायता के लिए तैयार है।"
+              ? "चाहे आपके पास कोई प्रश्न हो, डेमो की आवश्यकता हो, या कैफ़े, बार, या फ़ूड एंड बेवरेज मैनेजमेंट के लिए सहायता की आवश्यकता हो - हमारी टीम सहायता के लिए तैयार है।"
               : "Have a question, want a demo, or need support with your cafe management software, bar management software, or food & beverage management operations? Our team will get back to you within 24 hours."
             }
           </p>

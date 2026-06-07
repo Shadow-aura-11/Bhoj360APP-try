@@ -14,6 +14,7 @@ import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { parseOrderDate } from '../../utils/date';
 import { usePWA } from '../../hooks/usePWA';
 import PWAInstallBanner from '../../components/PWAInstallBanner';
+import { toPng } from 'html-to-image';
 
 const calculateTotalPayable = (order, discount, billingConfig) => {
   if (!order) return 0;
@@ -178,6 +179,7 @@ export default function WaiterDashboard() {
   const [settleMethod, setSettleMethod] = useState('cash'); // 'cash' | 'upi' | 'split'
   const [loading, setLoading] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [whatsappImageOrder, setWhatsappImageOrder] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
@@ -356,14 +358,70 @@ export default function WaiterDashboard() {
     }
     const targetOrder = orderToSettle || orders.find(o => o.id === orderId);
     if (!targetOrder) return;
+
+    const loadingToast = toast.loading('Generating receipt image...');
     try {
-      await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone });
+      // Set the order for render
+      setWhatsappImageOrder(targetOrder);
+      
+      // Wait for React to render the off-screen capture element in DOM
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const el = document.getElementById('whatsapp-receipt-capture');
+      if (!el) {
+        throw new Error('Capture element not found in DOM');
+      }
+
+      // Generate PNG image using html-to-image
+      const dataUrl = await toPng(el, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 });
+      const blob = await fetch(dataUrl).then(res => res.blob());
+      const file = new File([blob], `bill_${targetOrder.id}.png`, { type: 'image/png' });
+
+      let shared = false;
+      // Try Web Share API (mobile/safari/chrome mobile)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Bill Receipt #${targetOrder.id}`,
+            text: `Here is your bill for Order #${targetOrder.id} at ${restaurantName}`
+          });
+          shared = true;
+          toast.success('Receipt shared successfully!', { id: loadingToast });
+        } catch (shareErr) {
+          console.warn('Native share failed or cancelled', shareErr);
+        }
+      }
+
+      // Clipboard fallback for desktop/browsers without file share
+      if (!shared) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          toast.success('Receipt image copied to clipboard! Paste (Ctrl+V) in WhatsApp.', { id: loadingToast, duration: 6500 });
+        } catch (clipErr) {
+          console.warn('Clipboard write failed, downloading image', clipErr);
+          const link = document.createElement('a');
+          link.download = `bill_${targetOrder.id}.png`;
+          link.href = dataUrl;
+          link.click();
+          toast.success('Downloaded bill receipt image. Attach it in WhatsApp!', { id: loadingToast, duration: 6500 });
+        }
+      }
+
+      // Simulated SMS/WhatsApp update on backend
+      await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
+      
+      // Open WhatsApp web/app to start conversation with text details
       const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, restaurantConfig, restaurantName);
       window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-      toast.success('WhatsApp bill link opened and sent!');
-    } catch (e) {
-      console.warn('Failed to send simulated WhatsApp');
-      toast.error('Failed to send simulated WhatsApp');
+
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate WhatsApp receipt image', { id: loadingToast });
+    } finally {
+      setWhatsappImageOrder(null);
     }
   };
 
@@ -1906,6 +1964,172 @@ export default function WaiterDashboard() {
 
               <div className="text-center text-[9px] font-mono pt-1">
                 <p>--- End of Ticket ---</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Off-screen Receipt capture node for WhatsApp Sharing */}
+        {whatsappImageOrder && (
+          <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -100 }}>
+            <div 
+              id="whatsapp-receipt-capture" 
+              style={{ 
+                width: '380px', 
+                padding: '24px', 
+                background: '#ffffff', 
+                color: '#000000', 
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                lineHeight: '1.4',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* Logo */}
+              {restaurantConfig?.logo_url ? (
+                <img src={restaurantConfig.logo_url} alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 8px auto', display: 'block', objectFit: 'contain' }} />
+              ) : (
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid black', display: 'flex', margin: '0 auto 8px auto', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
+                  {restaurantConfig?.name ? restaurantConfig.name.charAt(0) : 'L'}
+                </div>
+              )}
+              
+              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', marginBottom: '4px' }}>
+                {restaurantConfig?.name || restaurantName}
+              </div>
+              
+              {restaurantConfig?.printing?.bill_setting?.show_address && restaurantConfig?.location && (
+                <div style={{ textAlign: 'center', fontSize: '10px', color: '#333333', marginBottom: '4px', lineHeight: '1.3' }}>
+                  {restaurantConfig.location}
+                </div>
+              )}
+              
+              {restaurantConfig?.printing?.bill_setting?.show_phone && restaurantConfig?.contact_phone && (
+                <div style={{ textAlign: 'center', fontSize: '11px', color: '#333333', marginBottom: '4px' }}>
+                  Phone: {restaurantConfig.contact_phone}
+                </div>
+              )}
+              
+              {restaurantConfig?.fssai_compliance && (
+                <div style={{ textAlign: 'center', fontSize: '10px', color: '#333333', marginBottom: '4px' }}>
+                  FSSAI No: {restaurantConfig.fssai_compliance}
+                </div>
+              )}
+              
+              <div style={{ borderBottom: '1px dashed #000000', margin: '12px 0' }}></div>
+              
+              {/* Metadata */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Table: {whatsappImageOrder.table_number || 'Takeaway'}</span>
+                  <span>Order: #{whatsappImageOrder.id}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Date: {parseOrderDate(whatsappImageOrder.settled_at || whatsappImageOrder.created_at).toLocaleDateString()}</span>
+                  <span>Time: {parseOrderDate(whatsappImageOrder.settled_at || whatsappImageOrder.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                {restaurantConfig?.printing?.bill_setting?.show_customer_info && whatsappImageOrder.customer_phone && (
+                  <div style={{ borderTop: '1px dotted #ccc', paddingTop: '6px', marginTop: '4px' }}>
+                    <div>Customer: {whatsappImageOrder.customer_name || 'Walk-in'}</div>
+                    <div>Phone: {whatsappImageOrder.customer_phone}</div>
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ borderBottom: '1px dashed #000000', marginBottom: '12px' }}></div>
+              
+              {/* Items */}
+              <div style={{ fontSize: '11px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderBottom: '1px dotted #000000', paddingBottom: '4px', marginBottom: '6px' }}>
+                  <span style={{ width: '50%' }}>Item Description</span>
+                  <span style={{ width: '15%', textAlign: 'center' }}>Qty</span>
+                  <span style={{ width: '35%', textAlign: 'right' }}>Price</span>
+                </div>
+                {whatsappImageOrder.items?.map((item) => {
+                  const itemAddons = item.addons || (item.addons_json ? (() => {
+                    try { return JSON.parse(item.addons_json); } catch (e) { return []; }
+                  })() : []);
+                  return (
+                    <div key={item.id} style={{ marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ width: '50%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {item.is_addon ? '(Add-on) ' : ''}{item.item_name}
+                        </span>
+                        <span style={{ width: '15%', textAlign: 'center' }}>{item.quantity}</span>
+                        <span style={{ width: '35%', textAlign: 'right' }}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                      {itemAddons && itemAddons.length > 0 && (
+                        <div style={{ paddingLeft: '12px', fontSize: '10px', color: '#555555', fontStyle: 'italic', marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {itemAddons.map((ad, idx) => (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>+ {ad.name} {ad.quantity > 1 ? `(x${ad.quantity})` : ''}</span>
+                              <span>₹{(ad.price * (ad.quantity || 1) * item.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <div style={{ borderBottom: '1px dashed #000000', marginTop: '12px' }}></div>
+              </div>
+
+              {/* Calculations */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', marginBottom: '16px' }}>
+                {(() => {
+                  const subtotal = whatsappImageOrder.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || whatsappImageOrder.total;
+                  const discount = whatsappImageOrder.discount_amount || 0;
+                  const afterDiscount = subtotal - discount;
+                  const gstEnabled = restaurantConfig?.billing?.gst_enabled;
+                  const gstPercent = restaurantConfig?.billing?.gst_percentage || 0;
+                  const serviceChargeEnabled = restaurantConfig?.billing?.service_charge_enabled ?? true;
+                  const serviceChargePercent = serviceChargeEnabled ? (restaurantConfig?.billing?.service_charge_percentage || 0) : 0;
+
+                  const gstAmt = gstEnabled ? (afterDiscount * gstPercent) / 100 : 0;
+                  const scAmt = (afterDiscount * serviceChargePercent) / 100;
+                  const grandTotal = afterDiscount + gstAmt + scAmt;
+
+                  return (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Subtotal</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#15803d', fontWeight: 'bold' }}>
+                          <span>Discount ({whatsappImageOrder.coupon_code || 'Coupon'})</span>
+                          <span>-₹{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {gstEnabled && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>GST ({gstPercent}%)</span>
+                          <span>₹{gstAmt.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {serviceChargePercent > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Service Charge ({serviceChargePercent}%)</span>
+                          <span>₹{scAmt.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '13px', borderTop: '1px dashed #000000', paddingTop: '6px', marginTop: '4px' }}>
+                        <span>TOTAL PAYABLE</span>
+                        <span>₹{grandTotal.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '4px', fontStyle: 'italic', color: '#555555' }}>
+                        <span>Settle Mode:</span>
+                        <span style={{ textTransform: 'uppercase' }}>{whatsappImageOrder.payment_method}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              <div style={{ borderBottom: '1px dashed #000000', marginBottom: '12px' }}></div>
+              <div style={{ textAlign: 'center', fontSize: '10px', fontWeight: 'bold', lineHeight: '1.4' }}>
+                <p>{restaurantConfig?.printing?.bill_setting?.custom_footer || 'Thank you! Visit again.'}</p>
+                <p style={{ fontSize: '8px', color: '#777777', marginTop: '4px', fontWeight: 'normal' }}>Powered by Bhoj360</p>
               </div>
             </div>
           </div>
