@@ -111,7 +111,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const entry = registry.restaurants.find((r) => r.id === restaurantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
-    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons'];
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses'];
     const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
     const accept = req.headers.accept || '';
 
@@ -125,7 +125,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
-  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses'];
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
   const accept = req.headers.accept || '';
 
