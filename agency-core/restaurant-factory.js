@@ -106,6 +106,7 @@ async function createRestaurant(options = {}) {
     contact_phone,
     subscription,
     paymentHistory,
+    blockedFeatures: options.blockedFeatures || [],
     pins: {
       admin: options.pins?.admin || 'admin123',
       waiter: options.pins?.waiter || '2222',
@@ -349,7 +350,8 @@ async function createRestaurant(options = {}) {
     contact_email,
     contact_phone,
     subscription,
-    paymentHistory
+    paymentHistory,
+    blockedFeatures: options.blockedFeatures || []
   });
   writeRegistry(registry);
 

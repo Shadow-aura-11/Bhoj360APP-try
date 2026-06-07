@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, LogOut, Wifi, WifiOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Menu, LogOut, Wifi, WifiOff, ShieldAlert } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { createApi } from '../../api/client';
 import Sidebar from './Sidebar';
 import { usePWA } from '../../hooks/usePWA';
@@ -18,11 +18,32 @@ export default function DashboardShell({
   const [restaurantName, setRestaurantName] = useState('Restaurant');
   const [logoUrl, setLogoUrl] = useState('');
   const [isOnline, setIsOnline] = useState(true);
+  const [blockedFeatures, setBlockedFeatures] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const api = createApi(restaurantId);
 
   const roleLabel = role === 'admin' ? 'Admin Portal' : role === 'waiter' ? 'Waiter App' : role === 'counter' ? 'Kitchen Display' : role === 'cashier' ? 'Cashier Terminal' : 'Staff App';
   const { installPrompt, handleInstall } = usePWA(restaurantName, roleLabel, logoUrl);
+
+  const getActiveFeature = () => {
+    const path = location.pathname;
+    if (path.endsWith('/admin/tables')) return 'tables';
+    if (path.endsWith('/admin/reservations')) return 'reservations';
+    if (path.endsWith('/admin/menu')) return 'menu';
+    if (path.endsWith('/admin/staff')) return 'staff';
+    if (path.endsWith('/admin/customers')) return 'customers';
+    if (path.endsWith('/admin/coupons')) return 'coupons';
+    if (path.endsWith('/admin/money')) return 'money';
+    if (path.endsWith('/admin/expenses')) return 'expenses';
+    if (path.endsWith('/admin/analytics')) return 'analytics';
+    if (path.endsWith('/admin/print-qr')) return 'qr';
+    if (path.endsWith('/admin/staff-apps')) return 'staff-apps';
+    return null;
+  };
+
+  const activeFeature = getActiveFeature();
+  const isFeatureBlocked = activeFeature && blockedFeatures.includes(activeFeature);
 
   useEffect(() => {
     if (installPrompt) {
@@ -63,6 +84,7 @@ export default function DashboardShell({
         if (config) {
           if (config.name) setRestaurantName(config.name);
           if (config.logo_url) setLogoUrl(config.logo_url);
+          if (config.blockedFeatures) setBlockedFeatures(config.blockedFeatures);
         } else {
           const session = JSON.parse(sessionStorage.getItem('session') || '{}');
           if (session.name) {
@@ -89,7 +111,7 @@ export default function DashboardShell({
       } catch {
         setIsOnline(false);
       }
-    }, 15000);
+    }, 10000);
 
     return () => clearInterval(pingInterval);
   }, [restaurantId]);
@@ -106,6 +128,7 @@ export default function DashboardShell({
         role={role}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        blockedFeatures={blockedFeatures}
       />
 
       {/* Main Panel */}
@@ -172,7 +195,19 @@ export default function DashboardShell({
 
         {/* Content Body */}
         <main className="flex-1 p-6 md:p-8 animate-fade-in relative z-10">
-          {children}
+          {isFeatureBlocked ? (
+            <div className="flex flex-col items-center justify-center p-8 py-20 text-center bg-white border border-slate-200 rounded-3xl shadow-xs min-h-[50vh]">
+              <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mb-4 shadow-sm animate-pulse">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <h2 className="text-lg font-bold font-display text-slate-800">Feature Restricted</h2>
+              <p className="text-xs text-slate-500 max-w-sm mt-2 leading-relaxed">
+                Access to the <strong>{activeFeature}</strong> manager has been disabled for your restaurant by the system administrator. Please contact your support representative.
+              </p>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>

@@ -5,6 +5,20 @@ import { agencyApi } from '../api/client';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
+const FEATURES_LIST = [
+  { id: 'tables', label: 'Tables' },
+  { id: 'reservations', label: 'Reservations' },
+  { id: 'menu', label: 'Menu Manager' },
+  { id: 'staff', label: 'Staff Management' },
+  { id: 'customers', label: 'Customers Directory' },
+  { id: 'coupons', label: 'Coupons & Discounts' },
+  { id: 'money', label: 'Money Management' },
+  { id: 'expenses', label: 'Expenses Manager' },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'qr', label: 'Print QR Codes' },
+  { id: 'staff-apps', label: 'Staff Mobile Apps' }
+];
+
 export default function AgencyDashboard() {
   const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState([]);
@@ -71,6 +85,7 @@ export default function AgencyDashboard() {
       cashier: '4444',
       customer: '0000',
     },
+    blockedFeatures: [],
   });
 
   const [newRestaurantResult, setNewRestaurantResult] = useState(null);
@@ -92,7 +107,8 @@ export default function AgencyDashboard() {
       counter: '',
       cashier: '',
       customer: '',
-    }
+    },
+    blockedFeatures: []
   });
 
   // Billing Tab Search and Filter states
@@ -656,6 +672,7 @@ export default function AgencyDashboard() {
         contact_email: editFormData.contact_email,
         contact_phone: editFormData.contact_phone,
         pins: editFormData.pins,
+        blockedFeatures: editFormData.blockedFeatures || [],
       });
       toast.success('Restaurant updated successfully!');
       setEditingRestaurant(null);
@@ -775,6 +792,7 @@ export default function AgencyDashboard() {
       location: res.location || '',
       contact_email: res.contact_email || '',
       contact_phone: res.contact_phone || '',
+      blockedFeatures: res.blockedFeatures || [],
       pins: {
         admin: res.pins?.admin || 'admin123',
         waiter: res.pins?.waiter || '2222',
@@ -1893,6 +1911,34 @@ export default function AgencyDashboard() {
                   />
                 </div>
                 <p className="text-[9px] text-slate-400 mt-1.5">Background tint for the restaurant's login page (lighter colors recommended).</p>
+              </div>
+
+              <div className="border-t border-slate-150 pt-4 mt-2">
+                <h4 className="text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                  Feature Restrictions
+                </h4>
+                <p className="text-[9px] text-slate-400 mb-3">Select specific features to disable/block in this restaurant's portal.</p>
+                <div className="grid grid-cols-2 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                  {FEATURES_LIST.map((feat) => {
+                    const isChecked = editFormData.blockedFeatures?.includes(feat.id);
+                    return (
+                      <label key={feat.id} className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-slate-700 hover:text-slate-900">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const nextBlocked = isChecked
+                              ? editFormData.blockedFeatures.filter(id => id !== feat.id)
+                              : [...(editFormData.blockedFeatures || []), feat.id];
+                            setEditFormData(prev => ({ ...prev, blockedFeatures: nextBlocked }));
+                          }}
+                          className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span>{feat.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="border-t border-slate-150 pt-4 mt-2">

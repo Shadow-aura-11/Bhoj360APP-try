@@ -17,7 +17,7 @@ import {
   Receipt
 } from 'lucide-react';
 
-export default function Sidebar({ restaurantId, role, isOpen, onClose }) {
+export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFeatures = [] }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -27,20 +27,27 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose }) {
   };
 
   const navItems = [
-    { label: 'Overview', path: `/r/${restaurantId}/admin`, icon: LayoutDashboard, end: true },
-    { label: 'Tables', path: `/r/${restaurantId}/admin/tables`, icon: Grid },
-    { label: 'Reservations', path: `/r/${restaurantId}/admin/reservations`, icon: CalendarCheck },
-    { label: 'Menu Manager', path: `/r/${restaurantId}/admin/menu`, icon: UtensilsCrossed },
-    { label: 'Staff Management', path: `/r/${restaurantId}/admin/staff`, icon: Users },
-    { label: 'Customers Directory', path: `/r/${restaurantId}/admin/customers`, icon: Users },
-    { label: 'Coupons & Discounts', path: `/r/${restaurantId}/admin/coupons`, icon: Ticket },
-    { label: 'Money Management', path: `/r/${restaurantId}/admin/money`, icon: Wallet },
-    { label: 'Expenses Manager', path: `/r/${restaurantId}/admin/expenses`, icon: Receipt },
-    { label: 'Analytics', path: `/r/${restaurantId}/admin/analytics`, icon: BarChart3 },
-    { label: 'Print QR Codes', path: `/r/${restaurantId}/admin/print-qr`, icon: QrCode },
-    { label: 'Staff Mobile Apps', path: `/r/${restaurantId}/admin/staff-apps`, icon: Smartphone },
-    { label: 'Settings', path: `/r/${restaurantId}/admin/settings`, icon: Settings },
+    { id: 'overview', label: 'Overview', path: `/r/${restaurantId}/admin`, icon: LayoutDashboard, end: true },
+    { id: 'tables', label: 'Tables', path: `/r/${restaurantId}/admin/tables`, icon: Grid },
+    { id: 'reservations', label: 'Reservations', path: `/r/${restaurantId}/admin/reservations`, icon: CalendarCheck },
+    { id: 'menu', label: 'Menu Manager', path: `/r/${restaurantId}/admin/menu`, icon: UtensilsCrossed },
+    { id: 'staff', label: 'Staff Management', path: `/r/${restaurantId}/admin/staff`, icon: Users },
+    { id: 'customers', label: 'Customers Directory', path: `/r/${restaurantId}/admin/customers`, icon: Users },
+    { id: 'coupons', label: 'Coupons & Discounts', path: `/r/${restaurantId}/admin/coupons`, icon: Ticket },
+    { id: 'money', label: 'Money Management', path: `/r/${restaurantId}/admin/money`, icon: Wallet },
+    { id: 'expenses', label: 'Expenses Manager', path: `/r/${restaurantId}/admin/expenses`, icon: Receipt },
+    { id: 'analytics', label: 'Analytics', path: `/r/${restaurantId}/admin/analytics`, icon: BarChart3 },
+    { id: 'qr', label: 'Print QR Codes', path: `/r/${restaurantId}/admin/print-qr`, icon: QrCode },
+    { id: 'staff-apps', label: 'Staff Mobile Apps', path: `/r/${restaurantId}/admin/staff-apps`, icon: Smartphone },
+    { id: 'settings', label: 'Settings', path: `/r/${restaurantId}/admin/settings`, icon: Settings },
   ];
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.id && blockedFeatures.includes(item.id)) {
+      return false;
+    }
+    return true;
+  });
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800">
@@ -71,7 +78,7 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose }) {
 
       {/* Nav List */}
       <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.label}
             to={item.path}

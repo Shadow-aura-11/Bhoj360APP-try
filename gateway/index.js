@@ -123,6 +123,30 @@ app.use('/r/:restaurantId', (req, res, next) => {
     }
   }
 
+  // Intercept if a specific feature is blocked by the agency administrator
+  if (entry && entry.blockedFeatures && entry.blockedFeatures.length > 0) {
+    const relativePath = req.path || '';
+    const featurePathMapping = {
+      '/tables': 'tables',
+      '/reservations': 'reservations',
+      '/menu': 'menu',
+      '/staff': 'staff',
+      '/customers': 'customers',
+      '/coupons': 'coupons',
+      '/analytics': 'analytics',
+      '/expenses': 'expenses'
+    };
+
+    for (const [pathPrefix, featureKey] of Object.entries(featurePathMapping)) {
+      if (relativePath.startsWith(pathPrefix) && entry.blockedFeatures.includes(featureKey)) {
+        return res.status(403).json({
+          error: `The ${featureKey} feature has been disabled for this restaurant by the administrator.`,
+          featureBlocked: true
+        });
+      }
+    }
+  }
+
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses'];

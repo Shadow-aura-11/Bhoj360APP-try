@@ -474,7 +474,7 @@ app.get('/api/restaurants/:id/stats', requireAgencyAuth, async (req, res) => {
 
 // PUT /api/restaurants/:id — Edit restaurant details
 app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
-  const { name, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone } = req.body;
+  const { name, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone, blockedFeatures } = req.body;
   const { id } = req.params;
 
   try {
@@ -498,6 +498,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
     if (contact_email !== undefined) entry.contact_email = contact_email;
     if (contact_phone !== undefined) entry.contact_phone = contact_phone;
     if (online !== undefined && active === undefined) entry.online = online;
+    if (blockedFeatures !== undefined) entry.blockedFeatures = blockedFeatures;
     
     // Save registry
     fs.writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2), 'utf8');
@@ -521,6 +522,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
       if (location !== undefined) config.location = location;
       if (contact_email !== undefined) config.contact_email = contact_email;
       if (contact_phone !== undefined) config.contact_phone = contact_phone;
+      if (blockedFeatures !== undefined) config.blockedFeatures = blockedFeatures;
       if (pins !== undefined) {
         config.pins = {
           ...config.pins,
