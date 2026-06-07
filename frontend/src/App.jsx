@@ -15,6 +15,7 @@ import StaffManager from './pages/admin/StaffManager';
 import CustomerDirectory from './pages/admin/CustomerDirectory';
 import CouponsManager from './pages/admin/CouponsManager';
 import MoneyManager from './pages/admin/MoneyManager';
+import ExpensesManager from './pages/admin/ExpensesManager';
 import QRPrintPage from './components/QR/QRPrintPage';
 import StaffMobileApps from './pages/admin/StaffMobileApps';
 import WaiterDashboard from './pages/waiter/WaiterDashboard';
@@ -252,6 +253,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <MoneyManager />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/r/:restaurantId/admin/expenses"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <ExpensesManager />
           </ProtectedRoute>
         }
       />

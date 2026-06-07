@@ -101,8 +101,8 @@ export default function Analytics() {
         cashRevenue: summary.cashRevenue || 0,
         onlineRevenue: summary.onlineRevenue || 0,
         week: revWeek.reduce((sum, d) => sum + d.revenue, 0) || 0,
-        month: (revWeek.reduce((sum, d) => sum + d.revenue, 0) * 4) || 0,
-        allTime: (revWeek.reduce((sum, d) => sum + d.revenue, 0) * 12) || 0,
+        month: summary.monthRevenue || 0,
+        allTime: summary.allTimeRevenue || 0,
       });
 
     } catch (err) {

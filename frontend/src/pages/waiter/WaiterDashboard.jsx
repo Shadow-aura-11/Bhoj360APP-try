@@ -225,7 +225,6 @@ export default function WaiterDashboard() {
       setReceiptOrder(null); // Ensure receipt is not in DOM
       const timer = setTimeout(() => {
         window.print();
-        setPrintOrder(null);
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -237,11 +236,22 @@ export default function WaiterDashboard() {
       setPrintOrder(null); // Ensure KOT is not in DOM
       const timer = setTimeout(() => {
         window.print();
-        setReceiptOrder(null);
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [receiptOrder]);
+
+  // Handle clearing after print is closed (fixes mobile printing blank issue)
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintOrder(null);
+      setReceiptOrder(null);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   // Sync Settle modal states
   useEffect(() => {

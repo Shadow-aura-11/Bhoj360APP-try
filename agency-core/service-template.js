@@ -130,6 +130,19 @@ try {
     );
   `);
 } catch (e) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      amount REAL NOT NULL,
+      category TEXT NOT NULL,
+      expense_date DATE DEFAULT (DATE('now', 'localtime')),
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
 
 function readConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -2056,6 +2069,18 @@ app.get('/analytics/summary', (req, res) => {
     )
     .get();
 
+  const monthRevenue = db
+    .prepare(
+      "SELECT COALESCE(SUM(total), 0) as revenue FROM orders WHERE status = 'paid' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')"
+    )
+    .get();
+
+  const allTimeRevenue = db
+    .prepare(
+      "SELECT COALESCE(SUM(total), 0) as revenue FROM orders WHERE status = 'paid'"
+    )
+    .get();
+
   const totalTables = db.prepare('SELECT COUNT(*) as count FROM tables').get();
 
   const tableTurnover =
@@ -2065,12 +2090,103 @@ app.get('/analytics/summary', (req, res) => {
     revenue: Math.round(todayRevenue.revenue * 100) / 100,
     cashRevenue: Math.round(todayCashRevenue.revenue * 100) / 100,
     onlineRevenue: Math.round(todayOnlineRevenue.revenue * 100) / 100,
+    monthRevenue: Math.round(monthRevenue.revenue * 100) / 100,
+    allTimeRevenue: Math.round(allTimeRevenue.revenue * 100) / 100,
     orderCount: todayOrders.count,
     avgOrderValue: Math.round(avgOrderValue.avg * 100) / 100,
     tableTurnover,
     paidOrders: paidOrders.count,
     totalTables: totalTables.count,
   });
+});
+
+// GET /expenses — Retrieve all expenses [ADMIN]
+app.get('/expenses', authMiddleware('admin'), (req, res) => {
+  try {
+    const expenses = db.prepare('SELECT * FROM expenses ORDER BY expense_date DESC, id DESC').all();
+    res.json(expenses);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /expenses — Add/Update an expense [ADMIN]
+app.post('/expenses', authMiddleware('admin'), (req, res) => {
+  const { id, title, amount, category, expense_date, description } = req.body;
+  if (!title || amount === undefined || !category) {
+    return res.status(400).json({ error: 'title, amount, and category are required' });
+  }
+
+  const dateVal = expense_date || new Date().toISOString().split('T')[0];
+
+  try {
+    if (id) {
+      db.prepare(
+        'UPDATE expenses SET title = ?, amount = ?, category = ?, expense_date = ?, description = ? WHERE id = ?'
+      ).run(title, parseFloat(amount), category, dateVal, description || null, id);
+      res.json({ message: 'Expense updated successfully' });
+    } else {
+      db.prepare(
+        'INSERT INTO expenses (title, amount, category, expense_date, description) VALUES (?, ?, ?, ?, ?)'
+      ).run(title, parseFloat(amount), category, dateVal, description || null);
+      res.json({ message: 'Expense created successfully' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /expenses/:id — Delete an expense [ADMIN]
+app.delete('/expenses/:id', authMiddleware('admin'), (req, res) => {
+  try {
+    db.prepare('DELETE FROM expenses WHERE id = ?').run(req.params.id);
+    res.json({ message: 'Expense deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /expenses/summary — Retrieve expenses and profit metrics [ADMIN]
+app.get('/expenses/summary', authMiddleware('admin'), (req, res) => {
+  try {
+    // 1. Total revenue (all time)
+    const allTimeRevenue = db.prepare("SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = 'paid'").get().total;
+
+    // 2. Total expenses (all time)
+    const allTimeExpenses = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM expenses").get().total;
+
+    // 3. This Month Revenue
+    const thisMonthRevenue = db.prepare("SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = 'paid' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')").get().total;
+
+    // 4. This Month Expenses
+    const thisMonthExpenses = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE strftime('%Y-%m', expense_date) = strftime('%Y-%m', 'now', 'localtime')").get().total;
+
+    // 5. Today's Revenue
+    const todayRevenue = db.prepare("SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = 'paid' AND DATE(created_at) = DATE('now', 'localtime')").get().total;
+
+    // 6. Today's Expenses
+    const todayExpenses = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_date = DATE('now', 'localtime')").get().total;
+
+    res.json({
+      allTime: {
+        revenue: Math.round(allTimeRevenue * 100) / 100,
+        expenses: Math.round(allTimeExpenses * 100) / 100,
+        profit: Math.round((allTimeRevenue - allTimeExpenses) * 100) / 100
+      },
+      thisMonth: {
+        revenue: Math.round(thisMonthRevenue * 100) / 100,
+        expenses: Math.round(thisMonthExpenses * 100) / 100,
+        profit: Math.round((thisMonthRevenue - thisMonthExpenses) * 100) / 100
+      },
+      today: {
+        revenue: Math.round(todayRevenue * 100) / 100,
+        expenses: Math.round(todayExpenses * 100) / 100,
+        profit: Math.round((todayRevenue - todayExpenses) * 100) / 100
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // GET /analytics/revenue — Daily revenue breakdown

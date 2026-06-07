@@ -177,11 +177,21 @@ export default function CounterDashboard() {
     if (printOrder) {
       const timer = setTimeout(() => {
         window.print();
-        setPrintOrder(null);
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [printOrder]);
+
+  // Handle clearing after print is closed (fixes mobile printing blank issue)
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintOrder(null);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   // Beep Audio Utility
   const playBeep = () => {

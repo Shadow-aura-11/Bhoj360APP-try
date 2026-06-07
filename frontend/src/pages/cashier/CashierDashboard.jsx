@@ -200,11 +200,21 @@ export default function CashierDashboard() {
     if (receiptOrder) {
       const timer = setTimeout(() => {
         window.print();
-        setReceiptOrder(null);
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [receiptOrder]);
+
+  // Handle clearing after print is closed (fixes mobile printing blank issue)
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setReceiptOrder(null);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   // Double tap gesture state
   const [lastTap, setLastTap] = useState({ tableId: null, time: 0 });

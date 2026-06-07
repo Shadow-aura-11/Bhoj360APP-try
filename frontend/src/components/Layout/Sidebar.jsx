@@ -13,7 +13,8 @@ import {
   Users,
   Ticket,
   Wallet,
-  Smartphone
+  Smartphone,
+  Receipt
 } from 'lucide-react';
 
 export default function Sidebar({ restaurantId, role, isOpen, onClose }) {
@@ -34,6 +35,7 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose }) {
     { label: 'Customers Directory', path: `/r/${restaurantId}/admin/customers`, icon: Users },
     { label: 'Coupons & Discounts', path: `/r/${restaurantId}/admin/coupons`, icon: Ticket },
     { label: 'Money Management', path: `/r/${restaurantId}/admin/money`, icon: Wallet },
+    { label: 'Expenses Manager', path: `/r/${restaurantId}/admin/expenses`, icon: Receipt },
     { label: 'Analytics', path: `/r/${restaurantId}/admin/analytics`, icon: BarChart3 },
     { label: 'Print QR Codes', path: `/r/${restaurantId}/admin/print-qr`, icon: QrCode },
     { label: 'Staff Mobile Apps', path: `/r/${restaurantId}/admin/staff-apps`, icon: Smartphone },
