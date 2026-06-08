@@ -186,16 +186,34 @@ export default function CounterDashboard() {
     iframe.style.border = '0';
     document.body.appendChild(iframe);
 
-    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    // Collect all stylesheets in memory
+    let inlinedStyles = '';
+    try {
+      for (const sheet of document.styleSheets) {
+        const rules = sheet.cssRules || sheet.rules;
+        if (rules) {
+          for (const rule of rules) {
+            inlinedStyles += rule.cssText + '\n';
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback if cross-origin stylesheets throw SecurityError
+      inlinedStyles = '';
+    }
+
+    const fallbackStyleTags = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
       .map(style => style.outerHTML)
       .join('\n');
 
     iframe.contentWindow.document.write(`
       <html>
         <head>
+          <base href="${window.location.origin}/">
           <title>Print</title>
-          ${styles}
+          ${fallbackStyleTags}
           <style>
+            ${inlinedStyles}
             @media print {
               body {
                 visibility: visible !important;
@@ -222,16 +240,28 @@ export default function CounterDashboard() {
     `);
     iframe.contentWindow.document.close();
 
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setPrintOrder(null);
+    // Wait for all images inside the iframe to load before opening print window
+    const images = iframe.contentWindow.document.images;
+    const promises = Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    });
+
+    Promise.all(promises).then(() => {
       setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 1000);
-    }, 500);
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setPrintOrder(null);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }, 300);
+    });
   };
 
   // Trigger print when printOrder is set
