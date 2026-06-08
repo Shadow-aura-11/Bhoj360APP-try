@@ -332,7 +332,8 @@ export default function ExpensesManager() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs text-slate-700">
+              {/* Desktop Table View */}
+              <table className="hidden md:table w-full text-left border-collapse text-xs text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="pb-3">Date</th>
@@ -385,6 +386,47 @@ export default function ExpensesManager() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Mobile Card List View */}
+              <div className="block md:hidden space-y-3">
+                {filteredExpenses.map((exp) => (
+                  <div key={exp.id} className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-2.5">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-850 text-xs truncate">{exp.title}</h4>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <span className={`inline-flex px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase flex-shrink-0 ${CATEGORY_COLORS[exp.category] || CATEGORY_COLORS['Other']}`}>
+                        {exp.category}
+                      </span>
+                    </div>
+                    {exp.description && (
+                      <p className="text-[11px] text-slate-500 line-clamp-2">{exp.description}</p>
+                    )}
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                      <span className="font-black font-mono text-xs text-slate-900">₹{exp.amount.toFixed(2)}</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => handleOpenEdit(exp)}
+                          className="p-1.5 text-slate-500 hover:text-slate-850 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(exp.id)}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-slate-205 hover:border-rose-100 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

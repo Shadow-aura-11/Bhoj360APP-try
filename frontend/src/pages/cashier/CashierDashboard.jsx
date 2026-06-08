@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Landmark, Users, ShoppingCart, CheckSquare, Printer, Check, DollarSign, History, Volume2, LogOut, Plus, X, Gift, Send, RefreshCw, Smartphone } from 'lucide-react';
 import { createApi, agencyApi } from '../../api/client';
@@ -151,7 +152,7 @@ export default function CashierDashboard() {
     loadRestaurantConfig();
   }, []);
 
-  const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+  const session = JSON.parse(localStorage.getItem('session') || '{}');
   const restaurantName = session.name || 'Restaurant';
 
   const { installPrompt, handleInstall } = usePWA(restaurantName, 'Cashier Portal', config?.logo_url);
@@ -196,23 +197,62 @@ export default function CashierDashboard() {
 
   // Receipt printing states
   const [receiptOrder, setReceiptOrder] = useState(null);
+  const [printImageUrl, setPrintImageUrl] = useState(null);
+  const [printImageSize, setPrintImageSize] = useState('80mm');
 
   // Trigger print when receiptOrder is set
   useEffect(() => {
-    if (receiptOrder) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    const generateAndPrint = async () => {
+      if (receiptOrder) {
+        const loadingToast = toast.loading('Preparing printout image...');
+        try {
+          // Wait for React to render the off-screen receipt element in DOM
+          await new Promise((resolve) => setTimeout(resolve, 350));
+          
+          const el = document.getElementById('print-receipt-section');
+          if (!el) {
+            toast.error('Print element not found', { id: loadingToast });
+            return;
+          }
+
+          const size = config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm';
+          setPrintImageSize(size);
+
+          // Generate PNG image using html-to-image
+          const dataUrl = await toPng(el, { 
+            cacheBust: true, 
+            backgroundColor: '#ffffff', 
+            pixelRatio: 2 
+          });
+          
+          setPrintImageUrl(dataUrl);
+          toast.dismiss(loadingToast);
+
+          // Trigger print preview
+          setTimeout(() => {
+            window.print();
+          }, 150);
+
+        } catch (err) {
+          console.error('Failed to generate receipt image:', err);
+          toast.error('Failed to generate receipt image', { id: loadingToast });
+        }
+      }
+    };
+
+    generateAndPrint();
   }, [receiptOrder]);
 
   // Handle clearing after print is closed (fixes mobile printing blank issue)
   useEffect(() => {
     const handleAfterPrint = () => {
       setReceiptOrder(null);
+      setPrintImageUrl(null);
     };
     window.addEventListener('afterprint', handleAfterPrint);
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
     };
@@ -265,6 +305,21 @@ export default function CashierDashboard() {
     }
   };
 
+  const triggerBackgroundNotification = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+          tag: 'restaurant-cashier-alert',
+          requireInteraction: true,
+        });
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    }
+  };
+
   // Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -275,7 +330,14 @@ export default function CashierDashboard() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewOrder = () => {
+    const handleNewOrder = (data) => {
+      const order = data?.order || data;
+      playBeep();
+      if (order) {
+        triggerBackgroundNotification(`New Order #${order.id}`, `Table ${order.table_number || order.table_id} has placed a new order.`);
+      } else {
+        triggerBackgroundNotification(`New Order Received`, `A new order has been received.`);
+      }
       refreshOrders();
       refreshTables();
     };
@@ -285,6 +347,7 @@ export default function CashierDashboard() {
       refreshTables();
       if (order && order.payment_status === 'pending_payment') {
         playBeep();
+        triggerBackgroundNotification(`Payment Requested!`, `Table ${order.table_number || order.table_id} requested checkout via ${order.payment_method}!`);
         toast(`Checkout requested by Table ${order.table_number || order.table_id} via ${order.payment_method}!`, {
           icon: '💰',
           style: {
@@ -578,7 +641,7 @@ export default function CashierDashboard() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     navigate(`/r/${restaurantId}/login?role=cashier`);
   };
 
@@ -589,39 +652,41 @@ export default function CashierDashboard() {
       {/* SCOPED CSS PRINT LAYOUT */}
       <style>{`
         #print-receipt-section {
+          position: absolute;
+          left: -9999px;
+          top: -9999px;
+          width: ${config?.printing?.hardware?.size === '58mm' ? '220px' : '300px'};
+          padding: 8px;
+          background: white;
+          color: black;
+          font-family: monospace;
+          font-size: ${config?.printing?.hardware?.size === '58mm' ? '9px' : '11px'};
+          line-height: 1.3;
+          box-sizing: border-box;
+        }
+        #print-image-section {
           display: none;
         }
         @media print {
-          .no-print {
+          #root {
             display: none !important;
           }
-          body > #root > div {
-            min-height: auto !important;
-            height: auto !important;
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          html, body {
-            height: auto !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
-          #print-receipt-section {
+          #print-image-section {
             display: block !important;
-            width: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'};
-            padding: 2mm;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: ${printImageSize} !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
             background: white !important;
-            color: black !important;
-            font-family: monospace !important;
-            font-size: ${config?.printing?.hardware?.size === '58mm' ? '8.5px' : '10px'} !important;
-            line-height: 1.3 !important;
-            box-sizing: border-box !important;
+            visibility: visible !important;
+          }
+          #print-image-section * {
+            visibility: visible !important;
           }
           @page {
-            size: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'} auto;
+            size: ${printImageSize} auto;
             margin: 0;
           }
         }
@@ -765,6 +830,13 @@ export default function CashierDashboard() {
             <p className="text-[7px] text-slate-500">Powered by Bhoj360</p>
           </div>
         </div>
+      )}
+
+      {printImageUrl && createPortal(
+        <div id="print-image-section">
+          <img src={printImageUrl} alt="Print Preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        </div>,
+        document.body
       )}
 
       {/* Off-screen Receipt capture node for WhatsApp Sharing */}

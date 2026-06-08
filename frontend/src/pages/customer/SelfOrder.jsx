@@ -123,7 +123,7 @@ export default function SelfOrder() {
       qrToken: token,
     };
 
-    sessionStorage.setItem('session', JSON.stringify(newSession));
+    localStorage.setItem('session', JSON.stringify(newSession));
     toast.success('Welcome! Redirecting to menu...');
     navigate(`/r/${restaurantId}/customer`);
   };

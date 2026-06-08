@@ -44,16 +44,12 @@ export default function Nav() {
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'py-4 glass-header shadow-lg' : 'py-6 bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-10 h-10 rounded-full border border-[var(--color-amber)] flex items-center justify-center relative overflow-hidden bg-black transition-transform duration-500 group-hover:rotate-180">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[rgba(212,146,10,0.2)] to-transparent"></div>
-            {/* Lettermark B */}
-            <span className="text-[var(--color-amber)] font-serif text-lg font-semibold tracking-widest relative z-10">B</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold font-serif tracking-wide text-[#F5F0EB]">Bhoj360</span>
-            <span className="text-[9px] font-mono tracking-[0.2em] text-[var(--color-amber)] uppercase">Operations Engine</span>
-          </div>
+        <Link to="/" className="flex items-center group cursor-pointer">
+          <img 
+            src="/logo.png" 
+            alt="Bhoj360 Logo" 
+            className="h-16 md:h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+          />
         </Link>
 
         {/* Desktop Navigation links */}

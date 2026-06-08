@@ -77,6 +77,17 @@ export default function OrderCard({
             <span className={`font-display font-black text-slate-800 ${isCounter ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
               Table {order.table_number || order.table_id}
             </span>
+            {order.type && (
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase tracking-wider ${
+                order.type === 'dine-in'
+                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                  : order.type === 'takeaway'
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              }`}>
+                {order.type}
+              </span>
+            )}
             {isDelayed() && (
               <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-50 border border-rose-200 text-rose-600 animate-pulse">
                 DELAYED

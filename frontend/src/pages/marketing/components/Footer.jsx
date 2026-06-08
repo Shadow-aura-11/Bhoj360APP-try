@@ -28,14 +28,12 @@ export default function Footer() {
           
           {/* Column 1: Brand Info */}
           <div className="lg:col-span-4 space-y-6 text-left">
-            <Link to="/" className="flex items-center gap-3 group cursor-pointer w-fit">
-              <div className="w-10 h-10 rounded-full border border-[var(--color-amber)] flex items-center justify-center relative overflow-hidden bg-black transition-transform duration-500 group-hover:rotate-180">
-                <span className="text-[var(--color-amber)] font-serif text-lg font-semibold tracking-widest relative z-10">B</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold font-serif tracking-wide text-[#F5F0EB]">Bhoj360</span>
-                <span className="text-[9px] font-mono tracking-[0.2em] text-[var(--color-amber)] uppercase">Operations Engine</span>
-              </div>
+            <Link to="/" className="flex items-center group cursor-pointer w-fit">
+              <img 
+                src="/logo.png" 
+                alt="Bhoj360 Logo" 
+                className="h-16 md:h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+              />
             </Link>
             
             <p className="text-sm text-[rgba(245,240,235,0.55)] font-light max-w-sm leading-relaxed">

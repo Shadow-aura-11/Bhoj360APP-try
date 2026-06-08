@@ -46,7 +46,7 @@ function readRegistry() {
 
 function pingRestaurant(port) {
   return new Promise((resolve) => {
-    const req = http.get(`http://localhost:${port}/health`, (res) => {
+    const req = http.get(`http://127.0.0.1:${port}/health`, (res) => {
       resolve(res.statusCode === 200);
     });
     req.on('error', () => resolve(false));
@@ -447,7 +447,7 @@ app.get('/api/restaurants/:id/stats', requireAgencyAuth, async (req, res) => {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    const proxyReq = http.get(`http://localhost:${entry.port}/analytics/summary`, (proxyRes) => {
+    const proxyReq = http.get(`http://127.0.0.1:${entry.port}/analytics/summary`, (proxyRes) => {
       let data = '';
       proxyRes.on('data', (chunk) => (data += chunk));
       proxyRes.on('end', () => {
@@ -924,7 +924,7 @@ app.get('/api/stats', async (req, res) => {
         if (!r.active) return;
         try {
           const statsRes = await new Promise((resolve) => {
-            const reqStats = http.get(`http://localhost:${r.port}/analytics/summary`, (resStats) => {
+            const reqStats = http.get(`http://127.0.0.1:${r.port}/analytics/summary`, (resStats) => {
               let data = '';
               resStats.on('data', (chunk) => (data += chunk));
               resStats.on('end', () => {

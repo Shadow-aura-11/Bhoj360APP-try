@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Check, UtensilsCrossed, Calendar, Users, Coffee, Soup, Plus, AlertCircle, Volume2, X, Printer, Send, Gift, RefreshCw, VolumeX, Smartphone } from 'lucide-react';
 import { createApi, agencyApi } from '../../api/client';
@@ -102,7 +103,7 @@ export default function WaiterDashboard() {
     return 'cash';
   };
 
-  const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+  const session = JSON.parse(localStorage.getItem('session') || '{}');
   const restaurantName = session.name || 'Restaurant';
 
   const { tables, loading: tablesLoading, refreshTables } = useTables(restaurantId, socket);
@@ -188,6 +189,8 @@ export default function WaiterDashboard() {
   const [upiQrBase64, setUpiQrBase64] = useState('');
   const [loadingQr, setLoadingQr] = useState(false);
   const [receiptOrder, setReceiptOrder] = useState(null);
+  const [printImageUrl, setPrintImageUrl] = useState(null);
+  const [printImageSize, setPrintImageSize] = useState('80mm');
   const [orderToSettle, setOrderToSettle] = useState(null);
 
 
@@ -219,28 +222,81 @@ export default function WaiterDashboard() {
     };
     loadSettings();
     fetchRestaurantConfig();
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   // Trigger print when printOrder is set (KOT)
   useEffect(() => {
-    if (printOrder) {
-      setReceiptOrder(null); // Ensure receipt is not in DOM
-      const timer = setTimeout(() => {
-        window.print();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    const generateAndPrintKOT = async () => {
+      if (printOrder) {
+        setReceiptOrder(null); // Ensure receipt is not in DOM
+        const loadingToast = toast.loading('Preparing KOT printout image...');
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 350));
+          const el = document.getElementById('print-kot-section');
+          if (!el) {
+            toast.error('Print KOT element not found', { id: loadingToast });
+            return;
+          }
+          const size = printerSettings.size === '58mm' ? '58mm' : '80mm';
+          setPrintImageSize(size);
+
+          const dataUrl = await toPng(el, { 
+            cacheBust: true, 
+            backgroundColor: '#ffffff', 
+            pixelRatio: 2 
+          });
+          setPrintImageUrl(dataUrl);
+          toast.dismiss(loadingToast);
+
+          setTimeout(() => {
+            window.print();
+          }, 150);
+        } catch (err) {
+          console.error('Failed to generate KOT image:', err);
+          toast.error('Failed to generate KOT image', { id: loadingToast });
+        }
+      }
+    };
+    generateAndPrintKOT();
   }, [printOrder]);
 
   // Trigger print when receiptOrder is set (Bill Receipt)
   useEffect(() => {
-    if (receiptOrder) {
-      setPrintOrder(null); // Ensure KOT is not in DOM
-      const timer = setTimeout(() => {
-        window.print();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    const generateAndPrintReceipt = async () => {
+      if (receiptOrder) {
+        setPrintOrder(null); // Ensure KOT is not in DOM
+        const loadingToast = toast.loading('Preparing Bill printout image...');
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 350));
+          const el = document.getElementById('print-receipt-section');
+          if (!el) {
+            toast.error('Print Receipt element not found', { id: loadingToast });
+            return;
+          }
+          const size = printerSettings.size === '58mm' ? '58mm' : '80mm';
+          setPrintImageSize(size);
+
+          const dataUrl = await toPng(el, { 
+            cacheBust: true, 
+            backgroundColor: '#ffffff', 
+            pixelRatio: 2 
+          });
+          setPrintImageUrl(dataUrl);
+          toast.dismiss(loadingToast);
+
+          setTimeout(() => {
+            window.print();
+          }, 150);
+        } catch (err) {
+          console.error('Failed to generate Receipt image:', err);
+          toast.error('Failed to generate Receipt image', { id: loadingToast });
+        }
+      }
+    };
+    generateAndPrintReceipt();
   }, [receiptOrder]);
 
   // Handle clearing after print is closed (fixes mobile printing blank issue)
@@ -248,6 +304,7 @@ export default function WaiterDashboard() {
     const handleAfterPrint = () => {
       setPrintOrder(null);
       setReceiptOrder(null);
+      setPrintImageUrl(null);
     };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => {
@@ -538,6 +595,21 @@ export default function WaiterDashboard() {
     }
   };
 
+  const triggerBackgroundNotification = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+          tag: 'restaurant-waiter-alert',
+          requireInteraction: true,
+        });
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!socket) return;
 
@@ -551,6 +623,7 @@ export default function WaiterDashboard() {
       if (speechEnabled) {
         speakText(`Table ${tblNum} par waiter ko bulaya gaya hai`);
       }
+      triggerBackgroundNotification(`Table ${tblNum} Called!`, `Table ${tblNum} is calling for attention!`);
       setWaiterCalls((prev) => ({ ...prev, [tblNum]: true }));
       setNotifications((prev) => [
         {
@@ -589,6 +662,7 @@ export default function WaiterDashboard() {
         if (speechEnabled) {
           speakText(msg);
         }
+        triggerBackgroundNotification(`Order #${order.id} Status: ${order.status}`, `Table ${order.table_number || order.table_id} order status is now ${order.status}`);
       }
 
       if (order.status === 'ready' && (!existingOrder || existingOrder.status !== 'ready')) {
@@ -608,6 +682,7 @@ export default function WaiterDashboard() {
       if (speechEnabled) {
         speakText(`Table ${order.table_number || order.table_id} ka naya order mila hai`);
       }
+      triggerBackgroundNotification(`New Order #${order.id}`, `Table ${order.table_number || order.table_id} placed a new order.`);
       refreshOrders();
       refreshTables();
     };
@@ -710,7 +785,7 @@ export default function WaiterDashboard() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     navigate(`/r/${restaurantId}/login?role=waiter`);
   };
 
@@ -1674,52 +1749,55 @@ export default function WaiterDashboard() {
 
       {/* Scoped printer style sheets */}
       <style>{`
+        #print-kot-section {
+          position: absolute;
+          left: -9999px;
+          top: -9999px;
+          width: ${printerSettings.size === '58mm' ? '220px' : '300px'};
+          padding: 8px;
+          background: white;
+          color: black;
+          font-family: monospace;
+          font-size: ${printerSettings.size === '58mm' ? '9px' : '11px'};
+          line-height: 1.3;
+          box-sizing: border-box;
+        }
         #print-receipt-section {
+          position: absolute;
+          left: -9999px;
+          top: -9999px;
+          width: ${printerSettings.size === '58mm' ? '220px' : '300px'};
+          padding: 8px;
+          background: white;
+          color: black;
+          font-family: monospace;
+          font-size: ${printerSettings.size === '58mm' ? '9px' : '11px'};
+          line-height: 1.3;
+          box-sizing: border-box;
+        }
+        #print-image-section {
           display: none;
         }
         @media print {
-          .no-print {
+          #root {
             display: none !important;
           }
-          body > #root > div {
-            min-height: auto !important;
-            height: auto !important;
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          html, body {
-            height: auto !important;
-            min-height: auto !important;
-            margin: 0 !important;
+          #print-image-section {
+            display: block !important;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: ${printImageSize} !important;
+            margin: 0 auto !important;
             padding: 0 !important;
             background: white !important;
+            visibility: visible !important;
           }
-          #print-kot-section {
-            display: block !important;
-            width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
-            margin: 0;
-            padding: 5px;
-            background: white !important;
-            color: black !important;
-            font-family: monospace !important;
-            font-size: ${printerSettings.size === '58mm' ? '8.5px' : '10px'} !important;
-            line-height: 1.3 !important;
-            box-sizing: border-box !important;
-          }
-          #print-receipt-section {
-            display: block !important;
-            width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
-            padding: 2mm;
-            background: white !important;
-            color: black !important;
-            font-family: monospace !important;
-            font-size: ${printerSettings.size === '58mm' ? '8.5px' : '10px'} !important;
-            line-height: 1.3 !important;
-            box-sizing: border-box !important;
+          #print-image-section * {
+            visibility: visible !important;
           }
           @page {
-            size: ${printerSettings.size === '58mm' ? '58mm' : '80mm'} auto;
+            size: ${printImageSize} auto;
             margin: 0;
           }
         }
@@ -1866,7 +1944,7 @@ export default function WaiterDashboard() {
       )}
 
       {printOrder && (
-        <div id="print-kot-section" className="hidden print:block text-black bg-white p-2">
+        <div id="print-kot-section" className="text-black bg-white p-2">
           {/* KITCHEN ORDER TICKET (KOT) */}
           <div>
               <div className="text-center border-b border-dashed border-black pb-2 mb-2">
@@ -2134,6 +2212,13 @@ export default function WaiterDashboard() {
             </div>
           </div>
         )}
+
+      {printImageUrl && createPortal(
+        <div id="print-image-section">
+          <img src={printImageUrl} alt="Print Preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        </div>,
+        document.body
+      )}
 
       </div>
     );

@@ -300,11 +300,11 @@ export default function StaffMobileApps() {
         if (config?.name) {
           setRestaurantName(config.name);
         } else {
-          const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+          const session = JSON.parse(localStorage.getItem('session') || '{}');
           if (session.name) setRestaurantName(session.name);
         }
       } catch {
-        const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+        const session = JSON.parse(localStorage.getItem('session') || '{}');
         if (session.name) setRestaurantName(session.name);
       }
     };

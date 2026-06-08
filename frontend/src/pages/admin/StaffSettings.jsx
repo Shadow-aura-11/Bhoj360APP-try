@@ -23,7 +23,9 @@ import {
   BadgePercent, 
   ShieldCheck,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Upload,
+  Link2
 } from 'lucide-react';
 import { createApi } from '../../api/client';
 import DashboardShell from '../../components/Layout/DashboardShell';
@@ -33,7 +35,7 @@ export default function StaffSettings() {
   const { restaurantId } = useParams();
   const api = createApi(restaurantId);
 
-  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'billing' | 'printing' | 'staff' | 'customers'
+  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'billing' | 'printing' | 'integrations' | 'staff' | 'customers'
   
   // Settings Configuration State
   const [config, setConfig] = useState({
@@ -75,6 +77,18 @@ export default function StaffSettings() {
         on_settlement: true
       }
     },
+    integrations: {
+      swiggy: {
+        enabled: false,
+        restaurant_id: '',
+        api_key: ''
+      },
+      zomato: {
+        enabled: false,
+        restaurant_id: '',
+        api_key: ''
+      }
+    },
     subscription: {
       planName: 'Bronze Plan',
       status: 'Trial',
@@ -107,6 +121,46 @@ export default function StaffSettings() {
   const [customers, setCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Logo image must be smaller than 5MB');
+      return;
+    }
+
+    const toastId = toast.loading('Uploading logo...');
+    try {
+      setUploadingLogo(true);
+      const reader = new FileReader();
+      
+      const base64Promise = new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+      });
+      
+      reader.readAsDataURL(file);
+      const base64String = await base64Promise;
+      const base64Data = base64String.split(',')[1];
+      
+      const res = await api.post('/menu/upload', {
+        filename: file.name,
+        base64Data
+      });
+      
+      setConfig(prev => ({ ...prev, logo_url: res.data.url }));
+      toast.success('Logo uploaded successfully!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload logo image', { id: toastId });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   // Fetch Config
   const fetchConfig = async () => {
@@ -151,6 +205,18 @@ export default function StaffSettings() {
               on_order_create: data.printing?.auto_print?.on_order_create ?? false,
               on_kot_create: data.printing?.auto_print?.on_kot_create ?? true,
               on_settlement: data.printing?.auto_print?.on_settlement ?? true,
+            }
+          },
+          integrations: {
+            swiggy: {
+              enabled: data.integrations?.swiggy?.enabled ?? false,
+              restaurant_id: data.integrations?.swiggy?.restaurant_id ?? '',
+              api_key: data.integrations?.swiggy?.api_key ?? ''
+            },
+            zomato: {
+              enabled: data.integrations?.zomato?.enabled ?? false,
+              restaurant_id: data.integrations?.zomato?.restaurant_id ?? '',
+              api_key: data.integrations?.zomato?.api_key ?? ''
             }
           },
           subscription: data.subscription || { planName: 'Bronze Plan', status: 'Trial', startDate: '', nextBillingDate: '' },
@@ -236,7 +302,7 @@ export default function StaffSettings() {
   };
 
   useEffect(() => {
-    if (activeTab === 'general' || activeTab === 'billing' || activeTab === 'printing') {
+    if (activeTab === 'general' || activeTab === 'billing' || activeTab === 'printing' || activeTab === 'integrations') {
       fetchConfig();
     } else if (activeTab === 'staff') {
       fetchPins();
@@ -304,10 +370,10 @@ export default function StaffSettings() {
       await api.put('/settings/pins', pins);
       toast.success('Credentials updated successfully!');
       
-      const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+      const session = JSON.parse(localStorage.getItem('session') || '{}');
       if (session.role === 'admin' && session.pin !== pins.admin) {
         session.pin = pins.admin;
-        sessionStorage.setItem('session', JSON.stringify(session));
+        localStorage.setItem('session', JSON.stringify(session));
       }
       
       fetchPins();
@@ -363,6 +429,16 @@ export default function StaffSettings() {
           >
             <Printer className="w-4 h-4" />
             <span>Bill & KOT Printing</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('integrations')}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-display text-xs font-bold transition-all shrink-0 ${
+              activeTab === 'integrations' ? 'border-indigo-650 text-indigo-650' : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <Link2 className="w-4 h-4" />
+            <span>Integrations</span>
           </button>
         </div>
 
@@ -430,14 +506,33 @@ export default function StaffSettings() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Restaurant Logo URL</label>
-                    <input 
-                      type="url"
-                      value={config.logo_url}
-                      onChange={(e) => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white"
-                      placeholder="https://example.com/logo.png"
-                    />
+                    <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Restaurant Logo</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        type="url"
+                        value={config.logo_url}
+                        onChange={(e) => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
+                        className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white"
+                        placeholder="https://example.com/logo.png or upload below"
+                      />
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                          id="logo-file-upload"
+                          disabled={uploadingLogo}
+                        />
+                        <label
+                          htmlFor="logo-file-upload"
+                          className="flex items-center justify-center gap-1.5 px-4.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs shadow-sm transition-colors cursor-pointer select-none"
+                        >
+                          <Upload className="w-4 h-4" />
+                          <span>{uploadingLogo ? 'Uploading...' : 'Upload Image'}</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -968,6 +1063,209 @@ export default function StaffSettings() {
                 </div>
               </div>
               <p className="text-[9px] text-slate-400 text-center">Receipt width scales based on 58mm or 80mm selections.</p>
+            </div>
+
+          </div>
+        )}
+
+        {/* ═══ TAB 4: INTEGRATIONS ═══ */}
+        {activeTab === 'integrations' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
+            
+            {/* Swiggy Integration Card */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center border border-orange-100 text-[#FC8019] font-display font-black tracking-tight text-lg">
+                      S
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-base text-slate-800">Swiggy Integration</h3>
+                      <p className="text-[10px] text-slate-450">Sync online orders directly with your POS</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfig(prev => ({
+                      ...prev,
+                      integrations: {
+                        ...prev.integrations,
+                        swiggy: {
+                          ...prev.integrations.swiggy,
+                          enabled: !prev.integrations.swiggy.enabled
+                        }
+                      }
+                    }))}
+                    className="text-[#FC8019] focus:outline-none"
+                  >
+                    {config.integrations?.swiggy?.enabled ? <ToggleRight className="w-10 h-10" /> : <ToggleLeft className="w-10 h-10 text-slate-300" />}
+                  </button>
+                </div>
+
+                {loadingConfig ? (
+                  <div className="flex justify-center py-12">
+                    <RefreshCw className="w-8 h-8 text-[#FC8019] animate-spin" />
+                  </div>
+                ) : (
+                  <form onSubmit={handleSaveConfig} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Swiggy Restaurant ID</label>
+                      <input 
+                        type="text"
+                        value={config.integrations?.swiggy?.restaurant_id || ''}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            swiggy: {
+                              ...prev.integrations.swiggy,
+                              restaurant_id: e.target.value
+                            }
+                          }
+                        }))}
+                        disabled={!config.integrations?.swiggy?.enabled}
+                        placeholder="e.g. SW-738921"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FC8019] focus:bg-white disabled:opacity-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Swiggy Client API Key</label>
+                      <input 
+                        type="password"
+                        value={config.integrations?.swiggy?.api_key || ''}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            swiggy: {
+                              ...prev.integrations.swiggy,
+                              api_key: e.target.value
+                            }
+                          }
+                        }))}
+                        disabled={!config.integrations?.swiggy?.enabled}
+                        placeholder="••••••••••••••••"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FC8019] focus:bg-white disabled:opacity-50"
+                      />
+                    </div>
+                    
+                    <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50 text-[10.5px] text-orange-850 leading-relaxed flex gap-2 mt-4">
+                      <Info className="w-4 h-4 text-[#FC8019] shrink-0 mt-0.5" />
+                      <span>To fetch credentials, go to your Swiggy Partner Portal &gt; Settings &gt; API Integrations and request a Client ID & Secret.</span>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t border-slate-100">
+                      <button
+                        type="submit"
+                        disabled={savingConfig || !config.integrations?.swiggy?.enabled}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#FC8019] hover:bg-[#e47317] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-orange-600/10"
+                      >
+                        {savingConfig ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                        <span>{savingConfig ? 'Saving Settings...' : 'Save Swiggy Configuration'}</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            {/* Zomato Integration Card */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center border border-rose-100 text-[#E23744] font-display font-black tracking-tight text-lg">
+                      Z
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-base text-slate-800">Zomato Integration</h3>
+                      <p className="text-[10px] text-slate-450">Sync online orders directly with your POS</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfig(prev => ({
+                      ...prev,
+                      integrations: {
+                        ...prev.integrations,
+                        zomato: {
+                          ...prev.integrations.zomato,
+                          enabled: !prev.integrations.zomato.enabled
+                        }
+                      }
+                    }))}
+                    className="text-[#E23744] focus:outline-none"
+                  >
+                    {config.integrations?.zomato?.enabled ? <ToggleRight className="w-10 h-10" /> : <ToggleLeft className="w-10 h-10 text-slate-300" />}
+                  </button>
+                </div>
+
+                {loadingConfig ? (
+                  <div className="flex justify-center py-12">
+                    <RefreshCw className="w-8 h-8 text-[#E23744] animate-spin" />
+                  </div>
+                ) : (
+                  <form onSubmit={handleSaveConfig} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Zomato Restaurant ID</label>
+                      <input 
+                        type="text"
+                        value={config.integrations?.zomato?.restaurant_id || ''}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            zomato: {
+                              ...prev.integrations.zomato,
+                              restaurant_id: e.target.value
+                            }
+                          }
+                        }))}
+                        disabled={!config.integrations?.zomato?.enabled}
+                        placeholder="e.g. ZM-928104"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#E23744] focus:bg-white disabled:opacity-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Zomato Merchant Key</label>
+                      <input 
+                        type="password"
+                        value={config.integrations?.zomato?.api_key || ''}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            zomato: {
+                              ...prev.integrations.zomato,
+                              api_key: e.target.value
+                            }
+                          }
+                        }))}
+                        disabled={!config.integrations?.zomato?.enabled}
+                        placeholder="••••••••••••••••"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#E23744] focus:bg-white disabled:opacity-50"
+                      />
+                    </div>
+                    
+                    <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100/50 text-[10.5px] text-rose-850 leading-relaxed flex gap-2 mt-4">
+                      <Info className="w-4 h-4 text-[#E23744] shrink-0 mt-0.5" />
+                      <span>To generate a Zomato Merchant Key, log in to Zomato Merchant Center &gt; Developer API and generate an authorization secret token.</span>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t border-slate-100">
+                      <button
+                        type="submit"
+                        disabled={savingConfig || !config.integrations?.zomato?.enabled}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#E23744] hover:bg-[#c92f3a] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-rose-600/10"
+                      >
+                        {savingConfig ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                        <span>{savingConfig ? 'Saving Settings...' : 'Save Zomato Configuration'}</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
 
           </div>

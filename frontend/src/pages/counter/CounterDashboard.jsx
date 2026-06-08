@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LogOut, ChefHat, Play, Check, Flame, ClipboardList, CheckSquare, Bell, Volume2, Clock, VolumeX, Smartphone } from 'lucide-react';
 import { createApi, agencyApi } from '../../api/client';
@@ -11,6 +12,7 @@ import toast from 'react-hot-toast';
 import { parseOrderDate } from '../../utils/date';
 import { usePWA } from '../../hooks/usePWA';
 import PWAInstallBanner from '../../components/PWAInstallBanner';
+import { toPng } from 'html-to-image';
 
 export default function CounterDashboard() {
   const { restaurantId } = useParams();
@@ -18,7 +20,7 @@ export default function CounterDashboard() {
   const api = createApi(restaurantId);
   const { socket, isConnected } = useSocket(restaurantId);
 
-  const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+  const session = JSON.parse(localStorage.getItem('session') || '{}');
   const restaurantName = session.name || 'Restaurant';
 
   const { tables } = useTables(restaurantId, socket);
@@ -111,6 +113,8 @@ export default function CounterDashboard() {
   const [mobileTab, setMobileTab] = useState('pending'); // 'pending' | 'preparing' | 'ready'
   const [printerSettings, setPrinterSettings] = useState({ enabled: false, size: '80mm' });
   const [printOrder, setPrintOrder] = useState(null);
+  const [printImageUrl, setPrintImageUrl] = useState(null);
+  const [printImageSize, setPrintImageSize] = useState('80mm');
 
   const { installPrompt, handleInstall } = usePWA(restaurantName, 'Kitchen Portal', agencySettings.logo_url);
 
@@ -174,20 +178,57 @@ export default function CounterDashboard() {
 
   // Trigger print when printOrder is set
   useEffect(() => {
-    if (printOrder) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
+    const generateAndPrint = async () => {
+      if (printOrder) {
+        const loadingToast = toast.loading('Preparing KOT printout image...');
+        try {
+          // Wait for React to render the off-screen ticket element in DOM
+          await new Promise((resolve) => setTimeout(resolve, 350));
+          
+          const el = document.getElementById('print-kot-section');
+          if (!el) {
+            toast.error('Print element not found', { id: loadingToast });
+            return;
+          }
+
+          const size = printerSettings.size === '58mm' ? '58mm' : '80mm';
+          setPrintImageSize(size);
+
+          // Generate PNG image using html-to-image
+          const dataUrl = await toPng(el, { 
+            cacheBust: true, 
+            backgroundColor: '#ffffff', 
+            pixelRatio: 2 
+          });
+          
+          setPrintImageUrl(dataUrl);
+          toast.dismiss(loadingToast);
+
+          // Trigger print preview
+          setTimeout(() => {
+            window.print();
+          }, 150);
+
+        } catch (err) {
+          console.error('Failed to generate KOT image:', err);
+          toast.error('Failed to generate KOT image', { id: loadingToast });
+        }
+      }
+    };
+
+    generateAndPrint();
   }, [printOrder]);
 
   // Handle clearing after print is closed (fixes mobile printing blank issue)
   useEffect(() => {
     const handleAfterPrint = () => {
       setPrintOrder(null);
+      setPrintImageUrl(null);
     };
     window.addEventListener('afterprint', handleAfterPrint);
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
     };
@@ -214,6 +255,21 @@ export default function CounterDashboard() {
     }
   };
 
+  const triggerBackgroundNotification = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+          tag: 'restaurant-counter-alert',
+          requireInteraction: true,
+        });
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    }
+  };
+
   // Clock interval
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -231,6 +287,7 @@ export default function CounterDashboard() {
       if (speechEnabled) {
         speakText(`Table ${order.table_number || order.table_id} ka naya order mila hai`);
       }
+      triggerBackgroundNotification(`New Order #${order.id}`, `Table ${order.table_number || order.table_id} Placed a New Order!`);
       toast(`New Order #${order.id} for Table ${order.table_number || order.table_id} Placed!`, {
         icon: '🔔',
         style: {
@@ -251,6 +308,7 @@ export default function CounterDashboard() {
       if (speechEnabled) {
         speakText(`Table ${tableNumber} par waiter ko bulaya gaya hai`);
       }
+      triggerBackgroundNotification(`Table ${tableNumber} Called!`, `Table ${tableNumber} requests assistance!`);
       toast(`Table ${tableNumber} requests assistance!`, {
         icon: '🆘',
         style: {
@@ -278,11 +336,13 @@ export default function CounterDashboard() {
           if (speechEnabled) {
             speakText(msg);
           }
+          triggerBackgroundNotification(`Order #${order.id} Status: ${order.status}`, `Table ${order.table_number || order.table_id} order status is now ${order.status}`);
         } else if (order.payment_status === 'pending_payment' && (!existingOrder || existingOrder.payment_status !== 'pending_payment')) {
           playLoudSound();
           if (speechEnabled) {
             speakText(`Table ${order.table_number || order.table_id} ne bill manga hai`);
           }
+          triggerBackgroundNotification(`Bill Requested!`, `Table ${order.table_number || order.table_id} ne bill manga hai.`);
         }
       }
       refreshOrders();
@@ -295,6 +355,7 @@ export default function CounterDashboard() {
       if (speechEnabled) {
         speakText(`Table ${order.table_number || order.table_id} ke order me naye items add kiye gaye hain`);
       }
+      triggerBackgroundNotification(`Items Added to Order #${order.id}`, `Table ${order.table_number || order.table_id} added items to order.`);
       refreshOrders();
       if (printerSettings.enabled) {
         setPrintOrder(order);
@@ -326,7 +387,7 @@ export default function CounterDashboard() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     navigate(`/r/${restaurantId}/login?role=counter`);
   };
 
@@ -612,45 +673,49 @@ export default function CounterDashboard() {
 
       {/* Printer Scoped CSS and Print Ticket Layout */}
       <style>{`
+        #print-kot-section {
+          position: absolute;
+          left: -9999px;
+          top: -9999px;
+          width: ${printerSettings.size === '58mm' ? '220px' : '300px'};
+          padding: 8px;
+          background: white;
+          color: black;
+          font-family: monospace;
+          font-size: ${printerSettings.size === '58mm' ? '9px' : '11px'};
+          line-height: 1.3;
+          box-sizing: border-box;
+        }
+        #print-image-section {
+          display: none;
+        }
         @media print {
-          .no-print {
+          #root {
             display: none !important;
           }
-          body > #root > div {
-            min-height: auto !important;
-            height: auto !important;
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          html, body {
-            height: auto !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
-          #print-kot-section {
+          #print-image-section {
             display: block !important;
-            width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
-            margin: 0;
-            padding: 5px;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: ${printImageSize} !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
             background: white !important;
-            color: black !important;
-            font-family: monospace !important;
-            font-size: ${printerSettings.size === '58mm' ? '8.5px' : '10px'} !important;
-            line-height: 1.3 !important;
-            box-sizing: border-box !important;
+            visibility: visible !important;
+          }
+          #print-image-section * {
+            visibility: visible !important;
           }
           @page {
-            size: ${printerSettings.size === '58mm' ? '58mm' : '80mm'} auto;
+            size: ${printImageSize} auto;
             margin: 0;
           }
         }
       `}</style>
 
       {printOrder && (
-        <div id="print-kot-section" className="hidden print:block text-black bg-white p-2">
+        <div id="print-kot-section" className="text-black bg-white p-2">
           <div className="text-center border-b border-dashed border-black pb-2 mb-2">
             <h2 className="font-bold text-sm uppercase">{restaurantName}</h2>
             <p className="text-[10px]">KITCHEN ORDER TICKET (KOT)</p>
@@ -726,6 +791,13 @@ export default function CounterDashboard() {
             <p>--- End of Ticket ---</p>
           </div>
         </div>
+      )}
+
+      {printImageUrl && createPortal(
+        <div id="print-image-section">
+          <img src={printImageUrl} alt="KOT Print Preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        </div>,
+        document.body
       )}
 
     </div>

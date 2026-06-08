@@ -47,6 +47,9 @@ db.pragma('foreign_keys = ON');
 
 // Run schema migrations for existing databases
 try {
+  db.exec("ALTER TABLE orders ADD COLUMN type TEXT DEFAULT 'dine-in';");
+} catch (e) {}
+try {
   db.exec("ALTER TABLE orders ADD COLUMN customer_phone TEXT;");
 } catch (e) {}
 try {
@@ -139,6 +142,33 @@ try {
       category TEXT NOT NULL,
       expense_date DATE DEFAULT (DATE('now', 'localtime')),
       description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_name TEXT NOT NULL UNIQUE,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL,
+      min_quantity REAL NOT NULL DEFAULT 0,
+      supplier TEXT,
+      cost_per_unit REAL DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inventory_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
+      item_name TEXT NOT NULL,
+      change_amount REAL NOT NULL,
+      type TEXT NOT NULL,
+      notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -1599,7 +1629,7 @@ app.get('/settings/config', authMiddleware('staff'), (req, res) => {
 // PUT /settings/config — Update configuration including general, billing, and printing configs [ADMIN]
 app.put('/settings/config', authMiddleware('admin'), (req, res) => {
   const config = readConfig();
-  const { name, contact_phone, contact_email, location, fssai_compliance, billing, printing, google_review_url, qr_theme, logo_url } = req.body;
+  const { name, contact_phone, contact_email, location, fssai_compliance, billing, printing, google_review_url, qr_theme, logo_url, integrations } = req.body;
 
   if (name !== undefined) config.name = name;
   if (contact_phone !== undefined) {
@@ -1616,6 +1646,7 @@ app.put('/settings/config', authMiddleware('admin'), (req, res) => {
   if (google_review_url !== undefined) config.google_review_url = google_review_url;
   if (qr_theme !== undefined) config.qr_theme = qr_theme;
   if (logo_url !== undefined) config.logo_url = logo_url;
+  if (integrations !== undefined) config.integrations = integrations;
 
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
 
@@ -2189,6 +2220,113 @@ app.get('/expenses/summary', authMiddleware('admin'), (req, res) => {
   }
 });
 
+// GET /inventory — Retrieve all inventory items [ADMIN]
+app.get('/inventory', authMiddleware('admin'), (req, res) => {
+  try {
+    const items = db.prepare('SELECT * FROM inventory ORDER BY item_name ASC').all();
+    res.json(items);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /inventory — Add/Update an inventory item [ADMIN]
+app.post('/inventory', authMiddleware('admin'), (req, res) => {
+  const { id, item_name, quantity, unit, min_quantity, supplier, cost_per_unit } = req.body;
+  if (!item_name || !unit) {
+    return res.status(400).json({ error: 'item_name and unit are required' });
+  }
+
+  try {
+    if (id) {
+      // Get previous quantity to log adjustment if it changes
+      const prev = db.prepare('SELECT quantity, item_name FROM inventory WHERE id = ?').get(id);
+      db.prepare(
+        'UPDATE inventory SET item_name = ?, quantity = ?, unit = ?, min_quantity = ?, supplier = ?, cost_per_unit = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      ).run(item_name, parseFloat(quantity || 0), unit, parseFloat(min_quantity || 0), supplier || null, parseFloat(cost_per_unit || 0), id);
+      
+      const qtyDiff = parseFloat(quantity || 0) - (prev ? prev.quantity : 0);
+      if (qtyDiff !== 0) {
+        db.prepare(
+          'INSERT INTO inventory_logs (inventory_id, item_name, change_amount, type, notes) VALUES (?, ?, ?, ?, ?)'
+        ).run(id, item_name, qtyDiff, 'adjustment', `Manual edit: quantity updated from ${prev ? prev.quantity : 0} to ${quantity}`);
+      }
+      res.json({ message: 'Inventory item updated successfully' });
+    } else {
+      // Ensure unique name
+      const existing = db.prepare('SELECT id FROM inventory WHERE LOWER(item_name) = LOWER(?)').get(item_name.toString().trim());
+      if (existing) {
+        return res.status(409).json({ error: `Inventory item "${item_name}" already exists` });
+      }
+
+      const result = db.prepare(
+        'INSERT INTO inventory (item_name, quantity, unit, min_quantity, supplier, cost_per_unit) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(item_name, parseFloat(quantity || 0), unit, parseFloat(min_quantity || 0), supplier || null, parseFloat(cost_per_unit || 0));
+      
+      db.prepare(
+        'INSERT INTO inventory_logs (inventory_id, item_name, change_amount, type, notes) VALUES (?, ?, ?, ?, ?)'
+      ).run(result.lastInsertRowid, item_name, parseFloat(quantity || 0), 'restock', 'Initial stock entry');
+      
+      res.json({ message: 'Inventory item created successfully' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /inventory/:id — Delete an inventory item [ADMIN]
+app.delete('/inventory/:id', authMiddleware('admin'), (req, res) => {
+  try {
+    const item = db.prepare('SELECT item_name FROM inventory WHERE id = ?').get(req.params.id);
+    if (!item) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+    db.prepare('DELETE FROM inventory WHERE id = ?').run(req.params.id);
+    res.json({ message: `Inventory item "${item.item_name}" deleted successfully` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /inventory/logs — Retrieve inventory transaction log [ADMIN]
+app.get('/inventory/logs', authMiddleware('admin'), (req, res) => {
+  try {
+    const logs = db.prepare('SELECT * FROM inventory_logs ORDER BY created_at DESC LIMIT 100').all();
+    res.json(logs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /inventory/adjust — Adjust stock levels [ADMIN]
+app.post('/inventory/adjust', authMiddleware('admin'), (req, res) => {
+  const { inventory_id, change_amount, type, notes } = req.body;
+  if (!inventory_id || change_amount === undefined || !type) {
+    return res.status(400).json({ error: 'inventory_id, change_amount, and type are required' });
+  }
+
+  try {
+    const item = db.prepare('SELECT item_name, quantity FROM inventory WHERE id = ?').get(inventory_id);
+    if (!item) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+
+    const newQty = item.quantity + parseFloat(change_amount);
+    if (newQty < 0) {
+      return res.status(400).json({ error: `Adjustment would result in negative stock (${newQty} ${item.unit})` });
+    }
+
+    db.prepare('UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newQty, inventory_id);
+    db.prepare(
+      'INSERT INTO inventory_logs (inventory_id, item_name, change_amount, type, notes) VALUES (?, ?, ?, ?, ?)'
+    ).run(inventory_id, item.item_name, parseFloat(change_amount), type, notes || null);
+
+    res.json({ message: 'Stock adjusted successfully', newQuantity: newQty });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /analytics/revenue — Daily revenue breakdown
 app.get('/analytics/revenue', (req, res) => {
   const period = req.query.period || 'week';
@@ -2217,10 +2355,10 @@ app.get('/analytics/revenue', (req, res) => {
 app.get('/analytics/popular', (req, res) => {
   const items = db
     .prepare(
-      `SELECT item_name, SUM(quantity) as total_ordered, COUNT(DISTINCT order_id) as order_count
+      `SELECT item_name, SUM(quantity) as total_ordered, SUM(quantity) as quantity, COUNT(DISTINCT order_id) as order_count
        FROM order_items
        GROUP BY item_name
-       ORDER BY total_ordered DESC
+       ORDER BY order_count DESC
        LIMIT 5`
     )
     .all();

@@ -62,7 +62,7 @@ export default function CustomerDashboard() {
         },
       ];
     });
-    toast.success(`Added ${item.name} to cart`);
+    // toast.success(`Added ${item.name} to cart`);
   };
 
   const updateQty = (itemId, amount) => {
@@ -152,7 +152,7 @@ export default function CustomerDashboard() {
 
   // Sync session state from storage
   useEffect(() => {
-    const ses = JSON.parse(sessionStorage.getItem('session') || '{}');
+    const ses = JSON.parse(localStorage.getItem('session') || '{}');
     if (ses.restaurantId === restaurantId && ses.role === 'customer') {
       setSession(ses);
     } else {
@@ -303,7 +303,7 @@ export default function CustomerDashboard() {
         qrToken: tableExists.qr_token,
       };
 
-      sessionStorage.setItem('session', JSON.stringify(newSession));
+      localStorage.setItem('session', JSON.stringify(newSession));
       setSession(newSession);
       toast.success(`Welcome to Table ${tableExists.number}`);
     } catch (err) {
@@ -340,7 +340,7 @@ export default function CustomerDashboard() {
         qrToken: urlToken,
       };
 
-      sessionStorage.setItem('session', JSON.stringify(newSession));
+      localStorage.setItem('session', JSON.stringify(newSession));
       setSession(newSession);
       toast.success(`Welcome to Table ${urlTable}`);
     } catch (err) {
@@ -382,7 +382,7 @@ export default function CustomerDashboard() {
   };
 
   const handleExit = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     if (logoutRedirectUrl) {
       window.location.href = logoutRedirectUrl;
     } else {

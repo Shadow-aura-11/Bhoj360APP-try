@@ -119,11 +119,11 @@ export default function Analytics() {
         { date: 'Sun', revenue: 5400 },
       ]);
       setPopularItems([
-        { item_name: 'Grilled Chicken', quantity: 45 },
-        { item_name: 'Pasta Arrabiata', quantity: 38 },
-        { item_name: 'Veg Biryani', quantity: 32 },
-        { item_name: 'Gulab Jamun', quantity: 28 },
-        { item_name: 'Cold Coffee', quantity: 24 },
+        { item_name: 'Grilled Chicken', quantity: 45, order_count: 45 },
+        { item_name: 'Pasta Arrabiata', quantity: 38, order_count: 38 },
+        { item_name: 'Veg Biryani', quantity: 32, order_count: 32 },
+        { item_name: 'Gulab Jamun', quantity: 28, order_count: 28 },
+        { item_name: 'Cold Coffee', quantity: 24, order_count: 24 },
       ]);
       setOrderStatusData([
         { name: 'PAID', value: 34 },
@@ -241,7 +241,7 @@ export default function Analytics() {
                     <XAxis type="number" stroke="#94a3b8" fontSize={11} />
                     <YAxis dataKey="item_name" type="category" stroke="#94a3b8" fontSize={11} width={80} />
                     <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#1e293b' }} />
-                    <Bar dataKey="quantity" fill="#f59e0b" radius={[0, 8, 8, 0]} barSize={20} />
+                    <Bar dataKey="order_count" fill="#f59e0b" radius={[0, 8, 8, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

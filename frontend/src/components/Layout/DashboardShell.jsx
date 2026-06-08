@@ -86,7 +86,7 @@ export default function DashboardShell({
           if (config.logo_url) setLogoUrl(config.logo_url);
           if (config.blockedFeatures) setBlockedFeatures(config.blockedFeatures);
         } else {
-          const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+          const session = JSON.parse(localStorage.getItem('session') || '{}');
           if (session.name) {
             setRestaurantName(session.name);
           }
@@ -117,7 +117,7 @@ export default function DashboardShell({
   }, [restaurantId]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     navigate(`/r/${restaurantId}/login?role=${role || 'admin'}`);
   };
 

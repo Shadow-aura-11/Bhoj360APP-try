@@ -66,10 +66,10 @@ export default function StaffManager() {
       await api.put('/settings/pins', { admin: adminPin });
       toast.success('Admin credentials updated successfully!');
       
-      const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+      const session = JSON.parse(localStorage.getItem('session') || '{}');
       if (session.role === 'admin' && session.pin !== adminPin) {
         session.pin = adminPin;
-        sessionStorage.setItem('session', JSON.stringify(session));
+        localStorage.setItem('session', JSON.stringify(session));
       }
       fetchPins();
     } catch (err) {

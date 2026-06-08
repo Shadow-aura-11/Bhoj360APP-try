@@ -20,6 +20,7 @@ export default function NewOrderModal({
   const [notes, setNotes] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [orderType, setOrderType] = useState('dine-in'); // 'dine-in' | 'takeaway' | 'delivery'
   const [loading, setLoading] = useState(true);
   
   // Mobile UI Tabs: 'menu' | 'cart'
@@ -50,6 +51,7 @@ export default function NewOrderModal({
       setNotes('');
       setCustomerPhone(initialCustomerPhone);
       setCustomerName('');
+      setOrderType('dine-in');
       setMobileTab('menu');
     }
   }, [restaurantId, isOpen, initialCustomerPhone]);
@@ -76,7 +78,7 @@ export default function NewOrderModal({
         },
       ];
     });
-    toast.success(`Added ${item.name} to cart`, { duration: 1000, id: `add-${item.id}` });
+    // toast.success(`Added ${item.name} to cart`, { duration: 1000, id: `add-${item.id}` });
   };
 
   const updateQty = (itemId, amount) => {
@@ -166,6 +168,7 @@ export default function NewOrderModal({
       table_number: tableNumber,
       items: cart,
       notes,
+      type: orderType,
       customer_phone: customerPhone.trim(),
       customer_name: customerName.trim(),
     });
@@ -505,6 +508,33 @@ export default function NewOrderModal({
               {/* Customer Details (only for new orders) */}
               {!existingOrderId && (
                 <div className="pt-3 border-t border-slate-200/60 grid grid-cols-1 gap-3">
+                  {/* Order Type Selector */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Dining Option
+                    </label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-150">
+                      {[
+                        { id: 'dine-in', label: '🍽️ Dine-In' },
+                        { id: 'takeaway', label: '🥡 Takeaway' },
+                        { id: 'delivery', label: '🛵 Delivery' },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setOrderType(t.id)}
+                          className={`py-2 text-[11px] font-bold rounded-xl transition-all duration-150 text-center ${
+                            orderType === t.id
+                              ? 'bg-amber-500 text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                       Customer Name

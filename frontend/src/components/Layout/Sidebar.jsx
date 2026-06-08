@@ -14,14 +14,15 @@ import {
   Ticket,
   Wallet,
   Smartphone,
-  Receipt
+  Receipt,
+  Boxes
 } from 'lucide-react';
 
 export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFeatures = [] }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    sessionStorage.removeItem('session');
+    localStorage.removeItem('session');
     navigate(`/r/${restaurantId}/login?role=${role || 'admin'}`);
     if (onClose) onClose();
   };
@@ -36,6 +37,7 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFe
     { id: 'coupons', label: 'Coupons & Discounts', path: `/r/${restaurantId}/admin/coupons`, icon: Ticket },
     { id: 'money', label: 'Money Management', path: `/r/${restaurantId}/admin/money`, icon: Wallet },
     { id: 'expenses', label: 'Expenses Manager', path: `/r/${restaurantId}/admin/expenses`, icon: Receipt },
+    { id: 'inventory', label: 'Inventory Manager', path: `/r/${restaurantId}/admin/inventory`, icon: Boxes },
     { id: 'analytics', label: 'Analytics', path: `/r/${restaurantId}/admin/analytics`, icon: BarChart3 },
     { id: 'qr', label: 'Print QR Codes', path: `/r/${restaurantId}/admin/print-qr`, icon: QrCode },
     { id: 'staff-apps', label: 'Staff Mobile Apps', path: `/r/${restaurantId}/admin/staff-apps`, icon: Smartphone },

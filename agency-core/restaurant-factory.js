@@ -242,6 +242,27 @@ async function createRestaurant(options = {}) {
       role TEXT NOT NULL,
       started_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS inventory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_name TEXT NOT NULL UNIQUE,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL,
+      min_quantity REAL NOT NULL DEFAULT 0,
+      supplier TEXT,
+      cost_per_unit REAL DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
+      item_name TEXT NOT NULL,
+      change_amount REAL NOT NULL,
+      type TEXT NOT NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Seed menu items (16 items across 4 categories)

@@ -29,7 +29,7 @@ agencyApi.interceptors.response.use(
 export function createApi(restaurantId) {
   const instance = axios.create({ baseURL: `${GATEWAY}/r/${restaurantId}` });
   instance.interceptors.request.use((config) => {
-    const session = JSON.parse(sessionStorage.getItem('session') || '{}');
+    const session = JSON.parse(localStorage.getItem('session') || '{}');
     if (session.role && session.restaurantId === restaurantId) {
       config.headers['x-role'] = session.role;
       config.headers['x-pin'] = session.pin;

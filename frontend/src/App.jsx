@@ -16,6 +16,7 @@ import CustomerDirectory from './pages/admin/CustomerDirectory';
 import CouponsManager from './pages/admin/CouponsManager';
 import MoneyManager from './pages/admin/MoneyManager';
 import ExpensesManager from './pages/admin/ExpensesManager';
+import InventoryManager from './pages/admin/InventoryManager';
 import QRPrintPage from './components/QR/QRPrintPage';
 import StaffMobileApps from './pages/admin/StaffMobileApps';
 import WaiterDashboard from './pages/waiter/WaiterDashboard';
@@ -55,7 +56,7 @@ function AgencyProtectedRoute({ children }) {
 function ProtectedRoute({ allowedRoles, children }) {
   const { restaurantId } = useParams();
   const location = useLocation();
-  const sessionStr = sessionStorage.getItem('session');
+  const sessionStr = localStorage.getItem('session');
   
   if (!sessionStr) {
     let roleParam = 'waiter';
@@ -261,6 +262,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <ExpensesManager />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/r/:restaurantId/admin/inventory"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <InventoryManager />
           </ProtectedRoute>
         }
       />

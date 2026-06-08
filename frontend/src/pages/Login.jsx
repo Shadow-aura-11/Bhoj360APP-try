@@ -83,7 +83,7 @@ export default function Login() {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallBtn(true);
-      const name = sessionStorage.getItem('restaurant_name') || 'this restaurant';
+      const name = localStorage.getItem('restaurant_name') || 'this restaurant';
       toast(`Install the app for ${name} on your device for quick access! 📲`, {
         duration: 8000,
         id: 'pwa-install-toast',
@@ -127,7 +127,7 @@ export default function Login() {
         const { data } = await api.get('/health');
         if (data.name) {
           setRestaurantName(data.name);
-          sessionStorage.setItem('restaurant_name', data.name);
+          localStorage.setItem('restaurant_name', data.name);
         }
         if (data.logo_url) setLogoUrl(data.logo_url);
         if (data.description) setDescription(data.description);
@@ -218,7 +218,7 @@ export default function Login() {
       const { data } = await api.post('/auth', payload);
 
       // Save session
-      sessionStorage.setItem('session', JSON.stringify({
+      localStorage.setItem('session', JSON.stringify({
         role: data.role,
         restaurantId,
         pin: staffPin,
@@ -288,7 +288,7 @@ export default function Login() {
       }
 
       // Save customer session
-      sessionStorage.setItem('session', JSON.stringify({
+      localStorage.setItem('session', JSON.stringify({
         role: 'customer',
         restaurantId,
         tableNumber: tableExists.number.toUpperCase(),
