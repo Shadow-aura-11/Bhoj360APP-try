@@ -1118,12 +1118,7 @@ export default function StaffSettings() {
               <p className="text-[9px] text-slate-400 text-center">Receipt width scales based on 58mm or 80mm selections.</p>
             </div>
 
-          </div>
-        )}
-
         {/* ═══ TAB 4: INTEGRATIONS ═══ */}
-        {activeTab === 'integrations' && (
-          <div className="grid grid-        {/* ═══ TAB 4: INTEGRATIONS ═══ */}
         {activeTab === 'integrations' && (
           blockedFeatures.includes('integration-swiggy') && blockedFeatures.includes('integration-zomato') ? (
             <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm text-center max-w-md mx-auto my-8 animate-slide-up w-full">
@@ -1234,7 +1229,7 @@ export default function StaffSettings() {
                             className="flex items-center gap-2 px-5 py-2.5 bg-[#FC8019] hover:bg-[#e47317] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-orange-600/10"
                           >
                             {savingConfig ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                            <span>{savingConfig ? 'Save Swiggy Configuration' : 'Save Swiggy Configuration'}</span>
+                            <span>{savingConfig ? 'Saving Settings...' : 'Save Swiggy Configuration'}</span>
                           </button>
                         </div>
                       </form>
@@ -1349,7 +1344,7 @@ export default function StaffSettings() {
                             className="flex items-center gap-2 px-5 py-2.5 bg-[#E23744] hover:bg-[#c92f3a] disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-rose-600/10"
                           >
                             {savingConfig ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                            <span>{savingConfig ? 'Save Zomato Configuration' : 'Save Zomato Configuration'}</span>
+                            <span>{savingConfig ? 'Saving Settings...' : 'Save Zomato Configuration'}</span>
                           </button>
                         </div>
                       </form>
@@ -1365,13 +1360,6 @@ export default function StaffSettings() {
               )}
             </div>
           )
-        )}    </div>
-                  </form>
-                )}
-              </div>
-            </div>
-
-          </div>
         )}
 
       </div>
