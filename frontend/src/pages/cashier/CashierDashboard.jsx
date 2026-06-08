@@ -673,9 +673,10 @@ export default function CashierDashboard() {
 
       try {
         const cleanRestaurantName = (config?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
         const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
-          filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.png`
+          filename: `${cleanRestaurantName}-Bill-${randomDigits}.png`
         });
 
         const baseURL = window.location.origin;
