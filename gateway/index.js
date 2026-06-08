@@ -154,7 +154,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
   const accept = req.headers.accept || '';
 
-  if (!isApiRequest || accept.includes('text/html')) {
+  if (!isApiRequest || (accept.includes('text/html') && !relativePath.startsWith('/s') && !relativePath.startsWith('/uploads'))) {
     return next();
   }
 

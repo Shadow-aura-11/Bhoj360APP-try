@@ -632,9 +632,10 @@ export default function WaiterDashboard() {
       const cleanBase64 = pdfDataUri.substring(pdfDataUri.indexOf(',') + 1);
 
       try {
+        const cleanRestaurantName = (restaurantConfig?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
         const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
-          filename: `receipt-${targetOrder.id}-${Date.now()}.pdf`
+          filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.pdf`
         });
 
         const baseURL = window.location.origin;
