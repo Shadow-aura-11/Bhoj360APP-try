@@ -457,13 +457,28 @@ export default function WaiterDashboard() {
     const toastId = toast.loading('Generating receipt image...');
 
     try {
+      const loadLogo = () => {
+        return new Promise((resolve) => {
+          const logoUrl = restaurantConfig?.logo_url;
+          if (!logoUrl) return resolve(null);
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = logoUrl;
+        });
+      };
+
+      const logoImg = await loadLogo();
+      const logoHeight = logoImg ? 52 : 44;
+
       // Create offscreen canvas first to draw a clean layout
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
       const width = 380;
       const itemsCount = targetOrder.items?.length || 0;
-      const baseHeight = 340 + (restaurantConfig?.billing?.gst_enabled ? 20 : 0) + (targetOrder.discount_amount > 0 ? 20 : 0) + (targetOrder.customer_phone ? 20 : 0);
+      const baseHeight = 340 + logoHeight + (restaurantConfig?.billing?.gst_enabled ? 20 : 0) + (targetOrder.discount_amount > 0 ? 20 : 0) + (targetOrder.customer_phone ? 20 : 0);
       const height = baseHeight + (itemsCount * 22);
       
       canvas.width = width;
@@ -473,17 +488,50 @@ export default function WaiterDashboard() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
       
+      let currentY = 24;
+
+      // Draw Logo if available
+      if (logoImg) {
+        const logoSize = 44;
+        const logoX = (width - logoSize) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize / 2, currentY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(logoImg, logoX, currentY, logoSize, logoSize);
+        ctx.restore();
+        currentY += logoSize + 8;
+      } else {
+        // Draw placeholder circle
+        const circleSize = 36;
+        const circleX = (width - circleSize) / 2;
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(circleX + circleSize / 2, currentY + circleSize / 2, circleSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const letter = (restaurantConfig?.name || restaurantName || 'R').charAt(0).toUpperCase();
+        ctx.fillText(letter, width / 2, currentY + circleSize / 2);
+        currentY += circleSize + 8;
+      }
+
       // Logo / Title
       ctx.fillStyle = '#0f172a';
       ctx.font = 'bold 16px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(restaurantConfig?.name || restaurantName || 'RECEIPT', width / 2, 32);
+      ctx.fillText(restaurantConfig?.name || restaurantName || 'RECEIPT', width / 2, currentY);
       
       // Address & Info
       ctx.font = '10px monospace';
       ctx.fillStyle = '#475569';
-      let currentY = 56;
+      currentY += 24;
       
       const locationVal = restaurantConfig?.location || restaurantConfig?.general?.address || '';
       const phoneVal = restaurantConfig?.contact_phone || restaurantConfig?.general?.phone || '';
