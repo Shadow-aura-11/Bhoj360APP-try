@@ -1294,18 +1294,54 @@ app.put('/orders/:id', authMiddleware('staff'), (req, res) => {
   const { status, notes } = req.body;
 
   if (status) {
-    db.prepare('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
-      status,
+    let finalStatus = status;
+    let paymentStatus = order.payment_status;
+    let paymentMethod = order.payment_method;
+    let onlineAmount = order.online_amount;
+    let cashAmount = order.cash_amount;
+    let settledAt = order.settled_at;
+
+    // For delivery orders (like Swiggy/Zomato) or when marked as completed/delivered/served,
+    // auto-settle the financials so they flow into analytics and money management.
+    if (status === 'delivered' || status === 'completed' || status === 'served' || status === 'paid') {
+      finalStatus = 'paid';
+      paymentStatus = 'paid';
+      if (!paymentMethod) {
+        paymentMethod = 'online';
+      }
+      if (!settledAt) {
+        settledAt = new Date().toISOString();
+      }
+      
+      const itemsTotalRow = db
+        .prepare('SELECT SUM(quantity * price) as total FROM order_items WHERE order_id = ?')
+        .get(req.params.id);
+      const total = itemsTotalRow.total || 0;
+      
+      if (paymentMethod === 'cash') {
+        cashAmount = total;
+        onlineAmount = 0;
+      } else {
+        cashAmount = 0;
+        onlineAmount = total;
+      }
+    }
+
+    db.prepare(
+      'UPDATE orders SET status = ?, payment_status = ?, payment_method = ?, online_amount = ?, cash_amount = ?, settled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).run(
+      finalStatus,
+      paymentStatus,
+      paymentMethod,
+      onlineAmount,
+      cashAmount,
+      settledAt,
       req.params.id
     );
 
     // Handle table status transitions
     if (order.table_id) {
-      if (status === 'paid' || status === 'cancelled') {
-        updateTableStatus(order.table_id);
-      } else {
-        updateTableStatus(order.table_id);
-      }
+      updateTableStatus(order.table_id);
     }
   }
 
