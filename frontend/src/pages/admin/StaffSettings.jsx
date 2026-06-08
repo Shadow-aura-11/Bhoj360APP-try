@@ -21,11 +21,11 @@ import {
   Info, 
   MapPin, 
   BadgePercent, 
-  ShieldCheck,
   ToggleLeft,
   ToggleRight,
   Upload,
-  Link2
+  Link2,
+  ShoppingBag
 } from 'lucide-react';
 import { createApi } from '../../api/client';
 import DashboardShell from '../../components/Layout/DashboardShell';
@@ -238,6 +238,62 @@ export default function StaffSettings() {
       toast.error(err.response?.data?.error || 'Failed to update configuration');
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleSimulateOrder = async (platform) => {
+    const toastId = toast.loading(`Simulating ${platform} order...`);
+    try {
+      // Fetch menu items
+      const { data: menuItems } = await api.get('/menu', { params: { available: 1 } });
+      if (!menuItems || menuItems.length === 0) {
+        toast.error('Cannot simulate order: No menu items available in menu.', { id: toastId });
+        return;
+      }
+
+      // Fetch tables to find a valid table_id (required by database schema)
+      const { data: tables } = await api.get('/tables');
+      if (!tables || tables.length === 0) {
+        toast.error('Cannot simulate order: No tables configured. Please create at least one table first.', { id: toastId });
+        return;
+      }
+      
+      const targetTable = tables[0];
+
+      // Select 1 to 3 random menu items
+      const randomCount = Math.floor(Math.random() * 3) + 1;
+      const selectedItems = [];
+      const shuffled = [...menuItems].sort(() => 0.5 - Math.random());
+      
+      for (let i = 0; i < Math.min(randomCount, shuffled.length); i++) {
+        const item = shuffled[i];
+        selectedItems.push({
+          menu_item_id: item.id,
+          item_name: item.name,
+          price: item.price,
+          quantity: Math.floor(Math.random() * 2) + 1,
+          notes: 'Simulated customization request',
+          addons: []
+        });
+      }
+
+      const orderNumber = Math.floor(1000 + Math.random() * 9000);
+      const simulatedPayload = {
+        table_id: targetTable.id,
+        table_number: targetTable.number,
+        items: selectedItems,
+        notes: `Simulated ${platform} Delivery Order`,
+        type: 'delivery',
+        customer_phone: '98765' + Math.floor(10000 + Math.random() * 90000).toString(),
+        customer_name: `${platform} Order #${orderNumber}`,
+        waiter_name: `${platform} Integration`
+      };
+
+      await api.post('/orders', simulatedPayload);
+      toast.success(`${platform} Order #${orderNumber} generated successfully!`, { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to simulate ${platform} order: ${err.message || 'error'}`, { id: toastId });
     }
   };
 
@@ -1144,7 +1200,16 @@ export default function StaffSettings() {
                       <span>To fetch credentials, go to your Swiggy Partner Portal &gt; Settings &gt; API Integrations and request a Client ID & Secret.</span>
                     </div>
 
-                    <div className="flex justify-end pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleSimulateOrder('Swiggy')}
+                        disabled={!config.integrations?.swiggy?.enabled}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-[#FC8019] border border-[#FC8019]/20 font-semibold rounded-xl text-xs transition-all"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Simulate Swiggy Order</span>
+                      </button>
                       <button
                         type="submit"
                         disabled={savingConfig || !config.integrations?.swiggy?.enabled}
@@ -1242,7 +1307,16 @@ export default function StaffSettings() {
                       <span>To generate a Zomato Merchant Key, log in to Zomato Merchant Center &gt; Developer API and generate an authorization secret token.</span>
                     </div>
 
-                    <div className="flex justify-end pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleSimulateOrder('Zomato')}
+                        disabled={!config.integrations?.zomato?.enabled}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-[#E23744] border border-[#E23744]/20 font-semibold rounded-xl text-xs transition-all"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Simulate Zomato Order</span>
+                      </button>
                       <button
                         type="submit"
                         disabled={savingConfig || !config.integrations?.zomato?.enabled}
