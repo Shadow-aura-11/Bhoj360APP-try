@@ -4,6 +4,7 @@ import { Plus, Building, Calendar, DollarSign, Activity, FileSpreadsheet, Play, 
 import { agencyApi } from '../api/client';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { compressImage } from '../utils/image';
 
 const FEATURES_LIST = [
   // Core modules
@@ -1033,12 +1034,16 @@ export default function AgencyDashboard() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setLogoUrl(ev.target.result);
-                      reader.readAsDataURL(file);
+                      try {
+                        const compressedBase64 = await compressImage(file, 300, 300, 0.85);
+                        setLogoUrl(compressedBase64);
+                      } catch (err) {
+                        console.error('Image compression failed:', err);
+                        toast.error('Failed to process logo image');
+                      }
                     }}
                   />
                 </label>
@@ -1751,12 +1756,16 @@ export default function AgencyDashboard() {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => setFormData(prev => ({ ...prev, logo_url: ev.target.result }));
-                          reader.readAsDataURL(file);
+                          try {
+                            const compressedBase64 = await compressImage(file, 300, 300, 0.85);
+                            setFormData(prev => ({ ...prev, logo_url: compressedBase64 }));
+                          } catch (err) {
+                            console.error('Image compression failed:', err);
+                            toast.error('Failed to process logo image');
+                          }
                         }}
                       />
                     </label>
@@ -1940,12 +1949,16 @@ export default function AgencyDashboard() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => setEditFormData(prev => ({ ...prev, logo_url: ev.target.result }));
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressedBase64 = await compressImage(file, 300, 300, 0.85);
+                          setEditFormData(prev => ({ ...prev, logo_url: compressedBase64 }));
+                        } catch (err) {
+                          console.error('Image compression failed:', err);
+                          toast.error('Failed to process logo image');
+                        }
                       }}
                     />
                   </label>

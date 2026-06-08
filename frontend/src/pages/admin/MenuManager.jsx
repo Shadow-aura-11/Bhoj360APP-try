@@ -7,6 +7,7 @@ import DashboardShell from '../../components/Layout/DashboardShell';
 import MenuGrid from '../../components/Menu/MenuGrid';
 import ConfirmModal from '../../components/shared/ConfirmModal';
 import toast from 'react-hot-toast';
+import { compressImage } from '../../utils/image';
 
 const PHOTO_PRESETS = [
   { name: 'Pizza', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop' },
@@ -438,23 +439,21 @@ export default function MenuManager() {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        try {
-                          const base64Data = reader.result.split(',')[1];
-                          toast.loading('Uploading photo...', { id: 'menu-photo-upload' });
-                          const { data } = await api.post('/menu/upload', {
-                            filename: file.name,
-                            base64Data,
-                          });
-                          setFormData(prev => ({ ...prev, image_url: data.url }));
-                          toast.success('Photo uploaded successfully!', { id: 'menu-photo-upload' });
-                        } catch (err) {
-                          console.error(err);
-                          toast.error('Failed to upload photo', { id: 'menu-photo-upload' });
-                        }
-                      };
-                      reader.readAsDataURL(file);
+                      toast.loading('Compressing and uploading photo...', { id: 'menu-photo-upload' });
+                      try {
+                        const compressedBase64String = await compressImage(file, 800, 800, 0.7);
+                        const base64Data = compressedBase64String.split(',')[1];
+                        
+                        const { data } = await api.post('/menu/upload', {
+                          filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg",
+                          base64Data,
+                        });
+                        setFormData(prev => ({ ...prev, image_url: data.url }));
+                        toast.success('Photo uploaded successfully!', { id: 'menu-photo-upload' });
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Failed to upload photo', { id: 'menu-photo-upload' });
+                      }
                     }}
                     className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition-all cursor-pointer"
                   />

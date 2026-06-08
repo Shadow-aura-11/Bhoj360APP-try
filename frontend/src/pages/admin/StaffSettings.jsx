@@ -30,6 +30,7 @@ import {
 import { createApi } from '../../api/client';
 import DashboardShell from '../../components/Layout/DashboardShell';
 import toast from 'react-hot-toast';
+import { compressImage } from '../../utils/image';
 
 export default function StaffSettings() {
   const { restaurantId } = useParams();
@@ -128,27 +129,15 @@ export default function StaffSettings() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Logo image must be smaller than 5MB');
-      return;
-    }
-
-    const toastId = toast.loading('Uploading logo...');
+    const toastId = toast.loading('Compressing and uploading logo...');
     try {
       setUploadingLogo(true);
-      const reader = new FileReader();
-      
-      const base64Promise = new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(err);
-      });
-      
-      reader.readAsDataURL(file);
-      const base64String = await base64Promise;
-      const base64Data = base64String.split(',')[1];
+      // Compress logo to max 300x300 for clean high performance loading
+      const compressedBase64String = await compressImage(file, 300, 300, 0.85);
+      const base64Data = compressedBase64String.split(',')[1];
       
       const res = await api.post('/menu/upload', {
-        filename: file.name,
+        filename: file.name.replace(/\.[^/.]+$/, "") + ".jpg",
         base64Data
       });
       

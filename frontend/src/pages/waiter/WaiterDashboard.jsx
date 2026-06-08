@@ -242,7 +242,7 @@ export default function WaiterDashboard() {
       <html>
         <head>
           <title>Print</title>
-          \${styles}
+          ${styles}
           <style>
             @media print {
               body {
@@ -250,7 +250,7 @@ export default function WaiterDashboard() {
                 background: white !important;
                 color: black !important;
               }
-              #\${elementId} {
+              #${elementId} {
                 position: static !important;
                 visibility: visible !important;
                 display: block !important;
@@ -262,8 +262,8 @@ export default function WaiterDashboard() {
           </style>
         </head>
         <body style="background: white; color: black; margin: 0; padding: 0;">
-          <div id="\${elementId}">
-            \${printElement.innerHTML}
+          <div id="${elementId}">
+            ${printElement.innerHTML}
           </div>
         </body>
       </html>
