@@ -41,6 +41,9 @@ const FEATURES_LIST = [
   { id: 'settings-billing', label: 'Billing Settings' },
   { id: 'settings-printer', label: 'Printer Settings' },
   { id: 'settings-upi', label: 'UPI / QR Settings' },
+  // Integrations
+  { id: 'integration-swiggy', label: 'Swiggy Integration' },
+  { id: 'integration-zomato', label: 'Zomato Integration' },
 ];
 
 export default function AgencyDashboard() {
