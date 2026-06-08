@@ -456,7 +456,7 @@ export default function CashierDashboard() {
       return;
     }
     if (!targetOrder) return;
-    const toastId = toast.loading('Generating PDF receipt...');
+    const toastId = toast.loading('Generating bill image...');
 
     try {
       // Create offscreen canvas first to draw a clean layout
@@ -619,28 +619,15 @@ export default function CashierDashboard() {
       ctx.fillStyle = '#94a3b8';
       ctx.fillText('Powered by Bhoj360', width / 2, currentY);
 
-      // Convert Canvas to PDF
+      // Convert Canvas to Base64 PNG Image
       const imgData = canvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [width, height]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-      
-      // Open print preview / raw PDF data in new tab so user has absolute visual layout
-      const pdfBlob = pdf.output('blob');
-      // Convert PDF to Base64 and upload to backend
-      const pdfDataUri = pdf.output('datauristring');
-      const cleanBase64 = pdfDataUri.substring(pdfDataUri.indexOf(',') + 1);
+      const cleanBase64 = imgData.substring(imgData.indexOf(',') + 1);
 
       try {
         const cleanRestaurantName = (config?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
         const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
-          filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.pdf`
+          filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.png`
         });
 
         const baseURL = window.location.origin;
@@ -648,20 +635,20 @@ export default function CashierDashboard() {
 
         // WhatsApp redirection
         const reviewLink = config?.google_review_url || 'https://google.com';
-        toast.success('PDF bill uploaded! Opening WhatsApp chat...', { id: toastId });
+        toast.success('Bill image uploaded! Opening WhatsApp chat...', { id: toastId });
         await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
         
-        const messageText = `Dear Customer, thank you for dining with us at ${config?.name || restaurantName}! 🌸\n\n📄 View/Download your PDF receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
+        const messageText = `Dear Customer, thank you for dining with us at ${config?.name || restaurantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
         window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
       } catch (uploadErr) {
         console.error(uploadErr);
         const errMsg = uploadErr.response?.data?.error || uploadErr.message || 'Unknown error';
-        toast.error(`Failed to upload PDF bill: ${errMsg}`, { id: toastId });
+        toast.error(`Failed to upload bill image: ${errMsg}`, { id: toastId });
       }
       
     } catch (err) {
       console.error(err);
-      toast.error('Failed to generate PDF bill.', { id: toastId });
+      toast.error('Failed to generate bill image.', { id: toastId });
     }
   };
 
@@ -1735,7 +1722,7 @@ export default function CashierDashboard() {
                     className="flex-1 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-1"
                   >
                     <Send className="w-3 h-3" />
-                    <span>Share PDF</span>
+                    <span>Share Bill</span>
                   </button>
                 </div>
               </div>

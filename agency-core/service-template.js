@@ -212,7 +212,7 @@ function performAutomatedBillCleanup() {
       console.log(`[Auto Cleanup] Successfully deleted ${oldOrders.length} database entries.`);
     }
 
-    // Sweep static uploads folder for receipt PDF files created more than 5 months ago
+    // Sweep static uploads folder for receipt PDF/PNG files created more than 5 months ago
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       const now = Date.now();
@@ -223,14 +223,14 @@ function performAutomatedBillCleanup() {
         const filePath = path.join(uploadsDir, file);
         const stats = fs.statSync(filePath);
         if (now - stats.birthtimeMs > fiveMonthsMs || now - stats.mtimeMs > fiveMonthsMs) {
-          if (file.endsWith('.pdf') || file.startsWith('receipt-') || file.startsWith('bill-')) {
+          if (file.endsWith('.pdf') || file.endsWith('.png') || file.startsWith('receipt-') || file.startsWith('bill-')) {
             fs.unlinkSync(filePath);
             deletedCount++;
           }
         }
       });
       if (deletedCount > 0) {
-        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF files from disk.`);
+        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF/PNG files from disk.`);
       }
     }
   } catch (err) {
