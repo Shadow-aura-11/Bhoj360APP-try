@@ -57,6 +57,25 @@ app.use(
   })
 );
 
+// Proxy short links /s/* and uploads /uploads/* directly to Agency Core (port 3000)
+app.use(
+  '/s',
+  createProxyMiddleware({
+    target: `http://localhost:${AGENCY_PORT}`,
+    changeOrigin: true,
+    pathRewrite: (reqPath) => '/s' + reqPath,
+  })
+);
+
+app.use(
+  '/uploads',
+  createProxyMiddleware({
+    target: `http://localhost:${AGENCY_PORT}`,
+    changeOrigin: true,
+    pathRewrite: (reqPath) => '/uploads' + reqPath,
+  })
+);
+
 // ─── 2. Restaurant Proxy: /r/:restaurantId/* → :31XX ───────
 
 // Handle Socket.IO connections for restaurants

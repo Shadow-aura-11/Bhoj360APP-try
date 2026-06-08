@@ -623,13 +623,13 @@ export default function WaiterDashboard() {
 
       try {
         const cleanRestaurantName = (restaurantConfig?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
-        const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
+        const { data: uploadRes } = await agencyApi.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
           filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.png`
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = restaurantConfig?.google_review_url || 'https://google.com';

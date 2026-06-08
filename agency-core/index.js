@@ -15,6 +15,7 @@ const nodemailer = require('nodemailer');
 
 const { createRestaurant } = require('./restaurant-factory');
 const { startAll } = require('./startup');
+const Database = require('better-sqlite3');
 
 const PORT = process.env.AGENCY_PORT || 3000;
 const REGISTRY_PATH = path.join(__dirname, 'registry.json');
@@ -23,9 +24,29 @@ const INQUIRIES_PATH = path.join(__dirname, 'inquiries.json');
 const BLOGS_PATH = path.join(__dirname, 'blogs.json');
 const APPLICATIONS_PATH = path.join(__dirname, 'applications.json');
 
+// Central Bills SQLite database & Uploads folder configuration
+const billsDb = new Database(path.join(__dirname, 'bills.db'));
+try {
+  billsDb.exec(`
+    CREATE TABLE IF NOT EXISTS short_urls (
+      id TEXT PRIMARY KEY,
+      url TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {
+  console.error('[Agency Central] Failed to initialize central bills DB:', e.message);
+}
+
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use('/uploads', express.static(uploadsDir));
 
 // ─── In-Memory Stores ───────────────────────────────────────
 
@@ -1115,6 +1136,69 @@ app.delete('/api/applications/:id', requireAgencyAuth, (req, res) => {
   saveApplications(applications);
   res.json({ message: 'Application deleted successfully' });
 });
+
+// POST /api/orders/upload-image-bill — Centrally upload bill image
+app.post('/api/orders/upload-image-bill', (req, res) => {
+  const { base64Image, filename } = req.body;
+  if (!base64Image) {
+    return res.status(400).json({ error: 'base64Image is required' });
+  }
+  try {
+    const base64Data = base64Image.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    const name = filename || `bill-${Date.now()}.png`;
+    const targetPath = path.join(uploadsDir, name);
+    fs.writeFileSync(targetPath, buffer);
+
+    const actualPath = `/uploads/${name}`;
+    const shortId = crypto.randomBytes(3).toString('hex');
+    billsDb.prepare('INSERT INTO short_urls (id, url) VALUES (?, ?)').run(shortId, actualPath);
+
+    res.json({ url: `/s/${shortId}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload receipt image.' });
+  }
+});
+
+// GET /s/:id — Redirect shortened URL key to the actual receipt path
+app.get('/s/:id', (req, res) => {
+  const record = billsDb.prepare('SELECT url FROM short_urls WHERE id = ?').get(req.params.id);
+  if (!record) {
+    return res.status(404).send('Short URL not found or expired.');
+  }
+  res.redirect(record.url);
+});
+
+// Automated cleanup of central bill uploads
+function performCentralBillCleanup() {
+  try {
+    const files = fs.readdirSync(uploadsDir);
+    const now = Date.now();
+    const fiveMonthsMs = 5 * 30 * 24 * 60 * 60 * 1000;
+    let deletedCount = 0;
+
+    files.forEach((file) => {
+      const filePath = path.join(uploadsDir, file);
+      const stats = fs.statSync(filePath);
+      if (now - stats.birthtimeMs > fiveMonthsMs || now - stats.mtimeMs > fiveMonthsMs) {
+        if (file.endsWith('.pdf') || file.endsWith('.png') || file.startsWith('receipt-') || file.startsWith('bill-')) {
+          fs.unlinkSync(filePath);
+          deletedCount++;
+        }
+      }
+    });
+    if (deletedCount > 0) {
+      console.log(`[Central Auto Cleanup] Deleted ${deletedCount} legacy receipt files from disk.`);
+    }
+  } catch (err) {
+    console.error('[Central Auto Cleanup] Sweep failed:', err.message);
+  }
+}
+
+// Run cleanup immediately on boot and then once every 24 hours
+setTimeout(performCentralBillCleanup, 5000);
+setInterval(performCentralBillCleanup, 24 * 60 * 60 * 1000);
 
 // ─── Health Check ────────────────────────────────────────────
 
