@@ -45,6 +45,11 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+const BILLS_DB_PATH = path.join(__dirname, 'bills.sqlite');
+const billsDb = new Database(BILLS_DB_PATH);
+billsDb.pragma('journal_mode = WAL');
+billsDb.pragma('foreign_keys = ON');
+
 // Run schema migrations for existing databases
 try {
   db.exec("ALTER TABLE orders ADD COLUMN type TEXT DEFAULT 'dine-in';");
@@ -173,6 +178,71 @@ try {
     );
   `);
 } catch (e) {}
+
+try {
+  billsDb.exec(`
+    CREATE TABLE IF NOT EXISTS short_urls (
+      id TEXT PRIMARY KEY,
+      url TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+// Automated cleanup function to delete orders, their items, and static receipt PDFs older than 5 months
+function performAutomatedBillCleanup() {
+  try {
+    const cutOffDate = new Date();
+    cutOffDate.setMonth(cutOffDate.getMonth() - 5);
+    const cutOffString = cutOffDate.toISOString();
+
+    // Find orders older than 5 months
+    const oldOrders = db.prepare("SELECT id FROM orders WHERE created_at < ?").all(cutOffString);
+    if (oldOrders.length > 0) {
+      console.log(`[Auto Cleanup] Found ${oldOrders.length} orders older than 5 months. Cleaning up...`);
+      
+      const orderIds = oldOrders.map(o => o.id);
+      
+      // Delete associated order items
+      const placeholders = orderIds.map(() => '?').join(',');
+      db.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).run(...orderIds);
+      
+      // Delete orders
+      db.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).run(...orderIds);
+      console.log(`[Auto Cleanup] Successfully deleted ${oldOrders.length} database entries.`);
+    }
+
+    // Sweep static uploads folder for receipt PDF files created more than 5 months ago
+    if (fs.existsSync(uploadsDir)) {
+      const files = fs.readdirSync(uploadsDir);
+      const now = Date.now();
+      const fiveMonthsMs = 5 * 30 * 24 * 60 * 60 * 1000;
+      let deletedCount = 0;
+
+      files.forEach((file) => {
+        const filePath = path.join(uploadsDir, file);
+        const stats = fs.statSync(filePath);
+        if (now - stats.birthtimeMs > fiveMonthsMs || now - stats.mtimeMs > fiveMonthsMs) {
+          if (file.endsWith('.pdf') || file.startsWith('receipt-') || file.startsWith('bill-')) {
+            fs.unlinkSync(filePath);
+            deletedCount++;
+          }
+        }
+      });
+      if (deletedCount > 0) {
+        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF files from disk.`);
+      }
+    }
+  } catch (err) {
+    console.error('[Auto Cleanup] Error executing bill cleanup:', err);
+  }
+}
+
+// Run cleanup immediately on server startup
+performAutomatedBillCleanup();
+// Run cleanup every 24 hours
+setInterval(performAutomatedBillCleanup, 24 * 60 * 60 * 1000);
+
 
 function readConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -1655,6 +1725,43 @@ app.post('/orders/:id/send-whatsapp', (req, res) => {
 
   res.json({ message: `Bill sent to +91-${phone} successfully via WhatsApp Simulation.` });
 });
+
+// GET /s/:id — Redirect shortened URL key to the actual receipt path
+app.get('/s/:id', (req, res) => {
+  const record = billsDb.prepare('SELECT url FROM short_urls WHERE id = ?').get(req.params.id);
+  if (!record) {
+    return res.status(404).send('Short URL not found or expired.');
+  }
+  res.redirect(record.url);
+});
+
+// POST /orders/upload-image-bill — Upload base64 receipt PDF, save it, shorten URL, and return shortened path
+app.post('/orders/upload-image-bill', (req, res) => {
+  const { base64Image, filename } = req.body;
+  if (!base64Image) {
+    return res.status(400).json({ error: 'base64Image is required' });
+  }
+  try {
+    // Correctly match and extract base64 data regardless of MIME type (e.g. image/png, application/pdf)
+    const base64Data = base64Image.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    const name = filename || `bill-${Date.now()}.pdf`;
+    const targetPath = path.join(uploadsDir, name);
+    fs.writeFileSync(targetPath, buffer);
+
+    const actualPath = `/uploads/${name}`;
+    // Generate a short 6-character unique ID key
+    const shortId = crypto.randomBytes(3).toString('hex');
+    billsDb.prepare('INSERT INTO short_urls (id, url) VALUES (?, ?)').run(shortId, actualPath);
+
+    // Return the short URL path relative to server root
+    res.json({ url: `/s/${shortId}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload receipt PDF.' });
+  }
+});
+
 
 // GET /settings/config — Get entire configuration including general, billing, and printing configs [STAFF/ADMIN]
 app.get('/settings/config', authMiddleware('staff'), (req, res) => {

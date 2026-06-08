@@ -448,6 +448,216 @@ export default function WaiterDashboard() {
       toast.error('Failed to open WhatsApp');
     }
   };
+  const handleSendWhatsAppImageBill = async (targetOrder) => {
+    if (!whatsappPhone || !/^\d{10}$/.test(whatsappPhone)) {
+      toast.error('WhatsApp phone number must be exactly 10 digits');
+      return;
+    }
+    if (!targetOrder) return;
+    const toastId = toast.loading('Generating PDF receipt...');
+
+    try {
+      // Create offscreen canvas first to draw a clean layout
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const width = 380;
+      const itemsCount = targetOrder.items?.length || 0;
+      const baseHeight = 340 + (restaurantConfig?.billing?.gst_enabled ? 20 : 0) + (targetOrder.discount_amount > 0 ? 20 : 0) + (targetOrder.customer_phone ? 20 : 0);
+      const height = baseHeight + (itemsCount * 22);
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Paint Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Logo / Title
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(restaurantConfig?.name || restaurantName || 'RECEIPT', width / 2, 32);
+      
+      // Address & Info
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#475569';
+      let currentY = 56;
+      
+      const locationVal = restaurantConfig?.location || restaurantConfig?.general?.address || '';
+      const phoneVal = restaurantConfig?.contact_phone || restaurantConfig?.general?.phone || '';
+      const fssaiVal = restaurantConfig?.fssai_compliance || restaurantConfig?.general?.fssai || '';
+      
+      if (locationVal) {
+        ctx.fillText(locationVal, width / 2, currentY);
+        currentY += 15;
+      }
+      if (phoneVal) {
+        ctx.fillText(`Phone: ${phoneVal}`, width / 2, currentY);
+        currentY += 15;
+      }
+      if (fssaiVal) {
+        ctx.fillText(`FSSAI: ${fssaiVal}`, width / 2, currentY);
+        currentY += 15;
+      }
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('--------------------------------------', width / 2, currentY);
+      currentY += 15;
+      
+      // Metadata
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`Table: ${targetOrder.table_number || 'Takeaway'}`, 28, currentY);
+      ctx.textAlign = 'right';
+      ctx.fillText(`Order: #${targetOrder.id}`, width - 28, currentY);
+      currentY += 16;
+      
+      ctx.textAlign = 'left';
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#475569';
+      const orderDate = new Date(targetOrder.settled_at || targetOrder.created_at || Date.now());
+      ctx.fillText(`Date: ${orderDate.toLocaleDateString()}`, 28, currentY);
+      ctx.textAlign = 'right';
+      ctx.fillText(`Time: ${orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, width - 28, currentY);
+      currentY += 16;
+
+      if (targetOrder.customer_phone) {
+        ctx.textAlign = 'left';
+        ctx.fillText(`Cust: ${targetOrder.customer_name || 'Walk-in'} (${targetOrder.customer_phone})`, 28, currentY);
+        currentY += 16;
+      }
+      
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('--------------------------------------', width / 2, currentY);
+      currentY += 15;
+      
+      // Items Headers
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('Item Description', 28, currentY);
+      ctx.textAlign = 'right';
+      ctx.fillText('Qty', width - 95, currentY);
+      ctx.fillText('Amount', width - 28, currentY);
+      currentY += 18;
+      
+      // Items List
+      ctx.font = '11px monospace';
+      ctx.fillStyle = '#334155';
+      targetOrder.items?.forEach((item) => {
+        ctx.textAlign = 'left';
+        const name = (item.is_addon ? '* ' : '') + item.item_name;
+        const displayName = name.length > 22 ? name.substring(0, 20) + '..' : name;
+        ctx.fillText(displayName, 28, currentY);
+        
+        ctx.textAlign = 'right';
+        ctx.fillText(`${item.quantity}`, width - 95, currentY);
+        ctx.fillText(`₹${(item.price * item.quantity).toFixed(2)}`, width - 28, currentY);
+        currentY += 20;
+      });
+      
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('--------------------------------------', width / 2, currentY);
+      currentY += 15;
+      
+      // Totals
+      ctx.font = '11px monospace';
+      ctx.fillStyle = '#334155';
+      const subtotal = targetOrder.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || targetOrder.total;
+      
+      ctx.textAlign = 'left';
+      ctx.fillText('Subtotal:', 28, currentY);
+      ctx.textAlign = 'right';
+      ctx.fillText(`₹${subtotal.toFixed(2)}`, width - 28, currentY);
+      currentY += 15;
+      
+      if (targetOrder.discount_amount > 0) {
+        ctx.textAlign = 'left';
+        ctx.fillText(`Discount (${targetOrder.coupon_code || 'Manual'}):`, 28, currentY);
+        ctx.textAlign = 'right';
+        ctx.fillText(`-₹${targetOrder.discount_amount.toFixed(2)}`, width - 28, currentY);
+        currentY += 15;
+      }
+      
+      const gstEnabled = restaurantConfig?.billing?.gst_enabled;
+      if (gstEnabled) {
+        const gstPercent = restaurantConfig?.billing?.gst_percentage || 5;
+        const discountVal = targetOrder.discount_amount || 0;
+        const taxable = Math.max(0, subtotal - discountVal);
+        const gstAmount = (taxable * gstPercent) / 100;
+        
+        ctx.textAlign = 'left';
+        ctx.fillText(`GST (${gstPercent}%):`, 28, currentY);
+        ctx.textAlign = 'right';
+        ctx.fillText(`₹${gstAmount.toFixed(2)}`, width - 28, currentY);
+        currentY += 15;
+      }
+      
+      // Grand Total
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 13px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('Total Payable:', 28, currentY);
+      ctx.textAlign = 'right';
+      ctx.fillText(`₹${(targetOrder.total || subtotal).toFixed(2)}`, width - 28, currentY);
+      currentY += 24;
+      
+      // Footer text
+      ctx.textAlign = 'center';
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(restaurantConfig?.printing?.bill_setting?.custom_footer || 'Thank you! Visit again.', width / 2, currentY);
+      currentY += 15;
+      ctx.font = '8px monospace';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('Powered by Bhoj360', width / 2, currentY);
+
+      // Convert Canvas to PDF
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [width, height]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+      // Convert PDF to Base64 and upload to backend
+      const pdfDataUri = pdf.output('datauristring');
+      const cleanBase64 = pdfDataUri.substring(pdfDataUri.indexOf(',') + 1);
+
+      try {
+        const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
+          base64Image: cleanBase64,
+          filename: `receipt-${targetOrder.id}-${Date.now()}.pdf`
+        });
+
+        const baseURL = window.location.origin;
+        const publicPdfUrl = `${baseURL}${uploadRes.url}`;
+
+        // WhatsApp redirection
+        const reviewLink = restaurantConfig?.google_review_url || 'https://google.com';
+        toast.success('PDF bill uploaded! Opening WhatsApp chat...', { id: toastId });
+        await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
+        
+        const messageText = `Dear Customer, thank you for dining with us at ${restaurantConfig?.name || restaurantName}! 🌸\n\n📄 View/Download your PDF receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
+        window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+      } catch (uploadErr) {
+        console.error(uploadErr);
+        const errMsg = uploadErr.response?.data?.error || uploadErr.message || 'Unknown error';
+        toast.error(`Failed to upload PDF bill: ${errMsg}`, { id: toastId });
+      }
+      
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate PDF bill.', { id: toastId });
+    }
+  };
 
   const handlePrintReceipt = (order) => {
     setReceiptOrder(order);
@@ -1403,23 +1613,33 @@ export default function WaiterDashboard() {
             {/* WhatsApp billing share trigger */}
             <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">WhatsApp Customer Billing Share</label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <input 
                   type="text" 
                   maxLength={10}
                   placeholder="10-digit customer number"
                   value={whatsappPhone}
                   onChange={(e) => setWhatsappPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono"
                 />
-                <button
-                  type="button"
-                  onClick={() => handleSendWhatsAppBill(orderToSettle.id)}
-                  className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs shrink-0 flex items-center gap-1"
-                >
-                  <Send className="w-3 h-3" />
-                  <span>Share</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSendWhatsAppBill(orderToSettle.id)}
+                    className="flex-1 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-1"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>Share Link</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendWhatsAppImageBill(orderToSettle)}
+                    className="flex-1 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-1"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>Share PDF</span>
+                  </button>
+                </div>
               </div>
             </div>
 
