@@ -212,7 +212,7 @@ function performAutomatedBillCleanup() {
       console.log(`[Auto Cleanup] Successfully deleted ${oldOrders.length} database entries.`);
     }
 
-    // Sweep static uploads folder for receipt PDF/PNG files created more than 5 months ago
+    // Sweep static uploads folder for receipt PDF files created more than 5 months ago
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       const now = Date.now();
@@ -223,14 +223,14 @@ function performAutomatedBillCleanup() {
         const filePath = path.join(uploadsDir, file);
         const stats = fs.statSync(filePath);
         if (now - stats.birthtimeMs > fiveMonthsMs || now - stats.mtimeMs > fiveMonthsMs) {
-          if (file.endsWith('.pdf') || file.endsWith('.png') || file.startsWith('receipt-') || file.startsWith('bill-')) {
+          if (file.endsWith('.pdf') || file.startsWith('receipt-') || file.startsWith('bill-')) {
             fs.unlinkSync(filePath);
             deletedCount++;
           }
         }
       });
       if (deletedCount > 0) {
-        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF/PNG files from disk.`);
+        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF files from disk.`);
       }
     }
   } catch (err) {
@@ -1735,7 +1735,7 @@ app.get('/s/:id', (req, res) => {
   res.redirect(record.url);
 });
 
-// POST /orders/upload-image-bill — Upload base64 receipt PDF, save it, shorten URL, and return shortened path
+// POST /orders/upload-image-bill — Upload base64 receipt image/PDF, save it to disk, and return direct path (no database storage)
 app.post('/orders/upload-image-bill', (req, res) => {
   const { base64Image, filename } = req.body;
   if (!base64Image) {
@@ -1745,20 +1745,16 @@ app.post('/orders/upload-image-bill', (req, res) => {
     // Correctly match and extract base64 data regardless of MIME type (e.g. image/png, application/pdf)
     const base64Data = base64Image.replace(/^data:[^;]+;base64,/, "");
     const buffer = Buffer.from(base64Data, 'base64');
-    const name = filename || `bill-${Date.now()}.pdf`;
+    const name = filename || `bill-${Date.now()}.png`;
     const targetPath = path.join(uploadsDir, name);
     fs.writeFileSync(targetPath, buffer);
 
     const actualPath = `/uploads/${name}`;
-    // Generate a short 6-character unique ID key
-    const shortId = crypto.randomBytes(3).toString('hex');
-    billsDb.prepare('INSERT INTO short_urls (id, url) VALUES (?, ?)').run(shortId, actualPath);
-
-    // Return the short URL path relative to server root
-    res.json({ url: `/s/${shortId}` });
+    // Return direct static file URL instead of a database shortened URL redirect
+    res.json({ url: actualPath });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to upload receipt PDF.' });
+    res.status(500).json({ error: 'Failed to upload receipt.' });
   }
 });
 

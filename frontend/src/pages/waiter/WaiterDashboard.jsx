@@ -454,7 +454,7 @@ export default function WaiterDashboard() {
       return;
     }
     if (!targetOrder) return;
-    const toastId = toast.loading('Generating bill image...');
+    const toastId = toast.loading('Generating receipt image...');
 
     try {
       // Create offscreen canvas first to draw a clean layout
@@ -617,23 +617,23 @@ export default function WaiterDashboard() {
       ctx.fillStyle = '#94a3b8';
       ctx.fillText('Powered by Bhoj360', width / 2, currentY);
 
-      // Convert Canvas to Base64 PNG Image
+      // Convert Canvas to PNG image data URI
       const imgData = canvas.toDataURL('image/png');
       const cleanBase64 = imgData.substring(imgData.indexOf(',') + 1);
 
       try {
         const cleanRestaurantName = (restaurantConfig?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
-        const { data: uploadRes } = await agencyApi.post('/orders/upload-image-bill', {
+        const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
           filename: `${cleanRestaurantName}-Bill-${targetOrder.id}.png`
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = restaurantConfig?.google_review_url || 'https://google.com';
-        toast.success('Bill image uploaded! Opening WhatsApp chat...', { id: toastId });
+        toast.success('Receipt image uploaded! Opening WhatsApp chat...', { id: toastId });
         await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
         
         const messageText = `Dear Customer, thank you for dining with us at ${restaurantConfig?.name || restaurantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
@@ -641,12 +641,12 @@ export default function WaiterDashboard() {
       } catch (uploadErr) {
         console.error(uploadErr);
         const errMsg = uploadErr.response?.data?.error || uploadErr.message || 'Unknown error';
-        toast.error(`Failed to upload bill image: ${errMsg}`, { id: toastId });
+        toast.error(`Failed to upload receipt image: ${errMsg}`, { id: toastId });
       }
       
     } catch (err) {
       console.error(err);
-      toast.error('Failed to generate bill image.', { id: toastId });
+      toast.error('Failed to generate receipt image.', { id: toastId });
     }
   };
 
@@ -1628,7 +1628,7 @@ export default function WaiterDashboard() {
                     className="flex-1 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-1"
                   >
                     <Send className="w-3 h-3" />
-                    <span>Share Bill</span>
+                    <span>Share PDF</span>
                   </button>
                 </div>
               </div>
