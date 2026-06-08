@@ -467,7 +467,7 @@ export default function CashierDashboard() {
           img.crossOrigin = 'anonymous';
           img.onload = () => resolve(img);
           img.onerror = () => resolve(null);
-          img.src = logoUrl;
+          img.src = logoUrl.startsWith('/') ? window.location.origin + logoUrl : logoUrl;
         });
       };
 
@@ -496,13 +496,38 @@ export default function CashierDashboard() {
       if (logoImg) {
         const logoSize = 44;
         const logoX = (width - logoSize) / 2;
+
+        // White background circle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize / 2, currentY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.save();
         ctx.beginPath();
         ctx.arc(logoX + logoSize / 2, currentY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(logoImg, logoX, currentY, logoSize, logoSize);
+
+        // Calculate aspect ratio (object-contain)
+        const imgWidth = logoImg.width || logoSize;
+        const imgHeight = logoImg.height || logoSize;
+        const ratio = Math.min(logoSize / imgWidth, logoSize / imgHeight);
+        const newWidth = imgWidth * ratio;
+        const newHeight = imgHeight * ratio;
+        const dx = logoX + (logoSize - newWidth) / 2;
+        const dy = currentY + (logoSize - newHeight) / 2;
+
+        ctx.drawImage(logoImg, dx, dy, newWidth, newHeight);
         ctx.restore();
+
+        // Subtle circular border
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize / 2, currentY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
         currentY += logoSize + 8;
       } else {
         // Draw placeholder circle
