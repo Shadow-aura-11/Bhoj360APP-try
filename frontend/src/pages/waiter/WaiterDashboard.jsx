@@ -221,13 +221,75 @@ export default function WaiterDashboard() {
     }
   }, []);
 
+  const handlePrint = (elementId) => {
+    const printElement = document.getElementById(elementId);
+    if (!printElement) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(style => style.outerHTML)
+      .join('\n');
+
+    iframe.contentWindow.document.write(`
+      <html>
+        <head>
+          <title>Print</title>
+          \${styles}
+          <style>
+            @media print {
+              body {
+                visibility: visible !important;
+                background: white !important;
+                color: black !important;
+              }
+              #\${elementId} {
+                position: static !important;
+                visibility: visible !important;
+                display: block !important;
+                width: 100% !important;
+                left: 0 !important;
+                top: 0 !important;
+              }
+            }
+          </style>
+        </head>
+        <body style="background: white; color: black; margin: 0; padding: 0;">
+          <div id="\${elementId}">
+            \${printElement.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    iframe.contentWindow.document.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setPrintOrder(null);
+      setReceiptOrder(null);
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 500);
+  };
+
   // Trigger print when printOrder is set (KOT)
   useEffect(() => {
     if (printOrder) {
       setReceiptOrder(null); // Ensure receipt is not in DOM
       setTimeout(() => {
-        window.print();
-      }, 200);
+        handlePrint('print-kot-section');
+      }, 300);
     }
   }, [printOrder]);
 
@@ -236,22 +298,10 @@ export default function WaiterDashboard() {
     if (receiptOrder) {
       setPrintOrder(null); // Ensure KOT is not in DOM
       setTimeout(() => {
-        window.print();
-      }, 200);
+        handlePrint('print-receipt-section');
+      }, 300);
     }
   }, [receiptOrder]);
-
-  // Handle clearing after print is closed
-  useEffect(() => {
-    const handleAfterPrint = () => {
-      setPrintOrder(null);
-      setReceiptOrder(null);
-    };
-    window.addEventListener('afterprint', handleAfterPrint);
-    return () => {
-      window.removeEventListener('afterprint', handleAfterPrint);
-    };
-  }, []);
 
   // Sync Settle modal states
   useEffect(() => {
@@ -485,12 +535,23 @@ export default function WaiterDashboard() {
   const triggerBackgroundNotification = (title, body) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        new Notification(title, {
-          body,
-          icon: '/favicon.ico',
-          tag: 'restaurant-waiter-alert',
-          requireInteraction: true,
-        });
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification(title, {
+              body,
+              icon: '/favicon.ico',
+              tag: 'restaurant-waiter-alert',
+              requireInteraction: true,
+            });
+          });
+        } else {
+          new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            tag: 'restaurant-waiter-alert',
+            requireInteraction: true,
+          });
+        }
       } catch (e) {
         console.warn('Native notification failed:', e);
       }
