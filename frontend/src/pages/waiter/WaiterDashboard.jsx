@@ -639,7 +639,7 @@ export default function WaiterDashboard() {
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = restaurantConfig?.google_review_url || 'https://google.com';

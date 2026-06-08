@@ -644,7 +644,7 @@ export default function CashierDashboard() {
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = config?.google_review_url || 'https://google.com';
