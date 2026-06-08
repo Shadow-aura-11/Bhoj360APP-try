@@ -1117,6 +1117,8 @@ export default function StaffSettings() {
               </div>
               <p className="text-[9px] text-slate-400 text-center">Receipt width scales based on 58mm or 80mm selections.</p>
             </div>
+          </div>
+        )}
 
         {/* ═══ TAB 4: INTEGRATIONS ═══ */}
         {activeTab === 'integrations' && (
