@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Landmark, Users, ShoppingCart, CheckSquare, Printer, Check, DollarSign, History, Volume2, LogOut, Plus, X, Gift, Send, RefreshCw, Smartphone } from 'lucide-react';
 import { createApi, agencyApi } from '../../api/client';
@@ -11,7 +10,7 @@ import toast from 'react-hot-toast';
 import { parseOrderDate } from '../../utils/date';
 import { usePWA } from '../../hooks/usePWA';
 import PWAInstallBanner from '../../components/PWAInstallBanner';
-import { toPng } from 'html-to-image';
+
 
 const calculateTotalPayable = (order, discount, billingConfig) => {
   if (!order) return 0;
@@ -195,59 +194,24 @@ export default function CashierDashboard() {
   const [activeTab, setActiveTab] = useState('requests'); // 'tables' | 'requests' | 'history'
   const [selectedTable, setSelectedTable] = useState(null);
 
+
+
   // Receipt printing states
   const [receiptOrder, setReceiptOrder] = useState(null);
-  const [printImageUrl, setPrintImageUrl] = useState(null);
-  const [printImageSize, setPrintImageSize] = useState('80mm');
 
   // Trigger print when receiptOrder is set
   useEffect(() => {
-    const generateAndPrint = async () => {
-      if (receiptOrder) {
-        const loadingToast = toast.loading('Preparing printout image...');
-        try {
-          // Wait for React to render the off-screen receipt element in DOM
-          await new Promise((resolve) => setTimeout(resolve, 350));
-          
-          const el = document.getElementById('print-receipt-section');
-          if (!el) {
-            toast.error('Print element not found', { id: loadingToast });
-            return;
-          }
-
-          const size = config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm';
-          setPrintImageSize(size);
-
-          // Generate PNG image using html-to-image
-          const dataUrl = await toPng(el, { 
-            cacheBust: true, 
-            backgroundColor: '#ffffff', 
-            pixelRatio: 2 
-          });
-          
-          setPrintImageUrl(dataUrl);
-          toast.dismiss(loadingToast);
-
-          // Trigger print preview
-          setTimeout(() => {
-            window.print();
-          }, 150);
-
-        } catch (err) {
-          console.error('Failed to generate receipt image:', err);
-          toast.error('Failed to generate receipt image', { id: loadingToast });
-        }
-      }
-    };
-
-    generateAndPrint();
+    if (receiptOrder) {
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    }
   }, [receiptOrder]);
 
-  // Handle clearing after print is closed (fixes mobile printing blank issue)
+  // Handle clearing after print is closed
   useEffect(() => {
     const handleAfterPrint = () => {
       setReceiptOrder(null);
-      setPrintImageUrl(null);
     };
     window.addEventListener('afterprint', handleAfterPrint);
     if ('Notification' in window && Notification.permission === 'default') {
@@ -475,69 +439,14 @@ export default function CashierDashboard() {
     const targetOrder = orderToSettle || orders.find(o => o.id === orderId);
     if (!targetOrder) return;
 
-    const loadingToast = toast.loading('Generating receipt image...');
     try {
-      // Set the order for render
-      setWhatsappImageOrder(targetOrder);
-      
-      // Wait for React to render the off-screen capture element in DOM
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      const el = document.getElementById('whatsapp-receipt-capture');
-      if (!el) {
-        throw new Error('Capture element not found in DOM');
-      }
-
-      // Generate PNG image using html-to-image
-      const dataUrl = await toPng(el, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 });
-      const blob = await fetch(dataUrl).then(res => res.blob());
-      const file = new File([blob], `bill_${targetOrder.id}.png`, { type: 'image/png' });
-
-      let shared = false;
-      // Try Web Share API (mobile/safari/chrome mobile)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: `Bill Receipt #${targetOrder.id}`,
-            text: `Here is your bill for Order #${targetOrder.id} at ${restaurantName}`
-          });
-          shared = true;
-          toast.success('Receipt shared successfully!', { id: loadingToast });
-        } catch (shareErr) {
-          console.warn('Native share failed or cancelled', shareErr);
-        }
-      }
-
-      // Clipboard fallback for desktop/browsers without file share
-      if (!shared) {
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          toast.success('Receipt image copied to clipboard! Paste (Ctrl+V) in WhatsApp.', { id: loadingToast, duration: 6500 });
-        } catch (clipErr) {
-          console.warn('Clipboard write failed, downloading image', clipErr);
-          const link = document.createElement('a');
-          link.download = `bill_${targetOrder.id}.png`;
-          link.href = dataUrl;
-          link.click();
-          toast.success('Downloaded bill receipt image. Attach it in WhatsApp!', { id: loadingToast, duration: 6500 });
-        }
-      }
-
-      // Simulated SMS/WhatsApp update on backend
-      await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
-      
-      // Open WhatsApp web/app to start conversation with text details
       const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, config, restaurantName);
+      await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
       window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-
+      toast.success('Opening WhatsApp...');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to generate WhatsApp receipt image', { id: loadingToast });
-    } finally {
-      setWhatsappImageOrder(null);
+      toast.error('Failed to open WhatsApp');
     }
   };
 
@@ -654,39 +563,39 @@ export default function CashierDashboard() {
         #print-receipt-section {
           position: absolute;
           left: -9999px;
-          top: -9999px;
-          width: ${config?.printing?.hardware?.size === '58mm' ? '220px' : '300px'};
+          top: 0;
+          width: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'};
           padding: 8px;
           background: white;
           color: black;
           font-family: monospace;
           font-size: ${config?.printing?.hardware?.size === '58mm' ? '9px' : '11px'};
-          line-height: 1.3;
+          line-height: 1.4;
           box-sizing: border-box;
         }
-        #print-image-section {
-          display: none;
-        }
         @media print {
-          #root {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
           }
-          #print-image-section {
-            display: block !important;
-            position: fixed !important;
+          #print-receipt-section,
+          #print-receipt-section * {
+            visibility: visible !important;
+          }
+          #print-receipt-section {
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: ${printImageSize} !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
+            width: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'} !important;
+            padding: 8px !important;
             background: white !important;
-            visibility: visible !important;
-          }
-          #print-image-section * {
-            visibility: visible !important;
+            color: black !important;
+            font-family: monospace !important;
+            font-size: ${config?.printing?.hardware?.size === '58mm' ? '9px' : '11px'} !important;
+            line-height: 1.4 !important;
+            box-sizing: border-box !important;
           }
           @page {
-            size: ${printImageSize} auto;
+            size: ${config?.printing?.hardware?.size === '58mm' ? '58mm' : '80mm'} auto;
             margin: 0;
           }
         }

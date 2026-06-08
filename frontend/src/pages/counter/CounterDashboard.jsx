@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LogOut, ChefHat, Play, Check, Flame, ClipboardList, CheckSquare, Bell, Volume2, Clock, VolumeX, Smartphone } from 'lucide-react';
 import { createApi, agencyApi } from '../../api/client';
@@ -12,7 +11,7 @@ import toast from 'react-hot-toast';
 import { parseOrderDate } from '../../utils/date';
 import { usePWA } from '../../hooks/usePWA';
 import PWAInstallBanner from '../../components/PWAInstallBanner';
-import { toPng } from 'html-to-image';
+
 
 export default function CounterDashboard() {
   const { restaurantId } = useParams();
@@ -113,8 +112,6 @@ export default function CounterDashboard() {
   const [mobileTab, setMobileTab] = useState('pending'); // 'pending' | 'preparing' | 'ready'
   const [printerSettings, setPrinterSettings] = useState({ enabled: false, size: '80mm' });
   const [printOrder, setPrintOrder] = useState(null);
-  const [printImageUrl, setPrintImageUrl] = useState(null);
-  const [printImageSize, setPrintImageSize] = useState('80mm');
 
   const { installPrompt, handleInstall } = usePWA(restaurantName, 'Kitchen Portal', agencySettings.logo_url);
 
@@ -178,52 +175,18 @@ export default function CounterDashboard() {
 
   // Trigger print when printOrder is set
   useEffect(() => {
-    const generateAndPrint = async () => {
-      if (printOrder) {
-        const loadingToast = toast.loading('Preparing KOT printout image...');
-        try {
-          // Wait for React to render the off-screen ticket element in DOM
-          await new Promise((resolve) => setTimeout(resolve, 350));
-          
-          const el = document.getElementById('print-kot-section');
-          if (!el) {
-            toast.error('Print element not found', { id: loadingToast });
-            return;
-          }
-
-          const size = printerSettings.size === '58mm' ? '58mm' : '80mm';
-          setPrintImageSize(size);
-
-          // Generate PNG image using html-to-image
-          const dataUrl = await toPng(el, { 
-            cacheBust: true, 
-            backgroundColor: '#ffffff', 
-            pixelRatio: 2 
-          });
-          
-          setPrintImageUrl(dataUrl);
-          toast.dismiss(loadingToast);
-
-          // Trigger print preview
-          setTimeout(() => {
-            window.print();
-          }, 150);
-
-        } catch (err) {
-          console.error('Failed to generate KOT image:', err);
-          toast.error('Failed to generate KOT image', { id: loadingToast });
-        }
-      }
-    };
-
-    generateAndPrint();
+    if (printOrder) {
+      // Wait for React to render the KOT section in DOM
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    }
   }, [printOrder]);
 
-  // Handle clearing after print is closed (fixes mobile printing blank issue)
+  // Handle clearing after print is closed
   useEffect(() => {
     const handleAfterPrint = () => {
       setPrintOrder(null);
-      setPrintImageUrl(null);
     };
     window.addEventListener('afterprint', handleAfterPrint);
     if ('Notification' in window && Notification.permission === 'default') {
@@ -676,39 +639,39 @@ export default function CounterDashboard() {
         #print-kot-section {
           position: absolute;
           left: -9999px;
-          top: -9999px;
-          width: ${printerSettings.size === '58mm' ? '220px' : '300px'};
+          top: 0;
+          width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'};
           padding: 8px;
           background: white;
           color: black;
           font-family: monospace;
           font-size: ${printerSettings.size === '58mm' ? '9px' : '11px'};
-          line-height: 1.3;
+          line-height: 1.4;
           box-sizing: border-box;
         }
-        #print-image-section {
-          display: none;
-        }
         @media print {
-          #root {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
           }
-          #print-image-section {
-            display: block !important;
-            position: fixed !important;
+          #print-kot-section,
+          #print-kot-section * {
+            visibility: visible !important;
+          }
+          #print-kot-section {
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: ${printImageSize} !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
+            width: ${printerSettings.size === '58mm' ? '58mm' : '80mm'} !important;
+            padding: 8px !important;
             background: white !important;
-            visibility: visible !important;
-          }
-          #print-image-section * {
-            visibility: visible !important;
+            color: black !important;
+            font-family: monospace !important;
+            font-size: ${printerSettings.size === '58mm' ? '9px' : '11px'} !important;
+            line-height: 1.4 !important;
+            box-sizing: border-box !important;
           }
           @page {
-            size: ${printImageSize} auto;
+            size: ${printerSettings.size === '58mm' ? '58mm' : '80mm'} auto;
             margin: 0;
           }
         }
@@ -793,12 +756,7 @@ export default function CounterDashboard() {
         </div>
       )}
 
-      {printImageUrl && createPortal(
-        <div id="print-image-section">
-          <img src={printImageUrl} alt="KOT Print Preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
-        </div>,
-        document.body
-      )}
+
 
     </div>
   );

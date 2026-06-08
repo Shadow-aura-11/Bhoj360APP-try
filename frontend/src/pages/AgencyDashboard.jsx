@@ -1,22 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Building, Calendar, DollarSign, Activity, FileSpreadsheet, Play, Power, ExternalLink, RefreshCw, Copy, Check, Info, Settings, Edit3, Image, ShieldAlert, CheckCircle, Trash2, AlertTriangle, CreditCard, History, LogOut, Mail, MessageSquare, Eye, Server, Search, MapPin, Bell, Printer } from 'lucide-react';
+import { Plus, Building, Calendar, DollarSign, Activity, FileSpreadsheet, Play, Power, ExternalLink, RefreshCw, Copy, Check, Info, Settings, Edit3, Image, ShieldAlert, CheckCircle, Trash2, AlertTriangle, CreditCard, History, LogOut, Mail, MessageSquare, Eye, Server, Search, MapPin, Bell, Printer, Upload } from 'lucide-react';
 import { agencyApi } from '../api/client';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 const FEATURES_LIST = [
-  { id: 'tables', label: 'Tables' },
+  // Core modules
+  { id: 'tables', label: 'Tables & Floor Plan' },
   { id: 'reservations', label: 'Reservations' },
   { id: 'menu', label: 'Menu Manager' },
   { id: 'staff', label: 'Staff Management' },
-  { id: 'customers', label: 'Customers Directory' },
+  { id: 'customers', label: 'Customer Directory' },
   { id: 'coupons', label: 'Coupons & Discounts' },
   { id: 'money', label: 'Money Management' },
   { id: 'expenses', label: 'Expenses Manager' },
-  { id: 'analytics', label: 'Analytics' },
+  { id: 'inventory', label: 'Inventory Manager' },
+  { id: 'analytics', label: 'Analytics & Reports' },
   { id: 'qr', label: 'Print QR Codes' },
-  { id: 'staff-apps', label: 'Staff Mobile Apps' }
+  { id: 'staff-apps', label: 'Staff Mobile Apps' },
+  // Billing & financial
+  { id: 'billing-gst', label: 'GST Configuration' },
+  { id: 'billing-service-charge', label: 'Service Charge' },
+  { id: 'billing-split-payment', label: 'Split Payment' },
+  { id: 'billing-upi', label: 'UPI / Online Payments' },
+  { id: 'billing-discount', label: 'Manual Discounts' },
+  { id: 'billing-whatsapp', label: 'WhatsApp Bill Sharing' },
+  // Print & KOT
+  { id: 'print-kot', label: 'KOT Printing' },
+  { id: 'print-bill', label: 'Bill/Receipt Printing' },
+  // Ordering
+  { id: 'customer-ordering', label: 'Customer Self-Ordering' },
+  { id: 'takeaway', label: 'Takeaway Orders' },
+  { id: 'order-addons', label: 'Item Add-ons' },
+  // Communication & feedback
+  { id: 'waiter-call', label: 'Waiter Call Button' },
+  { id: 'google-review', label: 'Google Review Prompt' },
+  // Settings
+  { id: 'settings-billing', label: 'Billing Settings' },
+  { id: 'settings-printer', label: 'Printer Settings' },
+  { id: 'settings-upi', label: 'UPI / QR Settings' },
 ];
 
 export default function AgencyDashboard() {
@@ -989,7 +1012,7 @@ export default function AgencyDashboard() {
             </div>
             {/* Agency Logo URL */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Agency Logo URL</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Agency Logo</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-2.5 text-slate-400">
@@ -1003,6 +1026,22 @@ export default function AgencyDashboard() {
                     className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-550 transition-colors"
                   />
                 </div>
+                <label className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl transition-colors cursor-pointer text-xs font-semibold flex-shrink-0">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setLogoUrl(ev.target.result);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
                 <button
                   type="submit"
                   disabled={savingSettings}
@@ -1011,6 +1050,12 @@ export default function AgencyDashboard() {
                   {savingSettings ? 'Saving...' : 'Save'}
                 </button>
               </div>
+              {logoUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={logoUrl} alt="Preview" className="w-8 h-8 rounded-lg object-contain border border-slate-200 bg-white" onError={(e) => e.target.style.display='none'} />
+                  <span className="text-[9px] text-slate-400">Logo preview</span>
+                </div>
+              )}
               <p className="text-[9px] text-slate-400 mt-1">This optional logo will automatically render on the headers of all tenant dashboards.</p>
             </div>
           </form>
@@ -1689,15 +1734,39 @@ export default function AgencyDashboard() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Restaurant Logo URL
+                    Restaurant Logo
                   </label>
-                  <input
-                    type="url"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
-                    placeholder="https://example.com/logo.png"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                  />
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="url"
+                      value={formData.logo_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
+                      placeholder="https://example.com/logo.png or upload below"
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors text-xs"
+                    />
+                    <label className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl transition-colors cursor-pointer text-xs font-semibold flex-shrink-0">
+                      <Upload className="w-4 h-4" />
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setFormData(prev => ({ ...prev, logo_url: ev.target.result }));
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {formData.logo_url && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <img src={formData.logo_url} alt="Logo Preview" className="w-10 h-10 rounded-xl object-contain border border-slate-200 bg-white" onError={(e) => e.target.style.display='none'} />
+                      <span className="text-[9px] text-slate-400">Logo preview</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1854,15 +1923,39 @@ export default function AgencyDashboard() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                  Restaurant Logo URL
+                  Restaurant Logo
                 </label>
-                <input
-                  type="url"
-                  value={editFormData.logo_url}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, logo_url: e.target.value }))}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                />
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="url"
+                    value={editFormData.logo_url}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, logo_url: e.target.value }))}
+                    placeholder="https://example.com/logo.png or upload below"
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors text-xs"
+                  />
+                  <label className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl transition-colors cursor-pointer text-xs font-semibold flex-shrink-0">
+                    <Upload className="w-4 h-4" />
+                    Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setEditFormData(prev => ({ ...prev, logo_url: ev.target.result }));
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                </div>
+                {editFormData.logo_url && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <img src={editFormData.logo_url} alt="Logo Preview" className="w-10 h-10 rounded-xl object-contain border border-slate-200 bg-white" onError={(e) => e.target.style.display='none'} />
+                    <span className="text-[9px] text-slate-400">Logo preview</span>
+                  </div>
+                )}
               </div>
 
               <div>
