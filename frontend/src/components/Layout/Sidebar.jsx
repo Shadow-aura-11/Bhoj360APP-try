@@ -15,7 +15,9 @@ import {
   Wallet,
   Smartphone,
   Receipt,
-  Boxes
+  Boxes,
+  MapPin,
+  Building
 } from 'lucide-react';
 
 export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFeatures = [] }) {
@@ -31,6 +33,8 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFe
     { id: 'overview', label: 'Overview', path: `/r/${restaurantId}/admin`, icon: LayoutDashboard, end: true },
     { id: 'tables', label: 'Tables', path: `/r/${restaurantId}/admin/tables`, icon: Grid },
     { id: 'reservations', label: 'Reservations', path: `/r/${restaurantId}/admin/reservations`, icon: CalendarCheck },
+    { id: 'venues', label: 'Venue Bookings', path: `/r/${restaurantId}/admin/venues`, icon: Building },
+    { id: 'outlets', label: 'Outlets & Delivery', path: `/r/${restaurantId}/admin/outlets`, icon: MapPin },
     { id: 'menu', label: 'Menu Manager', path: `/r/${restaurantId}/admin/menu`, icon: UtensilsCrossed },
     { id: 'staff', label: 'Staff Management', path: `/r/${restaurantId}/admin/staff`, icon: Users },
     { id: 'customers', label: 'Customers Directory', path: `/r/${restaurantId}/admin/customers`, icon: Users },

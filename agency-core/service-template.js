@@ -180,6 +180,40 @@ try {
 } catch (e) {}
 
 try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outlets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      phone TEXT,
+      delivery_radius REAL DEFAULT 5.0,
+      delivery_charge REAL DEFAULT 0.0,
+      delivery_enabled INTEGER DEFAULT 1,
+      zomato_enabled INTEGER DEFAULT 1,
+      swiggy_enabled INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS venue_bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      event_time TEXT NOT NULL,
+      guest_count INTEGER NOT NULL,
+      notes TEXT,
+      status TEXT DEFAULT 'Pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+try {
   billsDb.exec(`
     CREATE TABLE IF NOT EXISTS short_urls (
       id TEXT PRIMARY KEY,
@@ -2195,6 +2229,118 @@ app.delete('/reservations/:id', (req, res) => {
   if (existing.table_id) updateTableStatus(existing.table_id);
 
   res.json({ message: 'Reservation cancelled' });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  OUTLETS & DELIVERY API [ADMIN]
+// ═══════════════════════════════════════════════════════════
+
+app.get('/outlets', (req, res) => {
+  try {
+    const outlets = db.prepare('SELECT * FROM outlets ORDER BY id').all();
+    res.json(outlets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/outlets', (req, res) => {
+  const { id, name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled } = req.body;
+  if (!name || !address) {
+    return res.status(400).json({ error: 'Name and address are required' });
+  }
+  try {
+    if (id) {
+      db.prepare(`
+        UPDATE outlets SET 
+          name = ?, 
+          address = ?, 
+          phone = ?, 
+          delivery_radius = ?, 
+          delivery_charge = ?, 
+          delivery_enabled = ?, 
+          zomato_enabled = ?, 
+          swiggy_enabled = ?
+        WHERE id = ?
+      `).run(name, address, phone || '', Number(delivery_radius || 5.0), Number(delivery_charge || 0.0), delivery_enabled ? 1 : 0, zomato_enabled ? 1 : 0, swiggy_enabled ? 1 : 0, id);
+      const updated = db.prepare('SELECT * FROM outlets WHERE id = ?').get(id);
+      res.json(updated);
+    } else {
+      const result = db.prepare(`
+        INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(name, address, phone || '', Number(delivery_radius || 5.0), Number(delivery_charge || 0.0), delivery_enabled ? 1 : 0, zomato_enabled ? 1 : 0, swiggy_enabled ? 1 : 0);
+      const created = db.prepare('SELECT * FROM outlets WHERE id = ?').get(result.lastInsertRowId);
+      res.json(created);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/outlets/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM outlets WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  VENUE RESERVATIONS API [ADMIN]
+// ═══════════════════════════════════════════════════════════
+
+app.get('/venues', (req, res) => {
+  try {
+    const venues = db.prepare('SELECT * FROM venue_bookings ORDER BY event_date, event_time').all();
+    res.json(venues);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/venues', (req, res) => {
+  const { id, customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status } = req.body;
+  if (!customer_name || !customer_phone || !event_type || !event_date || !event_time || !guest_count) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+  try {
+    if (id) {
+      db.prepare(`
+        UPDATE venue_bookings SET 
+          customer_name = ?, 
+          customer_phone = ?, 
+          event_type = ?, 
+          event_date = ?, 
+          event_time = ?, 
+          guest_count = ?, 
+          notes = ?, 
+          status = ?
+        WHERE id = ?
+      `).run(customer_name, customer_phone, event_type, event_date, event_time, Number(guest_count), notes || '', status || 'Pending', id);
+      const updated = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(id);
+      res.json(updated);
+    } else {
+      const result = db.prepare(`
+        INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(customer_name, customer_phone, event_type, event_date, event_time, Number(guest_count), notes || '', status || 'Pending');
+      const created = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(result.lastInsertRowId);
+      res.json(created);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/venues/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM venue_bookings WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════

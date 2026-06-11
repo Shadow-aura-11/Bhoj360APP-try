@@ -196,6 +196,92 @@ export default function Analytics() {
 
   useEffect(() => { if (restaurantId) loadAnalytics(); }, [restaurantId, period]);
 
+  const handleExportExcel = () => {
+    try {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "=== RESTAURANT ANALYTICS SUMMARY ===\r\n";
+      csvContent += `Generated At,${new Date().toLocaleString()}\r\n`;
+      csvContent += `Period,${period === 'week' ? 'Last 7 Days' : 'Last 30 Days'}\r\n\r\n`;
+      
+      csvContent += "=== KEY PERFORMANCE INDICATORS ===\r\n";
+      csvContent += `Indicator,Value\r\n`;
+      csvContent += `Today's Revenue,${kpis.today}\r\n`;
+      csvContent += `Cash Revenue,${kpis.cashRevenue}\r\n`;
+      csvContent += `Online Revenue,${kpis.onlineRevenue}\r\n`;
+      csvContent += `This Week Revenue,${kpis.week}\r\n`;
+      csvContent += `This Month Revenue,${kpis.month}\r\n`;
+      csvContent += `All Time Revenue,${kpis.allTime}\r\n`;
+      csvContent += `Total Orders,${kpis.totalOrders}\r\n`;
+      csvContent += `Average Order Value,${kpis.avgOrderValue}\r\n`;
+      csvContent += `Average Preparation Time (mins),${kpis.avgPrepTime}\r\n\r\n`;
+
+      csvContent += "=== POPULAR ITEMS ===\r\n";
+      csvContent += `Item Name,Order Count\r\n`;
+      popularItems.forEach(item => {
+        csvContent += `"${item.item_name || item.name}",${item.order_count || item.count}\r\n`;
+      });
+      csvContent += "\r\n";
+
+      csvContent += "=== REVENUE BY DATE ===\r\n";
+      csvContent += `Date,Revenue\r\n`;
+      revenueData.forEach(day => {
+        csvContent += `${day.date || day.day},${day.revenue || day.total}\r\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Restaurant-Analytics-Report-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Excel/CSV Report downloaded successfully!');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to export report');
+    }
+  };
+
+  const handleExportPDF = () => {
+    const style = document.createElement('style');
+    style.id = 'print-helper-style';
+    style.innerHTML = `
+      @media print {
+        aside, nav, button, select, header {
+          display: none !important;
+        }
+        body {
+          background: white !important;
+          color: black !important;
+        }
+        main, .p-6 {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+        }
+        .grid {
+          display: block !important;
+        }
+        .bg-white {
+          border: none !important;
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+        }
+        .recharts-responsive-container {
+          width: 100% !important;
+          height: 350px !important;
+          page-break-inside: avoid !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => {
+      const el = document.getElementById('print-helper-style');
+      if (el) el.remove();
+    }, 1000);
+  };
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -223,6 +309,18 @@ export default function Analytics() {
             Performance Intelligence Dashboard
           </h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportExcel}
+              className="px-3.5 py-2 bg-emerald-650 hover:bg-emerald-600 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/10 active:scale-95 cursor-pointer"
+            >
+              Export Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-550 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-indigo-650/10 active:scale-95 cursor-pointer"
+            >
+              Download PDF
+            </button>
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}

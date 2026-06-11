@@ -263,6 +263,32 @@ async function createRestaurant(options = {}) {
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS outlets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      phone TEXT,
+      delivery_radius REAL DEFAULT 5.0,
+      delivery_charge REAL DEFAULT 0.0,
+      delivery_enabled INTEGER DEFAULT 1,
+      zomato_enabled INTEGER DEFAULT 1,
+      swiggy_enabled INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS venue_bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      event_time TEXT NOT NULL,
+      guest_count INTEGER NOT NULL,
+      notes TEXT,
+      status TEXT DEFAULT 'Pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Seed menu items (16 items across 4 categories)
@@ -343,6 +369,26 @@ async function createRestaurant(options = {}) {
     reservationInsert.run(3, 'T3', 'Amit Kumar', '+91-9876543212', 6, today, '20:30', 'confirmed', 'Business dinner');
   });
   seedReservations();
+
+  // Seed default outlets
+  const outletInsert = db.prepare(
+    'INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const seedOutlets = db.transaction(() => {
+    outletInsert.run('Main Outlet', config.restaurant?.address || '123 Main Street', config.restaurant?.phone || '+91-9876543210', 5.0, 40.0, 1, 1, 1);
+    outletInsert.run('Downtown Hub', '456 Business District', '+91-9876543215', 7.5, 60.0, 1, 0, 1);
+  });
+  seedOutlets();
+
+  // Seed sample venue bookings
+  const venueInsert = db.prepare(
+    'INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const seedVenues = db.transaction(() => {
+    venueInsert.run('Rajesh Gupta', '+91-9876543220', 'Marriage', today, 'Full Day', 250, 'Grand Hall, standard decor needed', 'Confirmed');
+    venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
+  });
+  seedVenues();
 
   db.close();
 

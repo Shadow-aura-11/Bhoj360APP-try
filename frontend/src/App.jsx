@@ -9,6 +9,8 @@ const LandingPage = lazy(() => import('./pages/marketing/LandingPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const TablesManager = lazy(() => import('./pages/admin/TablesManager'));
 const ReservationsManager = lazy(() => import('./pages/admin/ReservationsManager'));
+const OutletsDeliveryManager = lazy(() => import('./pages/admin/OutletsDeliveryManager'));
+const VenueReservationsManager = lazy(() => import('./pages/admin/VenueReservationsManager'));
 const MenuManager = lazy(() => import('./pages/admin/MenuManager'));
 const Analytics = lazy(() => import('./pages/admin/Analytics'));
 const StaffSettings = lazy(() => import('./pages/admin/StaffSettings'));
@@ -188,6 +190,22 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <ReservationsManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/admin/outlets"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <OutletsDeliveryManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/admin/venues"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <VenueReservationsManager />
             </ProtectedRoute>
           }
         />

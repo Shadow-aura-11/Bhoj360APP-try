@@ -1,0 +1,518 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Calendar, User, Phone, Users, Clock, Edit2, Trash2, Plus, Sparkles, CheckCircle2, HelpCircle } from 'lucide-react';
+import DashboardShell from '../../components/Layout/DashboardShell';
+import { createApi } from '../../api/client';
+import toast from 'react-hot-toast';
+
+export default function VenueReservationsManager() {
+  const { restaurantId } = useParams();
+  const api = createApi(restaurantId);
+
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedDayBookings, setSelectedDayBookings] = useState([]);
+  const [editingBooking, setEditingBooking] = useState(null);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    customer_name: '',
+    customer_phone: '',
+    event_type: 'Party',
+    event_date: '',
+    event_time: 'Lunch',
+    guest_count: 50,
+    notes: '',
+    status: 'Discussion'
+  });
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/venues');
+      setBookings(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load venue bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper date lists for calendar layout
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    const days = [];
+    // Pad previous month days
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    // Present month days
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(new Date(year, month, i));
+    }
+    return days;
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const getBookingsForDate = (date) => {
+    if (!date) return [];
+    const dateStr = date.toISOString().split('T')[0];
+    return bookings.filter(b => b.event_date === dateStr);
+  };
+
+  const getDayStatusColor = (dayBookings) => {
+    if (dayBookings.length === 0) return 'border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'; // Available
+    
+    // Check if any is booked/confirmed
+    const hasConfirmed = dayBookings.some(b => b.status === 'Confirmed');
+    if (hasConfirmed) return 'border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-100'; // Booked
+    
+    const hasDiscussion = dayBookings.some(b => b.status === 'Discussion');
+    if (hasDiscussion) return 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'; // Discussion
+
+    return 'border-slate-200 bg-slate-50 text-slate-655 hover:bg-slate-100';
+  };
+
+  const handleDayClick = (date) => {
+    if (!date) return;
+    const dateStr = date.toISOString().split('T')[0];
+    const dayBookings = getBookingsForDate(date);
+    setSelectedDay(date);
+    setSelectedDayBookings(dayBookings);
+
+    // Populate form with defaults for add mode
+    setEditingBooking(null);
+    setFormData({
+      customer_name: '',
+      customer_phone: '',
+      event_type: 'Party',
+      event_date: dateStr,
+      event_time: 'Lunch',
+      guest_count: 50,
+      notes: '',
+      status: 'Discussion'
+    });
+    setShowModal(true);
+  };
+
+  const handleAddBookingDirectly = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setSelectedDay(new Date());
+    setEditingBooking(null);
+    setFormData({
+      customer_name: '',
+      customer_phone: '',
+      event_type: 'Party',
+      event_date: todayStr,
+      event_time: 'Lunch',
+      guest_count: 50,
+      notes: '',
+      status: 'Discussion'
+    });
+    setShowModal(true);
+  };
+
+  const handleEditBooking = (booking) => {
+    setEditingBooking(booking);
+    setFormData({
+      customer_name: booking.customer_name,
+      customer_phone: booking.customer_phone,
+      event_type: booking.event_type,
+      event_date: booking.event_date,
+      event_time: booking.event_time,
+      guest_count: booking.guest_count,
+      notes: booking.notes || '',
+      status: booking.status
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...formData,
+        id: editingBooking?.id
+      };
+      await api.post('/venues', payload);
+      toast.success(editingBooking ? 'Reservation modified' : 'Reservation added');
+      setShowModal(false);
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save reservation');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this venue booking?')) return;
+    try {
+      await api.delete(`/venues/${id}`);
+      toast.success('Reservation deleted');
+      setShowModal(false);
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to cancel reservation');
+    }
+  };
+
+  const days = getDaysInMonth(currentDate);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  return (
+    <DashboardShell>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -z-1"></div>
+          <div>
+            <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-mono uppercase tracking-widest font-semibold inline-flex items-center gap-1.5 mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> Venue Module
+            </span>
+            <h1 className="font-display font-black text-3xl md:text-4xl tracking-tight">
+              Venue Bookings
+            </h1>
+            <p className="text-slate-400 text-sm mt-1.5 max-w-md">
+              Schedule banquet halls, venues and lawn reservations for events like parties, engagements, and marriages.
+            </p>
+          </div>
+          <button
+            onClick={handleAddBookingDirectly}
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-650 hover:bg-indigo-600 active:scale-95 transition-all text-white font-semibold rounded-2xl shadow-lg text-sm"
+          >
+            <Plus className="w-4 h-4" /> Book Venue
+          </button>
+        </div>
+
+        {/* Legend */}
+        <div className="flex gap-4 p-4 bg-white border border-slate-150 rounded-2xl text-xs font-semibold text-slate-600">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded-full bg-emerald-50 border border-emerald-200"></span> Available / Open
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded-full bg-amber-50 border border-amber-200"></span> Under Discussion
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded-full bg-indigo-50 border border-indigo-200"></span> Booked / Confirmed
+          </span>
+        </div>
+
+        {/* Calendar Card */}
+        <div className="bg-white border border-slate-200/80 rounded-3xl shadow-sm overflow-hidden">
+          {/* Calendar Controller */}
+          <div className="p-6 border-b border-slate-150 flex items-center justify-between">
+            <h2 className="font-display font-bold text-xl text-slate-800">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h2>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handlePrevMonth}
+                className="p-2.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 transition-all"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleNextMonth}
+                className="p-2.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 transition-all"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Grid Layout */}
+          <div className="grid grid-cols-7 gap-px bg-slate-200 p-px">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+              <div key={d} className="bg-slate-50 py-3 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                {d}
+              </div>
+            ))}
+
+            {days.map((day, idx) => {
+              if (!day) return <div key={`empty-${idx}`} className="bg-white min-h-[100px]" />;
+              const dayBookings = getBookingsForDate(day);
+              const colorClass = getDayStatusColor(dayBookings);
+
+              return (
+                <div
+                  key={day.toString()}
+                  onClick={() => handleDayClick(day)}
+                  className={`bg-white min-h-[110px] p-3 border-t border-slate-100 flex flex-col justify-between cursor-pointer transition-all ${colorClass}`}
+                >
+                  <div className="text-sm font-bold font-mono">
+                    {day.getDate()}
+                  </div>
+
+                  <div className="mt-2 space-y-1">
+                    {dayBookings.slice(0, 2).map((b) => (
+                      <div
+                        key={b.id}
+                        className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase truncate"
+                        style={{
+                          backgroundColor: b.status === 'Confirmed' ? '#e0e7ff' : '#fef3c7',
+                          color: b.status === 'Confirmed' ? '#3730a3' : '#92400e'
+                        }}
+                      >
+                        {b.event_type}: {b.customer_name}
+                      </div>
+                    ))}
+                    {dayBookings.length > 2 && (
+                      <div className="text-[9px] text-slate-500 font-bold pl-1">
+                        + {dayBookings.length - 2} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Modal for Day view & booking addition */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in duration-200 max-h-[90vh]">
+              
+              {/* Left Side: Existing Day Bookings */}
+              <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-slate-150 overflow-y-auto">
+                <h3 className="font-display font-black text-lg text-slate-800 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-indigo-600" />
+                  Bookings for {selectedDay?.toDateString()}
+                </h3>
+
+                {selectedDayBookings.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400">
+                    <p className="text-sm">No reservations on this date.</p>
+                    <p className="text-xs mt-1">Fill the form to reserve the venue.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedDayBookings.map((b) => (
+                      <div
+                        key={b.id}
+                        onClick={() => handleEditBooking(b)}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                          editingBooking?.id === b.id 
+                            ? 'border-indigo-650 bg-indigo-50/30' 
+                            : 'border-slate-200 hover:border-slate-350'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg ${
+                            b.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                          }`}>
+                            {b.status}
+                          </span>
+                          <span className="text-xs text-slate-400 font-bold font-mono">{b.event_time}</span>
+                        </div>
+
+                        <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                          {b.event_type} Booking
+                        </h4>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                          <div className="flex items-center gap-1">
+                            <User className="w-3.5 h-3.5" />
+                            <span>{b.customer_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>{b.customer_phone}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>{b.guest_count} guests</span>
+                          </div>
+                        </div>
+
+                        {b.notes && (
+                          <p className="text-xs text-slate-400 mt-2 italic bg-slate-50 p-2 rounded-lg">
+                            "{b.notes}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Form to add/edit */}
+              <form onSubmit={handleSubmit} className="w-full md:w-1/2 p-6 flex flex-col justify-between overflow-y-auto">
+                <div className="space-y-4">
+                  <h3 className="font-display font-black text-lg text-slate-800">
+                    {editingBooking ? 'Edit Booking details' : 'New Venue Booking'}
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Customer Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.customer_name}
+                        onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        placeholder="Customer name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Contact Phone
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.customer_phone}
+                        onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        placeholder="Phone number"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Function Type
+                      </label>
+                      <select
+                        value={formData.event_type}
+                        onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                      >
+                        <option>Party</option>
+                        <option>Engagement</option>
+                        <option>Marriage</option>
+                        <option>Corporate</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Expected Guests
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.guest_count}
+                        onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Event Date
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.event_date}
+                        onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Time Slot
+                      </label>
+                      <select
+                        value={formData.event_time}
+                        onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                      >
+                        <option>Lunch</option>
+                        <option>Dinner</option>
+                        <option>Full Day</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                      Booking Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                    >
+                      <option>Discussion</option>
+                      <option>Confirmed</option>
+                      <option>Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                      Special Requirements / Decor
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm h-16 resize-none"
+                      placeholder="e.g. DJ, Sound setup, Specific color themes..."
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-6 flex gap-2">
+                  {editingBooking && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(editingBooking.id)}
+                      className="px-4 py-2.5 bg-rose-50 text-rose-650 hover:bg-rose-100 rounded-xl text-sm font-semibold transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold rounded-xl text-sm shadow-md"
+                  >
+                    {editingBooking ? 'Save Changes' : 'Confirm Book'}
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        )}
+
+      </div>
+    </DashboardShell>
+  );
+}

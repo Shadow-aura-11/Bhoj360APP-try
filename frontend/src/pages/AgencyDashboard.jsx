@@ -20,6 +20,8 @@ const FEATURES_LIST = [
   { id: 'analytics', label: 'Analytics & Reports' },
   { id: 'qr', label: 'Print QR Codes' },
   { id: 'staff-apps', label: 'Staff Mobile Apps' },
+  { id: 'outlets', label: 'Outlets & Delivery' },
+  { id: 'venues', label: 'Venue Bookings' },
   // Billing & financial
   { id: 'billing-gst', label: 'GST Configuration' },
   { id: 'billing-service-charge', label: 'Service Charge' },
