@@ -28,7 +28,11 @@ export default function VenueReservationsManager() {
     event_time: 'Lunch',
     guest_count: 50,
     notes: '',
-    status: 'Discussion'
+    status: 'Discussion',
+    customer_father_name: '',
+    customer_village: '',
+    customer_aadhaar: '',
+    venue_areas: ''
   });
 
   useEffect(() => {
@@ -111,7 +115,11 @@ export default function VenueReservationsManager() {
       event_time: 'Lunch',
       guest_count: 50,
       notes: '',
-      status: 'Discussion'
+      status: 'Discussion',
+      customer_father_name: '',
+      customer_village: '',
+      customer_aadhaar: '',
+      venue_areas: ''
     });
     setShowModal(true);
   };
@@ -128,7 +136,11 @@ export default function VenueReservationsManager() {
       event_time: 'Lunch',
       guest_count: 50,
       notes: '',
-      status: 'Discussion'
+      status: 'Discussion',
+      customer_father_name: '',
+      customer_village: '',
+      customer_aadhaar: '',
+      venue_areas: ''
     });
     setShowModal(true);
   };
@@ -143,7 +155,11 @@ export default function VenueReservationsManager() {
       event_time: booking.event_time,
       guest_count: booking.guest_count,
       notes: booking.notes || '',
-      status: booking.status
+      status: booking.status,
+      customer_father_name: booking.customer_father_name || '',
+      customer_village: booking.customer_village || '',
+      customer_aadhaar: booking.customer_aadhaar || '',
+      venue_areas: booking.venue_areas || ''
     });
   };
 
@@ -200,7 +216,7 @@ export default function VenueReservationsManager() {
           </div>
           <button
             onClick={handleAddBookingDirectly}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-650 hover:bg-indigo-600 active:scale-95 transition-all text-white font-semibold rounded-2xl shadow-lg text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all text-white font-semibold rounded-2xl shadow-lg text-sm"
           >
             <Plus className="w-4 h-4" /> Book Venue
           </button>
@@ -315,7 +331,7 @@ export default function VenueReservationsManager() {
                         onClick={() => handleEditBooking(b)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                           editingBooking?.id === b.id 
-                            ? 'border-indigo-650 bg-indigo-50/30' 
+                            ? 'border-indigo-600 bg-indigo-50/30' 
                             : 'border-slate-200 hover:border-slate-350'
                         }`}
                       >
@@ -338,6 +354,12 @@ export default function VenueReservationsManager() {
                             <User className="w-3.5 h-3.5" />
                             <span>{b.customer_name}</span>
                           </div>
+                          {b.customer_father_name && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold">S/o:</span>
+                              <span>{b.customer_father_name}</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5" />
                             <span>{b.customer_phone}</span>
@@ -346,6 +368,24 @@ export default function VenueReservationsManager() {
                             <Users className="w-3.5 h-3.5" />
                             <span>{b.guest_count} guests</span>
                           </div>
+                          {b.customer_village && (
+                            <div className="col-span-2 flex items-center gap-1">
+                              <span className="font-bold text-slate-400">Village:</span>
+                              <span>{b.customer_village}</span>
+                            </div>
+                          )}
+                          {b.customer_aadhaar && (
+                            <div className="col-span-2 flex items-center gap-1">
+                              <span className="font-bold text-slate-400">Aadhaar:</span>
+                              <span className="font-mono">{b.customer_aadhaar}</span>
+                            </div>
+                          )}
+                          {b.venue_areas && (
+                            <div className="col-span-2 flex items-center gap-1 bg-indigo-50/50 p-1.5 rounded-lg border border-indigo-100/40 mt-1">
+                              <span className="font-bold text-indigo-600">Areas:</span>
+                              <span className="text-indigo-800 font-semibold">{b.venue_areas}</span>
+                            </div>
+                          )}
                         </div>
 
                         {b.notes && (
@@ -376,7 +416,7 @@ export default function VenueReservationsManager() {
                         required
                         value={formData.customer_name}
                         onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
                         placeholder="Customer name"
                       />
                     </div>
@@ -389,8 +429,62 @@ export default function VenueReservationsManager() {
                         required
                         value={formData.customer_phone}
                         onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
                         placeholder="Phone number"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Father's Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.customer_father_name}
+                        onChange={(e) => setFormData({ ...formData, customer_father_name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                        placeholder="Father's name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Village / Town
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.customer_village}
+                        onChange={(e) => setFormData({ ...formData, customer_village: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                        placeholder="Village / Town"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Aadhaar Number
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.customer_aadhaar}
+                        onChange={(e) => setFormData({ ...formData, customer_aadhaar: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                        placeholder="12-digit Aadhaar"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Venue Areas Required
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.venue_areas}
+                        onChange={(e) => setFormData({ ...formData, venue_areas: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                        placeholder="e.g. Lawn, Banquet Hall, Rooms"
                       />
                     </div>
                   </div>
@@ -420,7 +514,7 @@ export default function VenueReservationsManager() {
                         type="number"
                         value={formData.guest_count}
                         onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value) })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
                       />
                     </div>
                   </div>
@@ -435,7 +529,7 @@ export default function VenueReservationsManager() {
                         required
                         value={formData.event_date}
                         onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
                       />
                     </div>
                     <div>
@@ -476,7 +570,7 @@ export default function VenueReservationsManager() {
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm h-16 resize-none"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm h-16 resize-none focus:bg-white"
                       placeholder="e.g. DJ, Sound setup, Specific color themes..."
                     />
                   </div>
@@ -487,7 +581,7 @@ export default function VenueReservationsManager() {
                     <button
                       type="button"
                       onClick={() => handleDelete(editingBooking.id)}
-                      className="px-4 py-2.5 bg-rose-50 text-rose-650 hover:bg-rose-100 rounded-xl text-sm font-semibold transition-colors"
+                      className="px-4 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-sm font-semibold transition-colors"
                     >
                       Delete
                     </button>
@@ -501,9 +595,9 @@ export default function VenueReservationsManager() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold rounded-xl text-sm shadow-md"
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-md"
                   >
-                    {editingBooking ? 'Save Changes' : 'Confirm Book'}
+                    {editingBooking ? 'Save Changes' : 'Confirm Booking'}
                   </button>
                 </div>
               </form>

@@ -411,7 +411,7 @@ export default function MenuManager() {
           <div className="flex gap-2">
             <button
               onClick={() => setImportModalOpen(true)}
-              className="px-4 py-2.5 bg-emerald-650 hover:bg-emerald-600 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
               <Upload className="w-4 h-4" />
               <span>Import Menu</span>
@@ -978,7 +978,7 @@ export default function MenuManager() {
                   </div>
                   <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-indigo-650 h-full transition-all duration-300 rounded-full"
+                      className="bg-indigo-600 h-full transition-all duration-300 rounded-full"
                       style={{ width: `${importProgress}%` }}
                     />
                   </div>
@@ -998,7 +998,7 @@ export default function MenuManager() {
                 <button
                   type="submit"
                   disabled={importing}
-                  className="px-5 py-2.5 bg-emerald-650 hover:bg-emerald-600 text-white font-semibold rounded-xl text-sm shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 animate-bounce"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 animate-bounce"
                 >
                   {importing ? 'Importing...' : 'Start Import'}
                 </button>

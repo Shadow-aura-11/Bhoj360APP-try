@@ -122,7 +122,7 @@ export default function OutletsDeliveryManager() {
           </div>
           <button
             onClick={openAddModal}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-650 hover:bg-indigo-600 active:scale-95 transition-all text-white font-semibold rounded-2xl shadow-lg shadow-indigo-650/30 hover:shadow-indigo-600/40 text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all text-white font-semibold rounded-2xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-700/40 text-sm"
           >
             <Plus className="w-4 h-4" /> Add New Outlet
           </button>
@@ -151,7 +151,7 @@ export default function OutletsDeliveryManager() {
             </p>
             <button
               onClick={openAddModal}
-              className="mt-5 px-5 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all"
+              className="mt-5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all"
             >
               Configure First Outlet
             </button>
@@ -340,7 +340,7 @@ export default function OutletsDeliveryManager() {
                       type="checkbox"
                       checked={formData.delivery_enabled}
                       onChange={(e) => setFormData({ ...formData, delivery_enabled: e.target.checked })}
-                      className="w-4.5 h-4.5 accent-indigo-650"
+                      className="w-4.5 h-4.5 accent-indigo-600"
                     />
                   </label>
                   
@@ -375,7 +375,7 @@ export default function OutletsDeliveryManager() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold rounded-xl text-sm shadow-md"
+                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-md"
                   >
                     Save Changes
                   </button>

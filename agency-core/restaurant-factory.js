@@ -287,6 +287,10 @@ async function createRestaurant(options = {}) {
       guest_count INTEGER NOT NULL,
       notes TEXT,
       status TEXT DEFAULT 'Pending',
+      customer_father_name TEXT,
+      customer_village TEXT,
+      customer_aadhaar TEXT,
+      venue_areas TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);

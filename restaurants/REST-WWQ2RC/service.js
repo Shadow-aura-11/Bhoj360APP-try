@@ -47,6 +47,11 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+const BILLS_DB_PATH = path.join(__dirname, 'bills.sqlite');
+const billsDb = new Database(BILLS_DB_PATH);
+billsDb.pragma('journal_mode = WAL');
+billsDb.pragma('foreign_keys = ON');
+
 // Run schema migrations for existing databases
 try {
   db.exec("ALTER TABLE orders ADD COLUMN type TEXT DEFAULT 'dine-in';");
@@ -175,6 +180,123 @@ try {
     );
   `);
 } catch (e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outlets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      phone TEXT,
+      delivery_radius REAL DEFAULT 5.0,
+      delivery_charge REAL DEFAULT 0.0,
+      delivery_enabled INTEGER DEFAULT 1,
+      zomato_enabled INTEGER DEFAULT 1,
+      swiggy_enabled INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS venue_bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      event_time TEXT NOT NULL,
+      guest_count INTEGER NOT NULL,
+      notes TEXT,
+      status TEXT DEFAULT 'Pending',
+      customer_father_name TEXT,
+      customer_village TEXT,
+      customer_aadhaar TEXT,
+      venue_areas TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+// Migrations for existing venue bookings database tables
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_father_name TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_village TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_aadhaar TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN venue_areas TEXT;");
+} catch (e) {}
+
+try {
+  billsDb.exec(`
+    CREATE TABLE IF NOT EXISTS short_urls (
+      id TEXT PRIMARY KEY,
+      url TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+} catch (e) {}
+
+// Automated cleanup function to delete orders, their items, and static receipt PDFs older than 5 months
+function performAutomatedBillCleanup() {
+  try {
+    const cutOffDate = new Date();
+    cutOffDate.setMonth(cutOffDate.getMonth() - 5);
+    const cutOffString = cutOffDate.toISOString();
+
+    // Find orders older than 5 months
+    const oldOrders = db.prepare("SELECT id FROM orders WHERE created_at < ?").all(cutOffString);
+    if (oldOrders.length > 0) {
+      console.log(`[Auto Cleanup] Found ${oldOrders.length} orders older than 5 months. Cleaning up...`);
+      
+      const orderIds = oldOrders.map(o => o.id);
+      
+      // Delete associated order items
+      const placeholders = orderIds.map(() => '?').join(',');
+      db.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).run(...orderIds);
+      
+      // Delete orders
+      db.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).run(...orderIds);
+      console.log(`[Auto Cleanup] Successfully deleted ${oldOrders.length} database entries.`);
+    }
+
+    // Sweep static uploads folder for receipt PDF files created more than 5 months ago
+    if (fs.existsSync(uploadsDir)) {
+      const files = fs.readdirSync(uploadsDir);
+      const now = Date.now();
+      const fiveMonthsMs = 5 * 30 * 24 * 60 * 60 * 1000;
+      let deletedCount = 0;
+
+      files.forEach((file) => {
+        const filePath = path.join(uploadsDir, file);
+        const stats = fs.statSync(filePath);
+        if (now - stats.birthtimeMs > fiveMonthsMs || now - stats.mtimeMs > fiveMonthsMs) {
+          if (file.endsWith('.pdf') || file.startsWith('receipt-') || file.startsWith('bill-')) {
+            fs.unlinkSync(filePath);
+            deletedCount++;
+          }
+        }
+      });
+      if (deletedCount > 0) {
+        console.log(`[Auto Cleanup] Deleted ${deletedCount} legacy receipt PDF files from disk.`);
+      }
+    }
+  } catch (err) {
+    console.error('[Auto Cleanup] Error executing bill cleanup:', err);
+  }
+}
+
+// Run cleanup immediately on server startup
+performAutomatedBillCleanup();
+// Run cleanup every 24 hours
+setInterval(performAutomatedBillCleanup, 24 * 60 * 60 * 1000);
+
 
 function readConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -1658,6 +1780,39 @@ app.post('/orders/:id/send-whatsapp', (req, res) => {
   res.json({ message: `Bill sent to +91-${phone} successfully via WhatsApp Simulation.` });
 });
 
+// GET /s/:id — Redirect shortened URL key to the actual receipt path
+app.get('/s/:id', (req, res) => {
+  const record = billsDb.prepare('SELECT url FROM short_urls WHERE id = ?').get(req.params.id);
+  if (!record) {
+    return res.status(404).send('Short URL not found or expired.');
+  }
+  res.redirect(record.url);
+});
+
+// POST /orders/upload-image-bill — Upload base64 receipt image/PDF, save it to disk, and return direct path (no database storage)
+app.post('/orders/upload-image-bill', (req, res) => {
+  const { base64Image, filename } = req.body;
+  if (!base64Image) {
+    return res.status(400).json({ error: 'base64Image is required' });
+  }
+  try {
+    // Correctly match and extract base64 data regardless of MIME type (e.g. image/png, application/pdf)
+    const base64Data = base64Image.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    const name = filename || `bill-${Date.now()}.png`;
+    const targetPath = path.join(uploadsDir, name);
+    fs.writeFileSync(targetPath, buffer);
+
+    const actualPath = `/uploads/${name}`;
+    // Return direct static file URL instead of a database shortened URL redirect
+    res.json({ url: actualPath });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload receipt.' });
+  }
+});
+
+
 // GET /settings/config — Get entire configuration including general, billing, and printing configs [STAFF/ADMIN]
 app.get('/settings/config', authMiddleware('staff'), (req, res) => {
   const config = readConfig();
@@ -2094,6 +2249,149 @@ app.delete('/reservations/:id', (req, res) => {
   if (existing.table_id) updateTableStatus(existing.table_id);
 
   res.json({ message: 'Reservation cancelled' });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  OUTLETS & DELIVERY API [ADMIN]
+// ═══════════════════════════════════════════════════════════
+
+app.get('/outlets', (req, res) => {
+  try {
+    const outlets = db.prepare('SELECT * FROM outlets ORDER BY id').all();
+    res.json(outlets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/outlets', (req, res) => {
+  const { id, name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled } = req.body;
+  if (!name || !address) {
+    return res.status(400).json({ error: 'Name and address are required' });
+  }
+  try {
+    if (id) {
+      db.prepare(`
+        UPDATE outlets SET 
+          name = ?, 
+          address = ?, 
+          phone = ?, 
+          delivery_radius = ?, 
+          delivery_charge = ?, 
+          delivery_enabled = ?, 
+          zomato_enabled = ?, 
+          swiggy_enabled = ?
+        WHERE id = ?
+      `).run(name, address, phone || '', Number(delivery_radius || 5.0), Number(delivery_charge || 0.0), delivery_enabled ? 1 : 0, zomato_enabled ? 1 : 0, swiggy_enabled ? 1 : 0, id);
+      const updated = db.prepare('SELECT * FROM outlets WHERE id = ?').get(id);
+      res.json(updated);
+    } else {
+      const result = db.prepare(`
+        INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(name, address, phone || '', Number(delivery_radius || 5.0), Number(delivery_charge || 0.0), delivery_enabled ? 1 : 0, zomato_enabled ? 1 : 0, swiggy_enabled ? 1 : 0);
+      const created = db.prepare('SELECT * FROM outlets WHERE id = ?').get(result.lastInsertRowId);
+      res.json(created);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/outlets/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM outlets WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  VENUE RESERVATIONS API [ADMIN]
+// ═══════════════════════════════════════════════════════════
+
+app.get('/venues', (req, res) => {
+  try {
+    const venues = db.prepare('SELECT * FROM venue_bookings ORDER BY event_date, event_time').all();
+    res.json(venues);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/venues', (req, res) => {
+  const { id, customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status, customer_father_name, customer_village, customer_aadhaar, venue_areas } = req.body;
+  if (!customer_name || !customer_phone || !event_type || !event_date || !event_time || !guest_count) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+  try {
+    if (id) {
+      db.prepare(`
+        UPDATE venue_bookings SET 
+          customer_name = ?, 
+          customer_phone = ?, 
+          event_type = ?, 
+          event_date = ?, 
+          event_time = ?, 
+          guest_count = ?, 
+          notes = ?, 
+          status = ?,
+          customer_father_name = ?,
+          customer_village = ?,
+          customer_aadhaar = ?,
+          venue_areas = ?
+        WHERE id = ?
+      `).run(
+        customer_name, 
+        customer_phone, 
+        event_type, 
+        event_date, 
+        event_time, 
+        Number(guest_count), 
+        notes || '', 
+        status || 'Pending',
+        customer_father_name || '',
+        customer_village || '',
+        customer_aadhaar || '',
+        venue_areas || '',
+        id
+      );
+      const updated = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(id);
+      res.json(updated);
+    } else {
+      const result = db.prepare(`
+        INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status, customer_father_name, customer_village, customer_aadhaar, venue_areas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        customer_name, 
+        customer_phone, 
+        event_type, 
+        event_date, 
+        event_time, 
+        Number(guest_count), 
+        notes || '', 
+        status || 'Pending',
+        customer_father_name || '',
+        customer_village || '',
+        customer_aadhaar || '',
+        venue_areas || ''
+      );
+      const created = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(result.lastInsertRowId);
+      res.json(created);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/venues/:id', (req, res) => {
+  try {
+    db.prepare('DELETE FROM venue_bookings WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════

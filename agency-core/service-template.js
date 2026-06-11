@@ -208,9 +208,27 @@ try {
       guest_count INTEGER NOT NULL,
       notes TEXT,
       status TEXT DEFAULT 'Pending',
+      customer_father_name TEXT,
+      customer_village TEXT,
+      customer_aadhaar TEXT,
+      venue_areas TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+} catch (e) {}
+
+// Migrations for existing venue bookings database tables
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_father_name TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_village TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN customer_aadhaar TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE venue_bookings ADD COLUMN venue_areas TEXT;");
 } catch (e) {}
 
 try {
@@ -2301,7 +2319,7 @@ app.get('/venues', (req, res) => {
 });
 
 app.post('/venues', (req, res) => {
-  const { id, customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status } = req.body;
+  const { id, customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status, customer_father_name, customer_village, customer_aadhaar, venue_areas } = req.body;
   if (!customer_name || !customer_phone || !event_type || !event_date || !event_time || !guest_count) {
     return res.status(400).json({ error: 'Required fields missing' });
   }
@@ -2316,16 +2334,47 @@ app.post('/venues', (req, res) => {
           event_time = ?, 
           guest_count = ?, 
           notes = ?, 
-          status = ?
+          status = ?,
+          customer_father_name = ?,
+          customer_village = ?,
+          customer_aadhaar = ?,
+          venue_areas = ?
         WHERE id = ?
-      `).run(customer_name, customer_phone, event_type, event_date, event_time, Number(guest_count), notes || '', status || 'Pending', id);
+      `).run(
+        customer_name, 
+        customer_phone, 
+        event_type, 
+        event_date, 
+        event_time, 
+        Number(guest_count), 
+        notes || '', 
+        status || 'Pending',
+        customer_father_name || '',
+        customer_village || '',
+        customer_aadhaar || '',
+        venue_areas || '',
+        id
+      );
       const updated = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(id);
       res.json(updated);
     } else {
       const result = db.prepare(`
-        INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(customer_name, customer_phone, event_type, event_date, event_time, Number(guest_count), notes || '', status || 'Pending');
+        INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status, customer_father_name, customer_village, customer_aadhaar, venue_areas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        customer_name, 
+        customer_phone, 
+        event_type, 
+        event_date, 
+        event_time, 
+        Number(guest_count), 
+        notes || '', 
+        status || 'Pending',
+        customer_father_name || '',
+        customer_village || '',
+        customer_aadhaar || '',
+        venue_areas || ''
+      );
       const created = db.prepare('SELECT * FROM venue_bookings WHERE id = ?').get(result.lastInsertRowId);
       res.json(created);
     }
