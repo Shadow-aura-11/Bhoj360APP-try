@@ -403,22 +403,22 @@ export default function MenuManager() {
     <DashboardShell title="Menu Manager" restaurantId={restaurantId} role="admin">
       <div className="space-y-6">
         {/* Header Action Bar */}
-        <div className="flex items-center justify-between bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 pl-2">
             <UtensilsCrossed className="w-4.5 h-4.5 text-indigo-600" />
             Product Catalog
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={() => setImportModalOpen(true)}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
               <Upload className="w-4 h-4" />
               <span>Import Menu</span>
             </button>
             <button
               onClick={handleOpenReorder}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center gap-1.5 border border-slate-200 transition-all shadow-xs"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-200 transition-all shadow-xs"
             >
               <ListOrdered className="w-4 h-4 text-slate-500" />
               <span>Rearrange Menu</span>
@@ -428,10 +428,10 @@ export default function MenuManager() {
                 setEditItem(null);
                 setModalOpen(true);
               }}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Menu Item</span>
+              <span>Add Item</span>
             </button>
           </div>
         </div>

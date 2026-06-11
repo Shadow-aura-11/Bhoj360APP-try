@@ -369,7 +369,16 @@ export default function StaffMobileApps() {
                 Each role gets its own app with a persistent login that stays active on the device.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {['✓ Works on Android & iPhone', '✓ No App Store needed', '✓ Auto-updates with deployments', '✓ Persistent staff login', '✓ Offline-capable'].map((f) => (
+                {[
+                  '✓ Works on Android & iPhone',
+                  '✓ No App Store needed',
+                  '✓ Auto-updates with deployments',
+                  '✓ Persistent staff login',
+                  '✓ Offline-capable',
+                  '✓ Push Notifications',
+                  '✓ Periodic Sync',
+                  '✓ Background Sync'
+                ].map((f) => (
                   <span key={f} className="text-[10px] font-semibold text-indigo-700 bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-full">
                     {f}
                   </span>
