@@ -156,7 +156,7 @@ export default function WaiterDashboard() {
               handleInstall();
               toast.dismiss(t.id);
             }}
-            className="px-3 py-1.5 bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shrink-0 transition-all shadow-sm"
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shrink-0 transition-all shadow-sm"
             style={{ backgroundColor: '#4f46e5' }}
           >
             Install
@@ -165,11 +165,14 @@ export default function WaiterDashboard() {
       ), {
         id: 'pwa-waiter-install-toast',
         duration: 15000,
+        position: window.innerWidth < 640 ? 'bottom-center' : 'bottom-right',
         style: {
           border: '2px solid #6366f1',
           borderRadius: '1.25rem',
           padding: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '360px'
         }
       });
     }

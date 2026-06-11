@@ -69,11 +69,14 @@ export default function DashboardShell({
       ), {
         id: 'pwa-admin-install-toast',
         duration: 15000,
+        position: window.innerWidth < 640 ? 'bottom-center' : 'bottom-right',
         style: {
           border: '2px solid #6366f1',
           borderRadius: '1.25rem',
           padding: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '360px'
         }
       });
     }

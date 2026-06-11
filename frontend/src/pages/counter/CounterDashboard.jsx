@@ -137,11 +137,14 @@ export default function CounterDashboard() {
       ), {
         id: 'pwa-kitchen-install-toast',
         duration: 15000,
+        position: window.innerWidth < 640 ? 'bottom-center' : 'bottom-right',
         style: {
           border: '2px solid #be123c',
           borderRadius: '1.25rem',
           padding: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          width: '100%',
+          maxWidth: '360px'
         }
       });
     }
