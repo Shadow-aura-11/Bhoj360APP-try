@@ -191,8 +191,18 @@ export default function Login() {
         if (elapsed >= 1800) {
           clearInterval(interval);
           toast.dismiss('pwa-login-install');
-          const siteUrl = window.location.href;
-          window.open(`https://www.pwabuilder.com/?site=${encodeURIComponent(siteUrl)}`, '_blank');
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          if (isIOS) {
+            toast("To install: Tap the Share button 📤 in Safari, then select 'Add to Home Screen' 📲", {
+              duration: 6000,
+              id: 'pwa-install-instructions-login',
+            });
+          } else {
+            toast("To install: Tap the Chrome menu ⁝ at the top/bottom, then select 'Install app' or 'Add to Home Screen' 📲", {
+              duration: 6000,
+              id: 'pwa-install-instructions-login',
+            });
+          }
         }
       }, 150);
     }
