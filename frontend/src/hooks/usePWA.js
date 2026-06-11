@@ -27,7 +27,7 @@ export function usePWA(restaurantName, roleName, logoUrl) {
       display: 'standalone',
       background_color: '#0f172a',
       theme_color: '#6366f1',
-      orientation: 'any',
+      orientation: 'portrait',
       icons: [
         {
           src: absoluteLogoUrl,
