@@ -34,6 +34,16 @@ export default function VenueReservationsManager() {
     customer_aadhaar: '',
     venue_areas: ''
   });
+  
+  const [availableAreas, setAvailableAreas] = useState([
+    'Banquet Hall',
+    'Main Lawn',
+    'AC Rooms',
+    'Poolside Area',
+    'Terrace Garden',
+    'Conference Hall'
+  ]);
+  const [customAreaInput, setCustomAreaInput] = useState('');
 
   useEffect(() => {
     fetchBookings();
@@ -261,13 +271,14 @@ export default function VenueReservationsManager() {
           {/* Grid Layout */}
           <div className="grid grid-cols-7 gap-px bg-slate-200 p-px">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className="bg-slate-50 py-3 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
-                {d}
+              <div key={d} className="bg-slate-50 py-3 text-center text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="md:hidden">{d[0]}</span>
+                <span className="hidden md:inline">{d}</span>
               </div>
             ))}
 
             {days.map((day, idx) => {
-              if (!day) return <div key={`empty-${idx}`} className="bg-white min-h-[100px]" />;
+              if (!day) return <div key={`empty-${idx}`} className="bg-white min-h-[50px] md:min-h-[100px]" />;
               const dayBookings = getBookingsForDate(day);
               const colorClass = getDayStatusColor(dayBookings);
 
@@ -275,13 +286,13 @@ export default function VenueReservationsManager() {
                 <div
                   key={day.toString()}
                   onClick={() => handleDayClick(day)}
-                  className={`bg-white min-h-[110px] p-3 border-t border-slate-100 flex flex-col justify-between cursor-pointer transition-all ${colorClass}`}
+                  className={`bg-white min-h-[55px] md:min-h-[110px] p-1.5 md:p-3 border-t border-slate-100 flex flex-col justify-between cursor-pointer transition-all ${colorClass}`}
                 >
-                  <div className="text-sm font-bold font-mono">
+                  <div className="text-xs md:text-sm font-bold font-mono">
                     {day.getDate()}
                   </div>
 
-                  <div className="mt-2 space-y-1">
+                  <div className="hidden md:block mt-2 space-y-1">
                     {dayBookings.slice(0, 2).map((b) => (
                       <div
                         key={b.id}
@@ -299,6 +310,19 @@ export default function VenueReservationsManager() {
                         + {dayBookings.length - 2} more
                       </div>
                     )}
+                  </div>
+
+                  {/* Mobile Status Dots */}
+                  <div className="flex md:hidden justify-center gap-1 mt-1">
+                    {dayBookings.slice(0, 3).map((b) => (
+                      <span
+                        key={b.id}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{
+                          backgroundColor: b.status === 'Confirmed' ? '#4f46e5' : '#d97706'
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
               );
@@ -463,7 +487,7 @@ export default function VenueReservationsManager() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="col-span-2 sm:col-span-1">
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                         Aadhaar Number
                       </label>
@@ -475,22 +499,8 @@ export default function VenueReservationsManager() {
                         placeholder="12-digit Aadhaar"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                        Venue Areas Required
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.venue_areas}
-                        onChange={(e) => setFormData({ ...formData, venue_areas: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
-                        placeholder="e.g. Lawn, Banquet Hall, Rooms"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    
+                    <div className="col-span-2 sm:col-span-1">
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                         Function Type
                       </label>
@@ -506,16 +516,64 @@ export default function VenueReservationsManager() {
                         <option>Other</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                        Expected Guests
-                      </label>
+                  </div>
+
+                  {/* Areas Selector */}
+                  <div className="bg-slate-50 border border-slate-150 p-4.5 rounded-2xl space-y-3 col-span-2">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Venue Areas Required (Select Multiple)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableAreas.map((area) => {
+                        const isSelected = formData.venue_areas ? formData.venue_areas.split(', ').map(x => x.trim()).includes(area) : false;
+                        return (
+                          <button
+                            key={area}
+                            type="button"
+                            onClick={() => {
+                              const currentAreas = formData.venue_areas ? formData.venue_areas.split(', ').map(x => x.trim()).filter(Boolean) : [];
+                              let nextAreas;
+                              if (isSelected) {
+                                nextAreas = currentAreas.filter(a => a !== area);
+                              } else {
+                                nextAreas = [...currentAreas, area];
+                              }
+                              setFormData({ ...formData, venue_areas: nextAreas.join(', ') });
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-600 border-indigo-600 text-white font-bold' 
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {area}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-2">
                       <input
-                        type="number"
-                        value={formData.guest_count}
-                        onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value) })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                        type="text"
+                        value={customAreaInput}
+                        onChange={(e) => setCustomAreaInput(e.target.value)}
+                        placeholder="Add custom area..."
+                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = customAreaInput.trim();
+                          if (trimmed && !availableAreas.includes(trimmed)) {
+                            setAvailableAreas([...availableAreas, trimmed]);
+                            const currentAreas = formData.venue_areas ? formData.venue_areas.split(', ').map(x => x.trim()).filter(Boolean) : [];
+                            setFormData({ ...formData, venue_areas: [...currentAreas, trimmed].join(', ') });
+                            setCustomAreaInput('');
+                          }
+                        }}
+                        className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl font-bold text-xs transition-colors"
+                      >
+                        + Add Area
+                      </button>
                     </div>
                   </div>
 
@@ -548,19 +606,32 @@ export default function VenueReservationsManager() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                      Booking Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
-                    >
-                      <option>Discussion</option>
-                      <option>Confirmed</option>
-                      <option>Cancelled</option>
-                    </select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Expected Guests
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.guest_count}
+                        onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Booking Status
+                      </label>
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm"
+                      >
+                        <option>Discussion</option>
+                        <option>Confirmed</option>
+                        <option>Cancelled</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>

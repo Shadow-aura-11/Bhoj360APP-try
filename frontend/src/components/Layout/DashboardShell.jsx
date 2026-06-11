@@ -39,6 +39,8 @@ export default function DashboardShell({
     if (path.endsWith('/admin/analytics')) return 'analytics';
     if (path.endsWith('/admin/print-qr')) return 'qr';
     if (path.endsWith('/admin/staff-apps')) return 'staff-apps';
+    if (path.endsWith('/admin/outlets')) return 'outlets';
+    if (path.endsWith('/admin/venues')) return 'venues';
     return null;
   };
 
