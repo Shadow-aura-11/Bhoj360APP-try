@@ -1748,7 +1748,7 @@ export default function AgencyDashboard() {
                   </label>
                   <div className="flex gap-2 mb-2">
                     <input
-                      type="url"
+                      type="text"
                       value={formData.logo_url}
                       onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
                       placeholder="https://example.com/logo.png or upload below"
@@ -1941,7 +1941,7 @@ export default function AgencyDashboard() {
                 </label>
                 <div className="flex gap-2 mb-2">
                   <input
-                    type="url"
+                    type="text"
                     value={editFormData.logo_url}
                     onChange={(e) => setEditFormData(prev => ({ ...prev, logo_url: e.target.value }))}
                     placeholder="https://example.com/logo.png or upload below"

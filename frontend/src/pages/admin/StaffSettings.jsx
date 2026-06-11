@@ -562,7 +562,7 @@ export default function StaffSettings() {
                     <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Restaurant Logo</label>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <input 
-                        type="url"
+                        type="text"
                         value={config.logo_url}
                         onChange={(e) => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
                         className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white"
