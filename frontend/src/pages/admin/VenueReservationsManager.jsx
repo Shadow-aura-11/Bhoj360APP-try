@@ -181,7 +181,7 @@ export default function VenueReservationsManager() {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <DashboardShell>
+    <DashboardShell title="Venue Bookings" restaurantId={restaurantId} role="admin">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Header */}

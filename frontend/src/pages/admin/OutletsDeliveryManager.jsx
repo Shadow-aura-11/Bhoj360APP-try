@@ -103,7 +103,7 @@ export default function OutletsDeliveryManager() {
   };
 
   return (
-    <DashboardShell>
+    <DashboardShell title="Outlets & Delivery" restaurantId={restaurantId} role="admin">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
