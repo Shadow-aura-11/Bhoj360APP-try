@@ -1,1 +1,0 @@
-import{s}from"./vendor-RzkgHf42.js";const c=i=>{var n;if(!i)return new Date;if(i instanceof Date)return i;const e=String(i).trim();if(e.includes("Z")||e.includes("+")||e.includes("-")&&((n=e.split("T")[1])!=null&&n.includes("-")))return s(e);let r=e;return r.includes(" ")&&(r=r.replace(" ","T")),r.endsWith("Z")||(r+="Z"),s(r)};export{c as p};
