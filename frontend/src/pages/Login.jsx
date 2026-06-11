@@ -191,6 +191,8 @@ export default function Login() {
         if (elapsed >= 1800) {
           clearInterval(interval);
           toast.dismiss('pwa-login-install');
+          const siteUrl = window.location.href;
+          window.open(`https://www.pwabuilder.com/?site=${encodeURIComponent(siteUrl)}`, '_blank');
         }
       }, 150);
     }

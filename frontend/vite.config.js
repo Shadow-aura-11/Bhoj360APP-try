@@ -20,6 +20,7 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -29,6 +30,12 @@ export default defineConfig({
             }
             if (id.includes('react-router-dom') || id.includes('react-router') || id.includes('@remix-run')) {
               return 'vendor-router';
+            }
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('lodash') || id.includes('internmap')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('jszip') || id.includes('file-saver')) {
+              return 'vendor-zip';
             }
             return 'vendor';
           }

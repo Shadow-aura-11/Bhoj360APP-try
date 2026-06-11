@@ -86,7 +86,13 @@ export function usePWA(restaurantName, roleName, logoUrl) {
 
   const handleInstall = async () => {
     const prompt = installPrompt || window.deferredPrompt;
-    if (!prompt) return false;
+    if (!prompt) {
+      const match = window.location.pathname.match(/\/r\/([A-Za-z0-9_-]+)/);
+      const resId = match ? match[1] : 'REST-6QE0ZN';
+      const siteUrl = window.location.origin + `/r/${resId}/login`;
+      window.open(`https://www.pwabuilder.com/?site=${encodeURIComponent(siteUrl)}`, '_blank');
+      return false;
+    }
     prompt.prompt();
     const { outcome } = await prompt.userChoice;
     if (outcome === 'accepted') {
