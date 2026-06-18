@@ -51,6 +51,7 @@ function generateQrToken(restaurantId, tableNumber) {
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
   const tenantType = options.tenantType || 'restaurant';
+  const vertical = options.vertical || 'restaurant';
 
   // 1. Generate unique ID
   let id;
@@ -95,6 +96,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
+    vertical,
     createdAt: new Date().toISOString(),
     active: true,
     online: true,
@@ -151,6 +153,247 @@ async function createRestaurant(options = {}) {
     vendorInsert.run('Luxury Hotels', 'hotel_chain', 4.8);
   } else {
     // Create Restaurant tables
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tables (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        number TEXT NOT NULL UNIQUE,
+        capacity INTEGER NOT NULL DEFAULT 4,
+        section TEXT DEFAULT 'Main',
+        status TEXT DEFAULT 'available',
+        qr_token TEXT,
+        qr_generated_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        price REAL NOT NULL,
+        available INTEGER DEFAULT 1,
+        image_placeholder TEXT,
+        image_url TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_item_addons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT NOT NULL, -- 'percentage' or 'flat'
+        value REAL NOT NULL,
+        min_order_amount REAL DEFAULT 0,
+        active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        type TEXT DEFAULT 'dine-in',
+        status TEXT DEFAULT 'pending',
+        notes TEXT,
+        total REAL DEFAULT 0,
+        customer_phone TEXT,
+        customer_name TEXT,
+        waiter_name TEXT,
+        payment_method TEXT,
+        payment_status TEXT DEFAULT 'unpaid',
+        cash_amount REAL DEFAULT 0,
+        online_amount REAL DEFAULT 0,
+        discount_amount REAL DEFAULT 0,
+        coupon_code TEXT,
+        whatsapp_sent INTEGER DEFAULT 0,
+        settled_by TEXT DEFAULT 'System',
+        settled_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER REFERENCES orders(id),
+        menu_item_id INTEGER REFERENCES menu_items(id),
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        price REAL NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        is_addon INTEGER DEFAULT 0,
+        addons_json TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reservations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT,
+        customer_email TEXT,
+        party_size INTEGER NOT NULL,
+        reservation_date DATE NOT NULL,
+        reservation_time TIME NOT NULL,
+        duration_minutes INTEGER DEFAULT 90,
+        status TEXT DEFAULT 'confirmed',
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS staff (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        pin TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL,
+        started_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_name TEXT NOT NULL UNIQUE,
+        quantity REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL,
+        min_quantity REAL NOT NULL DEFAULT 0,
+        supplier TEXT,
+        cost_per_unit REAL DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
+        item_name TEXT NOT NULL,
+        change_amount REAL NOT NULL,
+        type TEXT NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS outlets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        phone TEXT,
+        delivery_radius REAL DEFAULT 5.0,
+        delivery_charge REAL DEFAULT 0.0,
+        delivery_enabled INTEGER DEFAULT 1,
+        zomato_enabled INTEGER DEFAULT 1,
+        swiggy_enabled INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS venue_bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_date TEXT NOT NULL,
+        event_time TEXT NOT NULL,
+        guest_count INTEGER NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'Pending',
+        customer_father_name TEXT,
+        customer_village TEXT,
+        customer_aadhaar TEXT,
+        venue_areas TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed menu items (16 items across 4 categories)
+    const menuInsert = db.prepare(
+      'INSERT INTO menu_items (name, description, category, price, image_placeholder, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+
+  if (vertical === 'spa') {
+    const spaSchemaPath = path.join(__dirname, '..', 'spa-wellness', 'schema.sql');
+    const spaSchema = fs.readFileSync(spaSchemaPath, 'utf8');
+    db.exec(spaSchema);
+
+    // Seed Spa Data
+    const serviceInsert = db.prepare(
+      'INSERT INTO services (name, description, category, duration_minutes, price, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+
+    const spaServices = [
+      ['Swedish Massage', 'Classic full body massage for relaxation', 'Massage', 60, 1500, 'https://images.unsplash.com/photo-1544161515-4ae6b91829d2?w=400'],
+      ['Deep Tissue Massage', 'Focuses on realigning deeper layers of muscles', 'Massage', 90, 2200, 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400'],
+      ['Aromatherapy Facial', 'Rejuvenating facial with essential oils', 'Facial', 45, 1800, 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400'],
+      ['Hot Stone Therapy', 'Warm stones placed on key points of the body', 'Body Treatment', 75, 2500, 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=400'],
+      ['Reflexology', 'Pressure applied to specific points on feet', 'Massage', 30, 1000, 'https://images.unsplash.com/photo-1519824141121-997454a93f78?w=400'],
+    ];
+
+    const seedSpaServices = db.transaction(() => {
+      for (const service of spaServices) {
+        serviceInsert.run(...service);
+      }
+    });
+    seedSpaServices();
+
+    const therapistInsert = db.prepare(
+      'INSERT INTO therapists (name, specialization, phone, status) VALUES (?, ?, ?, ?)'
+    );
+    const seedTherapists = db.transaction(() => {
+      therapistInsert.run('Sarah Johnson', 'Massage Specialist', '+91-9876543230', 'active');
+      therapistInsert.run('Michael Chen', 'Skin Care Expert', '+91-9876543231', 'active');
+      therapistInsert.run('Emma Davis', 'Holistic Therapist', '+91-9876543232', 'active');
+    });
+    seedTherapists();
+
+    const membershipInsert = db.prepare(
+      'INSERT INTO memberships (name, description, price, duration_months, benefits_json) VALUES (?, ?, ?, ?, ?)'
+    );
+    const seedMemberships = db.transaction(() => {
+      membershipInsert.run('Wellness Silver', '1 Treatment per month', 1200, 12, JSON.stringify(['1x 60min Swedish Massage', '10% off retail']));
+      membershipInsert.run('Wellness Gold', '2 Treatments per month', 2000, 12, JSON.stringify(['2x 60min Treatments', '15% off retail', 'Free Sauna access']));
+    });
+    seedMemberships();
+
+    // Enterprise Seeding
+    const orgInsert = db.prepare('INSERT INTO organizations (name, country, currency) VALUES (?, ?, ?)');
+    const orgResult = orgInsert.run(name, 'India', 'INR');
+    const orgId = orgResult.lastInsertRowid;
+
+    const branchInsert = db.prepare('INSERT INTO branches (organization_id, name, address) VALUES (?, ?, ?)');
+    const branchResult = branchInsert.run(orgId, 'Main Branch', 'City Center');
+    const branchId = branchResult.lastInsertRowid;
+
+    const roomInsert = db.prepare('INSERT INTO rooms (branch_id, name, type) VALUES (?, ?, ?)');
+    const seedRooms = db.transaction(() => {
+      roomInsert.run(branchId, 'Massage Suite 1', 'Massage');
+      roomInsert.run(branchId, 'Facial Room A', 'Facial');
+      roomInsert.run(branchId, 'Medical Consultation', 'Consultation');
+    });
+    seedRooms();
+
+    const campaignInsert = db.prepare('INSERT INTO campaigns (name, type, status) VALUES (?, ?, ?)');
+    const seedCampaigns = db.transaction(() => {
+      campaignInsert.run('Summer Glow Promo', 'Email', 'sent');
+      campaignInsert.run('Membership Renewal Reminder', 'WhatsApp', 'draft');
+    });
+    seedCampaigns();
+
+  } else {
+    // Default: Restaurant / POS vertical
+    // Create tables
     db.exec(`
       CREATE TABLE IF NOT EXISTS tables (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -436,6 +679,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
+    vertical,
     active: true,
     online: true,
     logo_url,

@@ -37,6 +37,12 @@ function findRestaurantPort(restaurantId) {
   return entry ? entry.port : null;
 }
 
+function findHospitalServicePort(hospitalId, serviceName) {
+  const registry = readRegistry();
+  const entry = registry.hospitals?.find((h) => h.id === hospitalId);
+  return entry ? entry.ports[serviceName] : null;
+}
+
 // ─── 1. Agency Core Proxy: /api/* → :3000 ──────────────────
 
 app.use(
@@ -101,6 +107,38 @@ app.use('/r/:restaurantId/socket.io', (req, res, next) => {
 const tenantProxyMiddleware = (prefix) => (req, res, next) => {
   const tenantId = req.params.tenantId || req.params.restaurantId;
   const port = findRestaurantPort(tenantId);
+// Handle REST API requests for restaurants
+app.use('/r/:restaurantId', (req, res, next) => {
+  const restaurantId = req.params.restaurantId;
+
+  // Handle HMS routing
+  if (restaurantId.startsWith('HMS-')) {
+    const relativePath = req.path || '';
+    const parts = relativePath.split('/').filter(Boolean);
+    const serviceName = parts[0]; // e.g. /patient/list -> patient
+
+    const port = findHospitalServicePort(restaurantId, serviceName);
+    if (!port) {
+      // If it's a page navigation (HTML request), let frontend handle it
+      const accept = req.headers.accept || '';
+      if (accept.includes('text/html')) {
+        return next();
+      }
+      return res.status(503).json({ error: `Hospital service ${serviceName} not found for ${restaurantId}` });
+    }
+
+    const proxy = createProxyMiddleware({
+      target: `http://localhost:${port}`,
+      changeOrigin: true,
+      pathRewrite: (reqPath) => {
+        // Strip /r/:id/serviceName
+        return reqPath.replace(`/r/${restaurantId}/${serviceName}`, '') || '/';
+      },
+    });
+    return proxy(req, res, next);
+  }
+
+  const port = findRestaurantPort(restaurantId);
 
   if (!port) {
     return res.status(503).json({ error: `Tenant ${tenantId} not found` });
