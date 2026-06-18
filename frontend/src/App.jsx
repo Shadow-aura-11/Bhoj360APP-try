@@ -29,6 +29,12 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// WMS Pages
+const WMSDashboard = lazy(() => import('./pages/wms/WMSDashboard'));
+const InventoryControl = lazy(() => import('./pages/wms/InventoryControl'));
+const OperationsControl = lazy(() => import('./pages/wms/OperationsControl'));
+const MobileScanner = lazy(() => import('./pages/wms/MobileScanner'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -336,6 +342,40 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* WMS Platform Routes */}
+        <Route
+          path="/r/:restaurantId/wms"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'supervisor']}>
+              <WMSDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/wms/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <InventoryControl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/wms/operations"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'supervisor']}>
+              <OperationsControl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/wms/scanner"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'supervisor', 'operator']}>
+              <MobileScanner />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

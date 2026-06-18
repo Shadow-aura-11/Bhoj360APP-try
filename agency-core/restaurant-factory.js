@@ -70,7 +70,8 @@ async function createRestaurant(options = {}) {
   fs.mkdirSync(restaurantDir, { recursive: true });
 
   // 4. Create config.json
-  const name = options.name || 'Unnamed Restaurant';
+  const type = options.type || 'RESTAURANT';
+  const name = options.name || (type === 'WMS' ? 'Unnamed Warehouse' : 'Unnamed Restaurant');
   const tableCount = options.tableCount || 8;
   const logo_url = options.logo_url || '';
   const description = options.description || '';
@@ -93,6 +94,7 @@ async function createRestaurant(options = {}) {
   const config = {
     id,
     name,
+    type,
     port,
     createdAt: new Date().toISOString(),
     active: true,
@@ -130,269 +132,470 @@ async function createRestaurant(options = {}) {
   db.pragma('journal_mode = WAL');
 
   // Create tables
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS tables (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      number TEXT NOT NULL UNIQUE,
-      capacity INTEGER NOT NULL DEFAULT 4,
-      section TEXT DEFAULT 'Main',
-      status TEXT DEFAULT 'available',
-      qr_token TEXT,
-      qr_generated_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  if (type === 'WMS') {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS warehouses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        location TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS zones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        warehouse_id INTEGER REFERENCES warehouses(id),
+        name TEXT NOT NULL,
+        type TEXT DEFAULT 'Storage', -- 'Receiving', 'Picking', 'Packing', 'Shipping'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS bins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zone_id INTEGER REFERENCES zones(id),
+        code TEXT NOT NULL UNIQUE,
+        capacity_m3 REAL,
+        status TEXT DEFAULT 'Empty',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sku TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT,
+        unit TEXT DEFAULT 'Units',
+        weight_kg REAL,
+        volume_m3 REAL,
+        min_stock INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER REFERENCES products(id),
+        bin_id INTEGER REFERENCES bins(id),
+        quantity INTEGER NOT NULL DEFAULT 0,
+        batch_number TEXT,
+        expiry_date DATE,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS asns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        asn_number TEXT NOT NULL UNIQUE,
+        supplier_name TEXT,
+        expected_date DATE,
+        status TEXT DEFAULT 'Pending', -- 'Received', 'Cancelled'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_number TEXT NOT NULL UNIQUE,
+        type TEXT NOT NULL, -- 'Inbound', 'Outbound'
+        customer_supplier_name TEXT,
+        status TEXT DEFAULT 'Draft',
+        priority INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER REFERENCES orders(id),
+        product_id INTEGER REFERENCES products(id),
+        quantity_requested INTEGER NOT NULL,
+        quantity_actual INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'Pending'
+      );
+
+      CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL, -- 'Receiving', 'Putaway', 'Picking', 'Packing', 'Replenishment', 'CycleCount'
+        status TEXT DEFAULT 'Open', -- 'In Progress', 'Completed', 'Cancelled'
+        priority INTEGER DEFAULT 1,
+        assigned_to TEXT,
+        order_id INTEGER REFERENCES orders(id),
+        product_id INTEGER REFERENCES products(id),
+        from_bin_id INTEGER REFERENCES bins(id),
+        to_bin_id INTEGER REFERENCES bins(id),
+        quantity INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME
+      );
+
+      CREATE TABLE IF NOT EXISTS docks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        warehouse_id INTEGER REFERENCES warehouses(id),
+        number TEXT NOT NULL,
+        status TEXT DEFAULT 'Available', -- 'Occupied', 'Reserved', 'Maintenance'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS trailers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trailer_number TEXT NOT NULL UNIQUE,
+        carrier TEXT,
+        status TEXT DEFAULT 'In Yard', -- 'At Dock', 'Departed'
+        location TEXT, -- Yard coordinates or zone
+        dock_id INTEGER REFERENCES docks(id),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS labor_tracking (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        staff_id INTEGER,
+        task_id INTEGER REFERENCES tasks(id),
+        start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+        end_time DATETIME,
+        units_processed INTEGER DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT, -- 'Forklift', 'Pallet Jack', 'Scanner'
+        status TEXT DEFAULT 'Available',
+        assigned_to TEXT,
+        last_maintenance DATE
+      );
+
+      CREATE TABLE IF NOT EXISTS staff (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL, -- 'Admin', 'Manager', 'Supervisor', 'Operator'
+        pin TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER,
+        product_id INTEGER,
+        change_amount INTEGER,
+        type TEXT, -- 'Adjustment', 'Movement', 'CycleCount'
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS cycle_counts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_name TEXT NOT NULL,
+        status TEXT DEFAULT 'Open', -- 'Completed', 'Cancelled'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME
+      );
+    `);
+
+    // Seed WMS Data
+    const seedWMS = db.transaction(() => {
+      // 1. Warehouse
+      const whId = db.prepare('INSERT INTO warehouses (name, location) VALUES (?, ?)').run('Central Distribution Center', 'North Industrial Park').lastInsertRowid;
+
+      // 2. Zones
+      const receivingZone = db.prepare('INSERT INTO zones (warehouse_id, name, type) VALUES (?, ?, ?)').run(whId, 'Receiving Dock', 'Receiving').lastInsertRowid;
+      const storageZone = db.prepare('INSERT INTO zones (warehouse_id, name, type) VALUES (?, ?, ?)').run(whId, 'High-Bay Storage', 'Storage').lastInsertRowid;
+      const pickingZone = db.prepare('INSERT INTO zones (warehouse_id, name, type) VALUES (?, ?, ?)').run(whId, 'Fast-Pick Area', 'Picking').lastInsertRowid;
+
+      // 3. Bins
+      const binInsert = db.prepare('INSERT INTO bins (zone_id, code, status) VALUES (?, ?, ?)');
+      for (let i = 1; i <= 5; i++) binInsert.run(receivingZone, `REC-00${i}`, 'Empty');
+      for (let i = 1; i <= 10; i++) binInsert.run(storageZone, `STG-A${i}`, 'Empty');
+      for (let i = 1; i <= 10; i++) binInsert.run(pickingZone, `PCK-B${i}`, 'Empty');
+
+      // 4. Products
+      const prodInsert = db.prepare('INSERT INTO products (sku, name, description, category, unit, weight_kg, volume_m3, min_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      prodInsert.run('SKU-1001', 'Heavy Duty Pallet', 'Industrial grade wood pallet', 'Equipment', 'Units', 25.0, 0.5, 100);
+      prodInsert.run('SKU-2002', 'Packaging Tape', 'High-strength adhesive tape', 'Consumables', 'Rolls', 0.5, 0.01, 500);
+      prodInsert.run('SKU-3003', 'Cardboard Box (L)', 'Large shipping box', 'Consumables', 'Units', 0.8, 0.05, 1000);
+      const prod4 = prodInsert.run('SKU-4004', 'Steel Shelving Unit', 'Modular steel shelf', 'Infrastructure', 'Sets', 45.0, 1.2, 20).lastInsertRowid;
+
+      // 5. Inventory (Stock some items)
+      const invInsert = db.prepare('INSERT INTO inventory (product_id, bin_id, quantity) VALUES (?, ?, ?)');
+      invInsert.run(1, 6, 250); // SKU-1001 in STG-A1
+      invInsert.run(2, 7, 1200); // SKU-2002 in STG-A2
+      invInsert.run(prod4, 8, 45); // SKU-4004 in STG-A3
+
+      // 6. Docks
+      const dockInsert = db.prepare('INSERT INTO docks (warehouse_id, number, status) VALUES (?, ?, ?)');
+      for (let i = 1; i <= 4; i++) dockInsert.run(whId, `DOCK-${i}`, 'Available');
+
+      // 6. Equipment
+      const equipInsert = db.prepare('INSERT INTO equipment (name, type, status) VALUES (?, ?, ?)');
+      equipInsert.run('FL-01', 'Forklift', 'Available');
+      equipInsert.run('FL-02', 'Forklift', 'In Use');
+      equipInsert.run('SC-01', 'Handheld Scanner', 'Available');
+      equipInsert.run('SC-02', 'Handheld Scanner', 'Available');
+    });
+    seedWMS();
+
+  } else {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tables (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        number TEXT NOT NULL UNIQUE,
+        capacity INTEGER NOT NULL DEFAULT 4,
+        section TEXT DEFAULT 'Main',
+        status TEXT DEFAULT 'available',
+        qr_token TEXT,
+        qr_generated_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        price REAL NOT NULL,
+        available INTEGER DEFAULT 1,
+        image_placeholder TEXT,
+        image_url TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_item_addons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT NOT NULL, -- 'percentage' or 'flat'
+        value REAL NOT NULL,
+        min_order_amount REAL DEFAULT 0,
+        active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        type TEXT DEFAULT 'dine-in',
+        status TEXT DEFAULT 'pending',
+        notes TEXT,
+        total REAL DEFAULT 0,
+        customer_phone TEXT,
+        customer_name TEXT,
+        waiter_name TEXT,
+        payment_method TEXT,
+        payment_status TEXT DEFAULT 'unpaid',
+        cash_amount REAL DEFAULT 0,
+        online_amount REAL DEFAULT 0,
+        discount_amount REAL DEFAULT 0,
+        coupon_code TEXT,
+        whatsapp_sent INTEGER DEFAULT 0,
+        settled_by TEXT DEFAULT 'System',
+        settled_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER REFERENCES orders(id),
+        menu_item_id INTEGER REFERENCES menu_items(id),
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        price REAL NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        is_addon INTEGER DEFAULT 0,
+        addons_json TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reservations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT,
+        customer_email TEXT,
+        party_size INTEGER NOT NULL,
+        reservation_date DATE NOT NULL,
+        reservation_time TIME NOT NULL,
+        duration_minutes INTEGER DEFAULT 90,
+        status TEXT DEFAULT 'confirmed',
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS staff (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        pin TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL,
+        started_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_name TEXT NOT NULL UNIQUE,
+        quantity REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL,
+        min_quantity REAL NOT NULL DEFAULT 0,
+        supplier TEXT,
+        cost_per_unit REAL DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
+        item_name TEXT NOT NULL,
+        change_amount REAL NOT NULL,
+        type TEXT NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS outlets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        phone TEXT,
+        delivery_radius REAL DEFAULT 5.0,
+        delivery_charge REAL DEFAULT 0.0,
+        delivery_enabled INTEGER DEFAULT 1,
+        zomato_enabled INTEGER DEFAULT 1,
+        swiggy_enabled INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS venue_bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_date TEXT NOT NULL,
+        event_time TEXT NOT NULL,
+        guest_count INTEGER NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'Pending',
+        customer_father_name TEXT,
+        customer_village TEXT,
+        customer_aadhaar TEXT,
+        venue_areas TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed menu items (16 items across 4 categories)
+    const menuInsert = db.prepare(
+      'INSERT INTO menu_items (name, description, category, price, image_placeholder, image_url) VALUES (?, ?, ?, ?, ?, ?)'
     );
 
-    CREATE TABLE IF NOT EXISTS menu_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT,
-      category TEXT NOT NULL,
-      price REAL NOT NULL,
-      available INTEGER DEFAULT 1,
-      image_placeholder TEXT,
-      image_url TEXT,
-      sort_order INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    const menuItems = [
+      // Starters
+      ['Garlic Bread', 'Crispy bread with garlic butter and herbs', 'Starters', 120, '🧄🍞', 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=400'],
+      ['Soup of the Day', 'Chef\'s special soup served with croutons', 'Starters', 150, '🍲', 'https://images.unsplash.com/photo-1547592165-e1d17fed6005?w=400'],
+      ['Spring Rolls', 'Crispy vegetable spring rolls with sweet chili sauce', 'Starters', 160, '🥟', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400'],
+      ['Bruschetta', 'Toasted bread topped with tomatoes, basil, and olive oil', 'Starters', 140, '🍅', 'https://images.unsplash.com/photo-1572448868306-1810ea24c46f?w=400'],
+      // Mains
+      ['Grilled Chicken', 'Herb-marinated chicken breast with seasonal vegetables', 'Mains', 380, '🍗', 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400'],
+      ['Pasta Arrabiata', 'Penne in spicy tomato sauce with fresh basil', 'Mains', 290, '🍝', 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'],
+      ['Paneer Tikka', 'Tandoor-grilled cottage cheese with mint chutney', 'Mains', 320, '🧀', 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400'],
+      ['Fish & Chips', 'Beer-battered fish with crispy fries and tartar sauce', 'Mains', 420, '🐟', 'https://images.unsplash.com/photo-1582236968798-e7e0e7a17726?w=400'],
+      ['Veg Biryani', 'Fragrant basmati rice with mixed vegetables and raita', 'Mains', 280, '🍚', 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400'],
+      // Drinks
+      ['Fresh Lime Soda', 'Freshly squeezed lime with soda water', 'Drinks', 80, '🍋', 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400'],
+      ['Mango Lassi', 'Creamy yogurt smoothie with fresh mango pulp', 'Drinks', 110, '🥭', 'https://images.unsplash.com/photo-1571006682862-3936b2884a57?w=400'],
+      ['Cold Coffee', 'Chilled coffee blended with ice cream', 'Drinks', 130, '☕', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
+      ['Mineral Water', 'Premium bottled mineral water', 'Drinks', 40, '💧', 'https://images.unsplash.com/photo-1608885898957-a599fb18de37?w=400'],
+      // Desserts
+      ['Chocolate Lava Cake', 'Warm chocolate cake with molten center and vanilla ice cream', 'Desserts', 220, '🍫', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400'],
+      ['Gulab Jamun', 'Soft milk dumplings in warm rose-scented syrup', 'Desserts', 120, '🍯', 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400'],
+      ['Ice Cream (2 scoops)', 'Choice of vanilla, chocolate, or strawberry', 'Desserts', 160, '🍨', 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400'],
+    ];
+
+    const seedMenu = db.transaction(() => {
+      for (const item of menuItems) {
+        menuInsert.run(...item);
+      }
+    });
+    seedMenu();
+
+    // Seed tables based on tableCount
+    const tableInsert = db.prepare(
+      'INSERT INTO tables (number, capacity, section, qr_token, qr_generated_at) VALUES (?, ?, ?, ?, ?)'
     );
 
-    CREATE TABLE IF NOT EXISTS menu_item_addons (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      price REAL NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    const indoorCount = Math.ceil(tableCount / 3);
+    const outdoorCount = Math.ceil(tableCount / 3);
+    const vipCount = tableCount - indoorCount - outdoorCount;
+
+    const seedTables = db.transaction(() => {
+      // Indoor tables
+      for (let i = 1; i <= indoorCount; i++) {
+        const number = `T${i}`;
+        const token = generateQrToken(id, number);
+        tableInsert.run(number, 4, 'Indoor', token, new Date().toISOString());
+      }
+      // Outdoor tables
+      for (let i = 1; i <= outdoorCount; i++) {
+        const number = `O${i}`;
+        const token = generateQrToken(id, number);
+        tableInsert.run(number, 4, 'Outdoor', token, new Date().toISOString());
+      }
+      // VIP tables
+      for (let i = 1; i <= vipCount; i++) {
+        const number = `VIP-${i}`;
+        const token = generateQrToken(id, number);
+        tableInsert.run(number, 6, 'VIP', token, new Date().toISOString());
+      }
+    });
+    seedTables();
+
+    // Seed 3 sample reservations for today
+    const today = new Date().toISOString().split('T')[0];
+    const reservationInsert = db.prepare(
+      'INSERT INTO reservations (table_id, table_number, customer_name, customer_phone, party_size, reservation_date, reservation_time, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
 
-    CREATE TABLE IF NOT EXISTS coupons (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
-      discount_type TEXT NOT NULL, -- 'percentage' or 'flat'
-      value REAL NOT NULL,
-      min_order_amount REAL DEFAULT 0,
-      active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    const seedReservations = db.transaction(() => {
+      reservationInsert.run(1, 'T1', 'Rahul Sharma', '+91-9876543210', 2, today, '13:00', 'confirmed', 'Window seat preferred');
+      reservationInsert.run(2, 'T2', 'Priya Patel', '+91-9876543211', 4, today, '19:00', 'confirmed', 'Birthday celebration');
+      reservationInsert.run(3, 'T3', 'Amit Kumar', '+91-9876543212', 6, today, '20:30', 'confirmed', 'Business dinner');
+    });
+    seedReservations();
+
+    // Seed default outlets
+    const outletInsert = db.prepare(
+      'INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
+    const seedOutlets = db.transaction(() => {
+      outletInsert.run('Main Outlet', config.restaurant?.address || '123 Main Street', config.restaurant?.phone || '+91-9876543210', 5.0, 40.0, 1, 1, 1);
+      outletInsert.run('Downtown Hub', '456 Business District', '+91-9876543215', 7.5, 60.0, 1, 0, 1);
+    });
+    seedOutlets();
 
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      table_id INTEGER REFERENCES tables(id),
-      table_number TEXT,
-      type TEXT DEFAULT 'dine-in',
-      status TEXT DEFAULT 'pending',
-      notes TEXT,
-      total REAL DEFAULT 0,
-      customer_phone TEXT,
-      customer_name TEXT,
-      waiter_name TEXT,
-      payment_method TEXT,
-      payment_status TEXT DEFAULT 'unpaid',
-      cash_amount REAL DEFAULT 0,
-      online_amount REAL DEFAULT 0,
-      discount_amount REAL DEFAULT 0,
-      coupon_code TEXT,
-      whatsapp_sent INTEGER DEFAULT 0,
-      settled_by TEXT DEFAULT 'System',
-      settled_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    // Seed sample venue bookings
+    const venueInsert = db.prepare(
+      'INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
-
-    CREATE TABLE IF NOT EXISTS order_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER REFERENCES orders(id),
-      menu_item_id INTEGER REFERENCES menu_items(id),
-      item_name TEXT NOT NULL,
-      quantity INTEGER NOT NULL DEFAULT 1,
-      price REAL NOT NULL,
-      notes TEXT,
-      status TEXT DEFAULT 'pending',
-      is_addon INTEGER DEFAULT 0,
-      addons_json TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS reservations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      table_id INTEGER REFERENCES tables(id),
-      table_number TEXT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT,
-      customer_email TEXT,
-      party_size INTEGER NOT NULL,
-      reservation_date DATE NOT NULL,
-      reservation_time TIME NOT NULL,
-      duration_minutes INTEGER DEFAULT 90,
-      status TEXT DEFAULT 'confirmed',
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS staff (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL,
-      pin TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      role TEXT NOT NULL,
-      started_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS inventory (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      item_name TEXT NOT NULL UNIQUE,
-      quantity REAL NOT NULL DEFAULT 0,
-      unit TEXT NOT NULL,
-      min_quantity REAL NOT NULL DEFAULT 0,
-      supplier TEXT,
-      cost_per_unit REAL DEFAULT 0,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS inventory_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
-      item_name TEXT NOT NULL,
-      change_amount REAL NOT NULL,
-      type TEXT NOT NULL,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS outlets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      address TEXT NOT NULL,
-      phone TEXT,
-      delivery_radius REAL DEFAULT 5.0,
-      delivery_charge REAL DEFAULT 0.0,
-      delivery_enabled INTEGER DEFAULT 1,
-      zomato_enabled INTEGER DEFAULT 1,
-      swiggy_enabled INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS venue_bookings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      event_type TEXT NOT NULL,
-      event_date TEXT NOT NULL,
-      event_time TEXT NOT NULL,
-      guest_count INTEGER NOT NULL,
-      notes TEXT,
-      status TEXT DEFAULT 'Pending',
-      customer_father_name TEXT,
-      customer_village TEXT,
-      customer_aadhaar TEXT,
-      venue_areas TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Seed menu items (16 items across 4 categories)
-  const menuInsert = db.prepare(
-    'INSERT INTO menu_items (name, description, category, price, image_placeholder, image_url) VALUES (?, ?, ?, ?, ?, ?)'
-  );
-
-  const menuItems = [
-    // Starters
-    ['Garlic Bread', 'Crispy bread with garlic butter and herbs', 'Starters', 120, '🧄🍞', 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=400'],
-    ['Soup of the Day', 'Chef\'s special soup served with croutons', 'Starters', 150, '🍲', 'https://images.unsplash.com/photo-1547592165-e1d17fed6005?w=400'],
-    ['Spring Rolls', 'Crispy vegetable spring rolls with sweet chili sauce', 'Starters', 160, '🥟', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400'],
-    ['Bruschetta', 'Toasted bread topped with tomatoes, basil, and olive oil', 'Starters', 140, '🍅', 'https://images.unsplash.com/photo-1572448868306-1810ea24c46f?w=400'],
-    // Mains
-    ['Grilled Chicken', 'Herb-marinated chicken breast with seasonal vegetables', 'Mains', 380, '🍗', 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400'],
-    ['Pasta Arrabiata', 'Penne in spicy tomato sauce with fresh basil', 'Mains', 290, '🍝', 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'],
-    ['Paneer Tikka', 'Tandoor-grilled cottage cheese with mint chutney', 'Mains', 320, '🧀', 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400'],
-    ['Fish & Chips', 'Beer-battered fish with crispy fries and tartar sauce', 'Mains', 420, '🐟', 'https://images.unsplash.com/photo-1582236968798-e7e0e7a17726?w=400'],
-    ['Veg Biryani', 'Fragrant basmati rice with mixed vegetables and raita', 'Mains', 280, '🍚', 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400'],
-    // Drinks
-    ['Fresh Lime Soda', 'Freshly squeezed lime with soda water', 'Drinks', 80, '🍋', 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400'],
-    ['Mango Lassi', 'Creamy yogurt smoothie with fresh mango pulp', 'Drinks', 110, '🥭', 'https://images.unsplash.com/photo-1571006682862-3936b2884a57?w=400'],
-    ['Cold Coffee', 'Chilled coffee blended with ice cream', 'Drinks', 130, '☕', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
-    ['Mineral Water', 'Premium bottled mineral water', 'Drinks', 40, '💧', 'https://images.unsplash.com/photo-1608885898957-a599fb18de37?w=400'],
-    // Desserts
-    ['Chocolate Lava Cake', 'Warm chocolate cake with molten center and vanilla ice cream', 'Desserts', 220, '🍫', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400'],
-    ['Gulab Jamun', 'Soft milk dumplings in warm rose-scented syrup', 'Desserts', 120, '🍯', 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400'],
-    ['Ice Cream (2 scoops)', 'Choice of vanilla, chocolate, or strawberry', 'Desserts', 160, '🍨', 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400'],
-  ];
-
-  const seedMenu = db.transaction(() => {
-    for (const item of menuItems) {
-      menuInsert.run(...item);
-    }
-  });
-  seedMenu();
-
-  // Seed tables based on tableCount
-  const tableInsert = db.prepare(
-    'INSERT INTO tables (number, capacity, section, qr_token, qr_generated_at) VALUES (?, ?, ?, ?, ?)'
-  );
-
-  const indoorCount = Math.ceil(tableCount / 3);
-  const outdoorCount = Math.ceil(tableCount / 3);
-  const vipCount = tableCount - indoorCount - outdoorCount;
-
-  const seedTables = db.transaction(() => {
-    // Indoor tables
-    for (let i = 1; i <= indoorCount; i++) {
-      const number = `T${i}`;
-      const token = generateQrToken(id, number);
-      tableInsert.run(number, 4, 'Indoor', token, new Date().toISOString());
-    }
-    // Outdoor tables
-    for (let i = 1; i <= outdoorCount; i++) {
-      const number = `O${i}`;
-      const token = generateQrToken(id, number);
-      tableInsert.run(number, 4, 'Outdoor', token, new Date().toISOString());
-    }
-    // VIP tables
-    for (let i = 1; i <= vipCount; i++) {
-      const number = `VIP-${i}`;
-      const token = generateQrToken(id, number);
-      tableInsert.run(number, 6, 'VIP', token, new Date().toISOString());
-    }
-  });
-  seedTables();
-
-  // Seed 3 sample reservations for today
-  const today = new Date().toISOString().split('T')[0];
-  const reservationInsert = db.prepare(
-    'INSERT INTO reservations (table_id, table_number, customer_name, customer_phone, party_size, reservation_date, reservation_time, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  );
-
-  const seedReservations = db.transaction(() => {
-    reservationInsert.run(1, 'T1', 'Rahul Sharma', '+91-9876543210', 2, today, '13:00', 'confirmed', 'Window seat preferred');
-    reservationInsert.run(2, 'T2', 'Priya Patel', '+91-9876543211', 4, today, '19:00', 'confirmed', 'Birthday celebration');
-    reservationInsert.run(3, 'T3', 'Amit Kumar', '+91-9876543212', 6, today, '20:30', 'confirmed', 'Business dinner');
-  });
-  seedReservations();
-
-  // Seed default outlets
-  const outletInsert = db.prepare(
-    'INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  );
-  const seedOutlets = db.transaction(() => {
-    outletInsert.run('Main Outlet', config.restaurant?.address || '123 Main Street', config.restaurant?.phone || '+91-9876543210', 5.0, 40.0, 1, 1, 1);
-    outletInsert.run('Downtown Hub', '456 Business District', '+91-9876543215', 7.5, 60.0, 1, 0, 1);
-  });
-  seedOutlets();
-
-  // Seed sample venue bookings
-  const venueInsert = db.prepare(
-    'INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  );
-  const seedVenues = db.transaction(() => {
-    venueInsert.run('Rajesh Gupta', '+91-9876543220', 'Marriage', today, 'Full Day', 250, 'Grand Hall, standard decor needed', 'Confirmed');
-    venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
-  });
-  seedVenues();
+    const seedVenues = db.transaction(() => {
+      venueInsert.run('Rajesh Gupta', '+91-9876543220', 'Marriage', today, 'Full Day', 250, 'Grand Hall, standard decor needed', 'Confirmed');
+      venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
+    });
+    seedVenues();
+  }
 
   db.close();
 
@@ -400,7 +603,7 @@ async function createRestaurant(options = {}) {
   let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
   // Inject restaurant-specific constants at the top
-  const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\n`;
+  const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\nconst TENANT_TYPE = '${type}';\n`;
   template = injection + template;
 
   const servicePath = path.join(restaurantDir, 'service.js');
@@ -410,6 +613,7 @@ async function createRestaurant(options = {}) {
   registry.restaurants.push({
     id,
     name,
+    type,
     port,
     active: true,
     online: true,

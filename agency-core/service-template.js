@@ -438,7 +438,8 @@ app.get('/health', (req, res) => {
   const config = readConfig();
   res.json({
     status: 'ok',
-    restaurantId: RESTAURANT_ID,
+    tenantId: RESTAURANT_ID,
+    type: typeof TENANT_TYPE !== 'undefined' ? TENANT_TYPE : 'RESTAURANT',
     name: config.name,
     logo_url: config.logo_url || '',
     description: config.description || '',
@@ -2897,7 +2898,143 @@ setInterval(() => {
 
 // ─── Start Server ───────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════
+//  WMS / WOS API MODULES
+// ═══════════════════════════════════════════════════════════
+
+if (typeof TENANT_TYPE !== 'undefined' && TENANT_TYPE === 'WMS') {
+
+  // --- INVENTORY API ---
+
+  app.get('/wms/inventory', (req, res) => {
+    try {
+      console.log(`[WMS] Fetching inventory for ${RESTAURANT_ID}`);
+      const items = db.prepare(`
+        SELECT i.*, p.sku, p.name as product_name, b.code as bin_code, z.name as zone_name
+        FROM inventory i
+        JOIN products p ON i.product_id = p.id
+        JOIN bins b ON i.bin_id = b.id
+        JOIN zones z ON b.zone_id = z.id
+      `).all();
+      console.log(`[WMS] Found ${items.length} items`);
+      res.json(items);
+    } catch (err) {
+      console.error('WMS Inventory Fetch Error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/wms/inventory/move', (req, res) => {
+    const { product_id, from_bin_id, to_bin_id, quantity } = req.body;
+
+    const move = db.transaction(() => {
+      // 1. Deduct from source
+      db.prepare('UPDATE inventory SET quantity = quantity - ? WHERE product_id = ? AND bin_id = ?').run(quantity, product_id, from_bin_id);
+
+      // 2. Add to destination
+      const existing = db.prepare('SELECT id FROM inventory WHERE product_id = ? AND bin_id = ?').get(product_id, to_bin_id);
+      if (existing) {
+        db.prepare('UPDATE inventory SET quantity = quantity + ? WHERE id = ?').run(quantity, existing.id);
+      } else {
+        db.prepare('INSERT INTO inventory (product_id, bin_id, quantity) VALUES (?, ?, ?)').run(product_id, to_bin_id, quantity);
+      }
+
+      // 3. Log
+      db.prepare('INSERT INTO inventory_logs (product_id, change_amount, type, notes) VALUES (?, ?, ?, ?)').run(
+        product_id, quantity, 'Movement', `Moved from bin ${from_bin_id} to ${to_bin_id}`
+      );
+    });
+
+    move();
+    res.json({ message: 'Inventory moved successfully' });
+  });
+
+  // --- ORDER & TASK API (WOS) ---
+
+  app.get('/wms/orders', (req, res) => {
+    const orders = db.prepare('SELECT * FROM orders ORDER BY priority DESC, created_at DESC').all();
+    const enriched = orders.map(o => {
+      const items = db.prepare('SELECT oi.*, p.sku, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?').all(o.id);
+      return { ...o, items };
+    });
+    res.json(enriched);
+  });
+
+  app.get('/wms/tasks', (req, res) => {
+    const tasks = db.prepare(`
+      SELECT t.*, p.sku, p.name as product_name, fb.code as from_bin, tb.code as to_bin
+      FROM tasks t
+      JOIN products p ON t.product_id = p.id
+      LEFT JOIN bins fb ON t.from_bin_id = fb.id
+      LEFT JOIN bins tb ON t.to_bin_id = tb.id
+      WHERE t.status != 'Completed'
+      ORDER BY t.priority DESC, t.created_at ASC
+    `).all();
+    res.json(tasks);
+  });
+
+  app.post('/wms/tasks/:id/complete', (req, res) => {
+    const { id } = req.params;
+    const { units_processed } = req.body;
+
+    const complete = db.transaction(() => {
+      db.prepare("UPDATE tasks SET status = 'Completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?").run(id);
+      db.prepare('INSERT INTO labor_tracking (task_id, units_processed, end_time) VALUES (?, ?, CURRENT_TIMESTAMP)').run(id, units_processed || 0);
+    });
+
+    complete();
+    io.to('warehouse').emit('task:completed', { taskId: id });
+    res.json({ message: 'Task completed' });
+  });
+
+  // --- YARD & DOCK API ---
+
+  app.get('/wms/yard', (req, res) => {
+    const trailers = db.prepare('SELECT t.*, d.number as dock_number FROM trailers t LEFT JOIN docks d ON t.dock_id = d.id').all();
+    const docks = db.prepare('SELECT * FROM docks').all();
+    res.json({ trailers, docks });
+  });
+
+  app.post('/wms/yard/check-in', (req, res) => {
+    const { trailer_number, carrier, location } = req.body;
+    db.prepare('INSERT INTO trailers (trailer_number, carrier, location, status) VALUES (?, ?, ?, ?)').run(trailer_number, carrier, location || 'Yard Gate', 'In Yard');
+    res.status(201).json({ message: 'Trailer checked in' });
+  });
+
+  app.post('/wms/yard/assign-dock', (req, res) => {
+    const { trailer_id, dock_id } = req.body;
+    db.prepare("UPDATE trailers SET dock_id = ?, status = 'At Dock' WHERE id = ?").run(dock_id, trailer_id);
+    db.prepare("UPDATE docks SET status = 'Occupied' WHERE id = ?").run(dock_id);
+    res.json({ message: 'Dock assigned' });
+  });
+
+  // --- ANALYTICS ---
+
+  app.get('/wms/analytics/kpis', (req, res) => {
+    const throughput = db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'Completed' AND completed_at >= DATE('now', '-1 day')").get();
+    const inventoryValue = db.prepare("SELECT SUM(quantity) as total_units FROM inventory").get();
+    const dockUtil = db.prepare("SELECT (SELECT COUNT(*) FROM docks WHERE status = 'Occupied') * 100.0 / COUNT(*) as util FROM docks").get();
+
+    res.json({
+      dailyThroughput: throughput.count,
+      totalInventory: inventoryValue.total_units,
+      dockUtilization: Math.round(dockUtil.util || 0) + '%',
+      accuracy: '99.8%'
+    });
+  });
+
+  // AI Mock Endpoints
+  app.get('/wms/ai/slotting-recommendations', (req, res) => {
+    res.json([
+      { product: 'SKU-1001', current_bin: 'STG-A5', recommended_bin: 'PCK-B1', reason: 'High velocity item, move to picking zone.' },
+      { product: 'SKU-4004', current_bin: 'REC-001', recommended_bin: 'STG-A10', reason: 'Heavy item, store in lower rack shelving.' }
+    ]);
+  });
+}
+
 server.listen(PORT, () => {
   const config = readConfig();
-  console.log(`  🍽️  Restaurant ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
+  const type = typeof TENANT_TYPE !== 'undefined' ? TENANT_TYPE : 'RESTAURANT';
+  const emoji = type === 'WMS' ? '📦' : '🍽️';
+  console.log(`  ${emoji}  ${type} Tenant ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
 });
