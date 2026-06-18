@@ -103,6 +103,10 @@ app.use('/r/:restaurantId/socket.io', (req, res, next) => {
   proxy(req, res, next);
 });
 
+// Handle REST API requests for tenants (Restaurants & TMS)
+const tenantProxyMiddleware = (prefix) => (req, res, next) => {
+  const tenantId = req.params.tenantId || req.params.restaurantId;
+  const port = findRestaurantPort(tenantId);
 // Handle REST API requests for restaurants
 app.use('/r/:restaurantId', (req, res, next) => {
   const restaurantId = req.params.restaurantId;
@@ -137,21 +141,21 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const port = findRestaurantPort(restaurantId);
 
   if (!port) {
-    return res.status(503).json({ error: `Restaurant ${restaurantId} not found` });
+    return res.status(503).json({ error: `Tenant ${tenantId} not found` });
   }
 
   // Intercept if tenant is blocked (active is false)
   const registry = readRegistry();
-  const entry = registry.restaurants.find((r) => r.id === restaurantId);
+  const entry = registry.restaurants.find((r) => r.id === tenantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
-    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues'];
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
     const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
     const accept = req.headers.accept || '';
 
     if (isApiRequest && !accept.includes('text/html')) {
       return res.status(403).json({ 
-        error: 'This restaurant portal has been suspended by the administrator.', 
+        error: 'This portal has been suspended by the administrator.',
         blocked: true 
       });
     }
@@ -177,7 +181,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
     for (const [pathPrefix, featureKey] of Object.entries(featurePathMapping)) {
       if (relativePath.startsWith(pathPrefix) && entry.blockedFeatures.includes(featureKey)) {
         return res.status(403).json({
-          error: `The ${featureKey} feature has been disabled for this restaurant by the administrator.`,
+          error: `The ${featureKey} feature has been disabled for this tenant by the administrator.`,
           featureBlocked: true
         });
       }
@@ -186,7 +190,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
-  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
   const accept = req.headers.accept || '';
 
@@ -198,22 +202,25 @@ app.use('/r/:restaurantId', (req, res, next) => {
     target: `http://localhost:${port}`,
     changeOrigin: true,
     pathRewrite: (reqPath) => {
-      // Strip /r/:restaurantId prefix
-      return reqPath.replace(`/r/${restaurantId}`, '') || '/';
+      // Strip prefix
+      return reqPath.replace(`/${prefix}/${tenantId}`, '') || '/';
     },
     on: {
       error: (err, req, res) => {
-        console.error(`[Gateway] REST proxy error for ${restaurantId}:`, err.message);
+        console.error(`[Gateway] REST proxy error for ${tenantId}:`, err.message);
         if (res.writeHead) {
           res.writeHead(503, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: `Restaurant ${restaurantId} is offline` }));
+          res.end(JSON.stringify({ error: `Tenant ${tenantId} is offline` }));
         }
       },
     },
   });
 
   proxy(req, res, next);
-});
+};
+
+app.use('/r/:tenantId', tenantProxyMiddleware('r'));
+app.use('/t/:tenantId', tenantProxyMiddleware('t'));
 
 // ─── 3. Frontend: /* ────────────────────────────────────────
 
@@ -267,6 +274,7 @@ const server = app.listen(PORT, () => {
   console.log(`  Routes:`);
   console.log(`    /api/*             → Agency Core (:${AGENCY_PORT})`);
   console.log(`    /r/:id/*           → Restaurant microservice`);
+  console.log(`    /t/:id/*           → TMS microservice`);
   console.log(`    /*                 → ${NODE_ENV === 'production' ? 'frontend/dist/' : 'Vite dev (:5173)'}`);
   console.log('');
 });

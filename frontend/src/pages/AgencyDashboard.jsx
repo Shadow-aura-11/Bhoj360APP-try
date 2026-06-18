@@ -99,6 +99,7 @@ export default function AgencyDashboard() {
   // New restaurant creation form state
   const [formData, setFormData] = useState({
     name: '',
+    tenantType: 'restaurant',
     tableCount: 8,
     logo_url: '',
     description: '',
@@ -1210,9 +1211,16 @@ export default function AgencyDashboard() {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
-                        {res.name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
+                          {res.name}
+                        </h3>
+                        {res.tenantType === 'tms' && (
+                          <span className="bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1">
+                            <Plane size={10} /> TMS
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-mono tracking-wider">
                         <span>Port: {res.port}</span>
                         {res.location && (
@@ -1288,7 +1296,7 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
-                        href={`/r/${res.id}/login`}
+                        href={res.tenantType === 'tms' ? `/t/${res.id}/login` : `/r/${res.id}/login`}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
                             ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm' 
@@ -1673,18 +1681,33 @@ export default function AgencyDashboard() {
               </div>
             ) : (
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Restaurant Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g. Punjabi Tadka"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Instance Type
+                    </label>
+                    <select
+                      value={formData.tenantType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tenantType: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="restaurant">🍴 Restaurant POS</option>
+                      <option value="tms">✈️ Travel Management</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Instance Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder={formData.tenantType === 'tms' ? "e.g. Global Travel" : "e.g. Punjabi Tadka"}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1727,20 +1750,22 @@ export default function AgencyDashboard() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Default Table Count
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    required
-                    value={formData.tableCount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
+                {formData.tenantType === 'restaurant' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Default Table Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      required={formData.tenantType === 'restaurant'}
+                      value={formData.tableCount}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">

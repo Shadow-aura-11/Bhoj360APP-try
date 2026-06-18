@@ -47,7 +47,10 @@ function killPort(port) {
 
 async function startRestaurant(restaurant) {
   const servicePath = path.join(__dirname, '..', 'restaurants', restaurant.id, 'service.js');
-  const templatePath = path.join(__dirname, 'service-template.js');
+  const tenantType = restaurant.tenantType || 'restaurant';
+  const templatePath = tenantType === 'tms'
+    ? path.join(__dirname, 'tms-service-template.js')
+    : path.join(__dirname, 'service-template.js');
 
   if (!fs.existsSync(templatePath)) {
     console.warn(`  [Startup] service-template.js not found.`);
