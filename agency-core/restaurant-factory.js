@@ -679,6 +679,97 @@ async function createRestaurant(options = {}) {
     });
     seedReservations();
 
+  `);
+
+  // Seed menu items (16 items across 4 categories)
+  const menuInsert = db.prepare(
+    'INSERT INTO menu_items (name, description, category, price, image_placeholder, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+  );
+
+  const menuItems = [
+    // Starters
+    ['Garlic Bread', 'Crispy bread with garlic butter and herbs', 'Starters', 120, '🧄🍞', 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=400'],
+    ['Soup of the Day', 'Chef\'s special soup served with croutons', 'Starters', 150, '🍲', 'https://images.unsplash.com/photo-1547592165-e1d17fed6005?w=400'],
+    ['Spring Rolls', 'Crispy vegetable spring rolls with sweet chili sauce', 'Starters', 160, '🥟', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400'],
+    ['Bruschetta', 'Toasted bread topped with tomatoes, basil, and olive oil', 'Starters', 140, '🍅', 'https://images.unsplash.com/photo-1572448868306-1810ea24c46f?w=400'],
+    // Mains
+    ['Grilled Chicken', 'Herb-marinated chicken breast with seasonal vegetables', 'Mains', 380, '🍗', 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400'],
+    ['Pasta Arrabiata', 'Penne in spicy tomato sauce with fresh basil', 'Mains', 290, '🍝', 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'],
+    ['Paneer Tikka', 'Tandoor-grilled cottage cheese with mint chutney', 'Mains', 320, '🧀', 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400'],
+    ['Fish & Chips', 'Beer-battered fish with crispy fries and tartar sauce', 'Mains', 420, '🐟', 'https://images.unsplash.com/photo-1582236968798-e7e0e7a17726?w=400'],
+    ['Veg Biryani', 'Fragrant basmati rice with mixed vegetables and raita', 'Mains', 280, '🍚', 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400'],
+    // Drinks
+    ['Fresh Lime Soda', 'Freshly squeezed lime with soda water', 'Drinks', 80, '🍋', 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400'],
+    ['Mango Lassi', 'Creamy yogurt smoothie with fresh mango pulp', 'Drinks', 110, '🥭', 'https://images.unsplash.com/photo-1571006682862-3936b2884a57?w=400'],
+    ['Cold Coffee', 'Chilled coffee blended with ice cream', 'Drinks', 130, '☕', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'],
+    ['Mineral Water', 'Premium bottled mineral water', 'Drinks', 40, '💧', 'https://images.unsplash.com/photo-1608885898957-a599fb18de37?w=400'],
+    // Desserts
+    ['Chocolate Lava Cake', 'Warm chocolate cake with molten center and vanilla ice cream', 'Desserts', 220, '🍫', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400'],
+    ['Gulab Jamun', 'Soft milk dumplings in warm rose-scented syrup', 'Desserts', 120, '🍯', 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400'],
+    ['Ice Cream (2 scoops)', 'Choice of vanilla, chocolate, or strawberry', 'Desserts', 160, '🍨', 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400'],
+  ];
+
+  const seedMenu = db.transaction(() => {
+    for (const item of menuItems) {
+      menuInsert.run(...item);
+    }
+  });
+  seedMenu();
+
+  // Seed tables based on tableCount
+  const tableInsert = db.prepare(
+    'INSERT INTO tables (number, capacity, section, qr_token, qr_generated_at) VALUES (?, ?, ?, ?, ?)'
+  );
+
+  const indoorCount = Math.ceil(tableCount / 3);
+  const outdoorCount = Math.ceil(tableCount / 3);
+  const vipCount = tableCount - indoorCount - outdoorCount;
+
+  const seedTables = db.transaction(() => {
+    // Indoor tables
+    for (let i = 1; i <= indoorCount; i++) {
+      const number = `T${i}`;
+      const token = generateQrToken(id, number);
+      tableInsert.run(number, 4, 'Indoor', token, new Date().toISOString());
+    }
+    // Outdoor tables
+    for (let i = 1; i <= outdoorCount; i++) {
+      const number = `O${i}`;
+      const token = generateQrToken(id, number);
+      tableInsert.run(number, 4, 'Outdoor', token, new Date().toISOString());
+    }
+    // VIP tables
+    for (let i = 1; i <= vipCount; i++) {
+      const number = `VIP-${i}`;
+      const token = generateQrToken(id, number);
+      tableInsert.run(number, 6, 'VIP', token, new Date().toISOString());
+    }
+  });
+  seedTables();
+
+  // Seed 3 sample reservations for today
+  const today = new Date().toISOString().split('T')[0];
+  const reservationInsert = db.prepare(
+    'INSERT INTO reservations (table_id, table_number, customer_name, customer_phone, party_size, reservation_date, reservation_time, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+
+  const seedReservations = db.transaction(() => {
+    reservationInsert.run(1, 'T1', 'Rahul Sharma', '+91-9876543210', 2, today, '13:00', 'confirmed', 'Window seat preferred');
+    reservationInsert.run(2, 'T2', 'Priya Patel', '+91-9876543211', 4, today, '19:00', 'confirmed', 'Birthday celebration');
+    reservationInsert.run(3, 'T3', 'Amit Kumar', '+91-9876543212', 6, today, '20:30', 'confirmed', 'Business dinner');
+  });
+  seedReservations();
+
+  // Seed default outlets
+  const outletInsert = db.prepare(
+    'INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const seedOutlets = db.transaction(() => {
+    outletInsert.run('Main Outlet', config.restaurant?.address || '123 Main Street', config.restaurant?.phone || '+91-9876543210', 5.0, 40.0, 1, 1, 1);
+    outletInsert.run('Downtown Hub', '456 Business District', '+91-9876543215', 7.5, 60.0, 1, 0, 1);
+  });
+  seedOutlets();
+
     // Seed default outlets
     const outletInsert = db.prepare(
       'INSERT INTO outlets (name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'

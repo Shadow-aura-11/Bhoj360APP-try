@@ -17,6 +17,7 @@ const PORT = process.env.GATEWAY_PORT || 4000;
 const AGENCY_PORT = process.env.AGENCY_PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const REGISTRY_PATH = path.join(__dirname, '..', 'agency-core', 'registry.json');
+const EMS_REGISTRY_PATH = path.join(__dirname, '..', 'venue-event', 'registry.json');
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -31,12 +32,24 @@ function readRegistry() {
   }
 }
 
+function readEmsRegistry() {
+  try {
+    return JSON.parse(fs.readFileSync(EMS_REGISTRY_PATH, 'utf8'));
+  } catch {
+    return { tenants: [] };
+  }
+}
+
 function findRestaurantPort(restaurantId) {
   const registry = readRegistry();
   const entry = registry.restaurants.find((r) => r.id === restaurantId);
   return entry ? entry.port : null;
 }
 
+function findEmsPort(tenantId) {
+  const registry = readEmsRegistry();
+  const entry = registry.tenants.find((t) => t.id === tenantId);
+  return entry ? entry.port : null;
 function findHospitalServicePort(hospitalId, serviceName) {
   const registry = readRegistry();
   const entry = registry.hospitals?.find((h) => h.id === hospitalId);
@@ -156,6 +169,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const entry = registry.restaurants.find((r) => r.id === tenantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
+      const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
     const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
     const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
     const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
@@ -183,6 +197,14 @@ app.use('/r/:restaurantId', (req, res, next) => {
       '/expenses': 'expenses',
       '/inventory': 'inventory',
       '/outlets': 'outlets',
+        '/venues': 'venues',
+        '/events': 'events',
+        '/tickets': 'ticketing',
+        '/attendees': 'attendees',
+        '/vendors': 'vendors',
+        '/catering-orders': 'catering',
+        '/crm': 'marketing',
+        '/marketing': 'marketing'
       '/venues': 'venues',
       '/leads': 'crm',
       '/equipment': 'facility',
@@ -207,6 +229,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
@@ -241,6 +264,46 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
 app.use('/r/:tenantId', tenantProxyMiddleware('r'));
 app.use('/t/:tenantId', tenantProxyMiddleware('t'));
+
+// ─── 2.5. EMS Proxy: /e/:tenantId/* → :41XX ─────────────────
+
+app.use('/e/:tenantId', (req, res, next) => {
+  const tenantId = req.params.tenantId;
+  const port = findEmsPort(tenantId);
+
+  if (!port) {
+    return res.status(503).json({ error: `EMS Tenant ${tenantId} not found` });
+  }
+
+  // Bypass proxy for non-API routes or HTML document requests
+  const relativePath = req.path || '';
+  const apiRoots = ['/auth', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai', '/health', '/uploads'];
+  const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
+  const accept = req.headers.accept || '';
+
+  if (!isApiRequest || (accept.includes('text/html') && !relativePath.startsWith('/uploads'))) {
+    return next();
+  }
+
+  const proxy = createProxyMiddleware({
+    target: `http://localhost:${port}`,
+    changeOrigin: true,
+    pathRewrite: (reqPath) => {
+      return reqPath.replace(`/e/${tenantId}`, '') || '/';
+    },
+    on: {
+      error: (err, req, res) => {
+        console.error(`[Gateway] EMS proxy error for ${tenantId}:`, err.message);
+        if (res.writeHead) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `EMS Tenant ${tenantId} is offline` }));
+        }
+      },
+    },
+  });
+
+  proxy(req, res, next);
+});
 
 // ─── 3. Frontend: /* ────────────────────────────────────────
 

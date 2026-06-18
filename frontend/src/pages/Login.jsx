@@ -4,6 +4,9 @@ import { Shield, Utensils, ClipboardList, Users, ArrowLeft, ArrowRight, Download
 import { createApi } from '../api/client';
 import toast from 'react-hot-toast';
 
+export default function Login({ isEMS = false }) {
+  const { restaurantId, tenantId } = useParams();
+  const currentId = isEMS ? tenantId : restaurantId;
 export default function Login() {
   const { restaurantId, gymId } = useParams();
   const tenantId = restaurantId || gymId;
@@ -33,6 +36,7 @@ export default function Login() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   
+  const api = createApi(currentId);
   const api = createApi(tenantId);
   const isRoleLocked = new URLSearchParams(window.location.search).has('role');
 
@@ -56,6 +60,7 @@ export default function Login() {
 
   // 1. Dynamic Manifest injection
   useEffect(() => {
+    if (currentId && !isEMS) {
     if (tenantId) {
       let manifestLink = document.getElementById('dynamic-manifest');
       if (!manifestLink) {
@@ -64,6 +69,9 @@ export default function Login() {
         manifestLink.rel = 'manifest';
         document.head.appendChild(manifestLink);
       }
+      manifestLink.href = `/r/${currentId}/manifest.json`;
+    }
+  }, [currentId, isEMS]);
       const prefix = isGym ? 'gym' : 'r';
       manifestLink.href = `/${prefix}/${tenantId}/manifest.json`;
     }
@@ -160,6 +168,11 @@ export default function Login() {
         }
       } catch (err) { /* silent */ }
     };
+    if (currentId) {
+      loadRestaurantDetails();
+      loadAgencySettings();
+    }
+  }, [currentId]);
     if (tenantId) {
       loadRestaurantDetails();
       loadAgencySettings();
@@ -241,6 +254,36 @@ export default function Login() {
       const { data } = await api.post('/auth', payload);
 
       // Save session
+      if (isEMS) {
+        localStorage.setItem(`ems_token_${tenantId}`, 'mock-token');
+        localStorage.setItem('ems_session', JSON.stringify({
+          role: data.role,
+          tenantId,
+          staffName: data.staffName || 'Admin',
+        }));
+        navigate(`/e/${tenantId}/dashboard`);
+      } else {
+        localStorage.setItem('session', JSON.stringify({
+          role: data.role,
+          restaurantId,
+          pin: staffPin,
+          name: data.name,
+          staffName: data.staffName || (isAd ? 'Admin' : data.role.toUpperCase()),
+          username: data.username || targetUsername,
+        }));
+
+        toast.success(`Logged in as ${data.staffName || (isAd ? 'Admin' : data.role.toUpperCase())}`);
+
+        // Redirect to correct dashboard
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectUrl = searchParams.get('redirect');
+        if (redirectUrl) {
+          navigate(redirectUrl);
+        } else {
+          if (data.role === 'admin') navigate(`/r/${restaurantId}/admin`);
+          else if (data.role === 'waiter') navigate(`/r/${restaurantId}/waiter`);
+          else if (data.role === 'counter') navigate(`/r/${restaurantId}/counter`);
+          else if (data.role === 'cashier') navigate(`/r/${restaurantId}/cashier`);
       localStorage.setItem('session', JSON.stringify({
         role: data.role,
         restaurantId: isGym ? undefined : tenantId,
@@ -619,7 +662,7 @@ export default function Login() {
                 </button>
               )}
 
-              {selectedRole === 'customer' ? (
+              {selectedRole === 'customer' && !isEMS ? (
                 /* Customer Login Form */
                 <form onSubmit={handleCustomerSubmit} className="w-full space-y-4 animate-slide-up">
                   {customerStep === 1 ? (
