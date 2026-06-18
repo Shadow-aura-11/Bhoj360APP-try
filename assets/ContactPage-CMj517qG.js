@@ -1,4 +1,4 @@
-import{r as l,m as e,z as p}from"./vendor-BYCKrpmZ.js";import{L as b}from"./vendor-router-BhkwlUS9.js";import{a as j}from"./client-Da0pd8IK.js";import{u as y,a as v,N as w,F as k}from"./useDocumentMetadata-xRUeAjrs.js";import{F as N}from"./index-Bnjx0cBu.js";import"./vendor-icons-xmC1L8Oy.js";const z=`
+import{r as l,m as e,z as p}from"./vendor-BYCKrpmZ.js";import{L as b}from"./vendor-router-BhkwlUS9.js";import{a as j}from"./client-Da0pd8IK.js";import{u as y,a as v,N as w,F as k}from"./useDocumentMetadata-xRUeAjrs.js";import{F as N}from"./index-Cxt-kcF8.js";import"./vendor-icons-xmC1L8Oy.js";const z=`
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
 
   .cp-root {
