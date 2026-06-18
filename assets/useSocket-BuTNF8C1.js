@@ -1,1 +1,0 @@
-import{r as c}from"./vendor-BYCKrpmZ.js";import{b as r}from"./client-Da0pd8IK.js";function i(t){const[s,o]=c.useState(!1),n=c.useRef(null);return c.useEffect(()=>{if(!t)return;const e=r(t);return n.current=e,e.on("connect",()=>{o(!0)}),e.on("disconnect",()=>{o(!1)}),e.on("connect_error",()=>{o(!1)}),()=>{e.disconnect()}},[t]),{socket:n.current,isConnected:s}}export{i as u};
