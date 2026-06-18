@@ -50,6 +50,10 @@ async function startRestaurant(restaurant) {
   const isGym = restaurant.type === 'gym';
   const templateFile = isGym ? 'gms-service-template.js' : 'service-template.js';
   const templatePath = path.join(__dirname, templateFile);
+  const tenantType = restaurant.tenantType || 'restaurant';
+  const templatePath = tenantType === 'tms'
+    ? path.join(__dirname, 'tms-service-template.js')
+    : path.join(__dirname, 'service-template.js');
 
   if (!fs.existsSync(templatePath)) {
     console.warn(`  [Startup] service-template.js not found.`);

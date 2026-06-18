@@ -22,9 +22,10 @@ out/
 registry.json
 inquiries.json
 agency-config.json
-restaurants/*/config.json
-restaurants/*/inquiries.json
-restaurants/*/node_modules/
+restaurants/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # Logs
 npm-debug.log*
