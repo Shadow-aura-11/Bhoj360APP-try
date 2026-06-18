@@ -267,6 +267,30 @@ export default function App() {
           }
         />
         <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/r/:restaurantId/admin/tables"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
@@ -501,6 +525,10 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        {/* HMS Routes */}
+        <Route path="/r/:restaurantId/hms/registration" element={<PatientRegistration />} />
+        <Route path="/r/:restaurantId/hms/emr" element={<EMRDashboard />} />
+        <Route path="/r/:restaurantId/hms/ai" element={<AIMedicalAssistant />} />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
