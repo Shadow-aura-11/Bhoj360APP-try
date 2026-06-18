@@ -50,6 +50,7 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
+  const tenantType = options.tenantType || 'restaurant';
   const vertical = options.vertical || 'restaurant';
 
   // 1. Generate unique ID
@@ -71,7 +72,7 @@ async function createRestaurant(options = {}) {
   fs.mkdirSync(restaurantDir, { recursive: true });
 
   // 4. Create config.json
-  const name = options.name || 'Unnamed Restaurant';
+  const name = options.name || (tenantType === 'tms' ? 'Unnamed TMS' : 'Unnamed Restaurant');
   const tableCount = options.tableCount || 8;
   const logo_url = options.logo_url || '';
   const description = options.description || '';
@@ -106,6 +107,7 @@ async function createRestaurant(options = {}) {
     location,
     contact_email,
     contact_phone,
+    tenantType,
     subscription,
     paymentHistory,
     blockedFeatures: options.blockedFeatures || [],
@@ -130,6 +132,196 @@ async function createRestaurant(options = {}) {
 
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
+
+  if (tenantType === 'tms') {
+    const schemaPath = path.join(__dirname, '..', 'tms', 'schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+    db.exec(schema);
+
+    // Seed TMS initial data
+    const policyInsert = db.prepare('INSERT INTO policies (name, description, max_flight_class, max_hotel_stars, daily_allowance) VALUES (?, ?, ?, ?, ?)');
+    policyInsert.run('Standard', 'Default corporate travel policy', 'economy', 3, 50);
+    policyInsert.run('Executive', 'Executive corporate travel policy', 'business', 5, 150);
+
+    const employeeInsert = db.prepare('INSERT INTO employees (employee_id, name, email, department, role, policy_id) VALUES (?, ?, ?, ?, ?, ?)');
+    employeeInsert.run('EMP001', 'Admin User', 'admin@tms.com', 'IT', 'admin', 2);
+    employeeInsert.run('EMP002', 'Manager User', 'manager@tms.com', 'Sales', 'manager', 2);
+    employeeInsert.run('EMP003', 'Employee User', 'employee@tms.com', 'Marketing', 'employee', 1);
+
+    const vendorInsert = db.prepare('INSERT INTO vendors (name, type, rating) VALUES (?, ?, ?)');
+    vendorInsert.run('Global Airlines', 'airline', 4.5);
+    vendorInsert.run('Luxury Hotels', 'hotel_chain', 4.8);
+  } else {
+    // Create Restaurant tables
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tables (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        number TEXT NOT NULL UNIQUE,
+        capacity INTEGER NOT NULL DEFAULT 4,
+        section TEXT DEFAULT 'Main',
+        status TEXT DEFAULT 'available',
+        qr_token TEXT,
+        qr_generated_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        price REAL NOT NULL,
+        available INTEGER DEFAULT 1,
+        image_placeholder TEXT,
+        image_url TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_item_addons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT NOT NULL, -- 'percentage' or 'flat'
+        value REAL NOT NULL,
+        min_order_amount REAL DEFAULT 0,
+        active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        type TEXT DEFAULT 'dine-in',
+        status TEXT DEFAULT 'pending',
+        notes TEXT,
+        total REAL DEFAULT 0,
+        customer_phone TEXT,
+        customer_name TEXT,
+        waiter_name TEXT,
+        payment_method TEXT,
+        payment_status TEXT DEFAULT 'unpaid',
+        cash_amount REAL DEFAULT 0,
+        online_amount REAL DEFAULT 0,
+        discount_amount REAL DEFAULT 0,
+        coupon_code TEXT,
+        whatsapp_sent INTEGER DEFAULT 0,
+        settled_by TEXT DEFAULT 'System',
+        settled_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER REFERENCES orders(id),
+        menu_item_id INTEGER REFERENCES menu_items(id),
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        price REAL NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        is_addon INTEGER DEFAULT 0,
+        addons_json TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reservations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER REFERENCES tables(id),
+        table_number TEXT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT,
+        customer_email TEXT,
+        party_size INTEGER NOT NULL,
+        reservation_date DATE NOT NULL,
+        reservation_time TIME NOT NULL,
+        duration_minutes INTEGER DEFAULT 90,
+        status TEXT DEFAULT 'confirmed',
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS staff (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        pin TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL,
+        started_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_name TEXT NOT NULL UNIQUE,
+        quantity REAL NOT NULL DEFAULT 0,
+        unit TEXT NOT NULL,
+        min_quantity REAL NOT NULL DEFAULT 0,
+        supplier TEXT,
+        cost_per_unit REAL DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER REFERENCES inventory(id) ON DELETE CASCADE,
+        item_name TEXT NOT NULL,
+        change_amount REAL NOT NULL,
+        type TEXT NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS outlets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        phone TEXT,
+        delivery_radius REAL DEFAULT 5.0,
+        delivery_charge REAL DEFAULT 0.0,
+        delivery_enabled INTEGER DEFAULT 1,
+        zomato_enabled INTEGER DEFAULT 1,
+        swiggy_enabled INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS venue_bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_date TEXT NOT NULL,
+        event_time TEXT NOT NULL,
+        guest_count INTEGER NOT NULL,
+        notes TEXT,
+        status TEXT DEFAULT 'Pending',
+        customer_father_name TEXT,
+        customer_village TEXT,
+        customer_aadhaar TEXT,
+        venue_areas TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed menu items (16 items across 4 categories)
+    const menuInsert = db.prepare(
+      'INSERT INTO menu_items (name, description, category, price, image_placeholder, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+    );
 
   if (vertical === 'spa') {
     const spaSchemaPath = path.join(__dirname, '..', 'spa-wellness', 'schema.sql');
@@ -470,7 +662,10 @@ async function createRestaurant(options = {}) {
   db.close();
 
   // 6. Copy service template and inject config
-  let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+  const templateToUse = tenantType === 'tms'
+    ? path.join(__dirname, 'tms-service-template.js')
+    : TEMPLATE_PATH;
+  let template = fs.readFileSync(templateToUse, 'utf8');
 
   // Inject restaurant-specific constants at the top
   const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\n`;
@@ -494,6 +689,7 @@ async function createRestaurant(options = {}) {
     location,
     contact_email,
     contact_phone,
+    tenantType,
     subscription,
     paymentHistory,
     blockedFeatures: options.blockedFeatures || []

@@ -26,13 +26,17 @@ agencyApi.interceptors.response.use(
   }
 );
 
-export function createApi(restaurantId) {
-  const instance = axios.create({ baseURL: `${GATEWAY}/r/${restaurantId}` });
+export function createApi(restaurantId, type = 'restaurant') {
+  const prefix = type === 'tms' ? 't' : 'r';
+  const instance = axios.create({ baseURL: `${GATEWAY}/${prefix}/${restaurantId}` });
   instance.interceptors.request.use((config) => {
     const session = JSON.parse(localStorage.getItem('session') || '{}');
     if (session.role && session.restaurantId === restaurantId) {
       config.headers['x-role'] = session.role;
       config.headers['x-pin'] = session.pin;
+      if (session.employeeId) {
+        config.headers['x-employee-id'] = session.employeeId;
+      }
       if (session.username) {
         config.headers['x-username'] = session.username;
       }

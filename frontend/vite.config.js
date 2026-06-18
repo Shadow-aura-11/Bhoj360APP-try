@@ -17,6 +17,15 @@ export default defineConfig({
           }
         },
       },
+      '/t': {
+        target: 'http://localhost:4000',
+        ws: true,
+        bypass: (req) => {
+          if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            return '/index.html';
+          }
+        },
+      },
     },
   },
   build: {
