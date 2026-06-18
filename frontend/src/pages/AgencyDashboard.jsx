@@ -114,7 +114,6 @@ export default function AgencyDashboard() {
       cashier: '4444',
       customer: '0000',
     },
-    appType: 'restaurant',
     blockedFeatures: [],
   });
 
@@ -1674,34 +1673,18 @@ export default function AgencyDashboard() {
               </div>
             ) : (
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      App Type / OS
-                    </label>
-                    <select
-                      value={formData.appType}
-                      onChange={(e) => setFormData(prev => ({ ...prev, appType: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors text-xs"
-                    >
-                      <option value="restaurant">Restaurant POS</option>
-                      <option value="hms">Hospital Management (HMS)</option>
-                      <option value="pms">Property Management (PMS)</option>
-                    </select>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Node Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder={formData.appType === 'hms' ? "e.g. City General Hospital" : "e.g. Punjabi Tadka"}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                    Restaurant Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g. Punjabi Tadka"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
                 </div>
 
                 <div>

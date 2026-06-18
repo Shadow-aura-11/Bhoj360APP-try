@@ -9,7 +9,6 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const Database = require('better-sqlite3');
-const { hmsSchema, seedHMS } = require('./hms-schema');
 
 const REGISTRY_PATH = path.join(__dirname, 'registry.json');
 const RESTAURANTS_DIR = path.join(__dirname, '..', 'restaurants');
@@ -51,7 +50,7 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
-  const vertical = options.vertical || options.appType || 'restaurant';
+  const vertical = options.vertical || 'restaurant';
 
   // 1. Generate unique ID
   let id;
@@ -200,9 +199,6 @@ async function createRestaurant(options = {}) {
     });
     seedCampaigns();
 
-  } else if (vertical === 'hms') {
-    db.exec(hmsSchema);
-    seedHMS(db);
   } else {
     // Default: Restaurant / POS vertical
     // Create tables
@@ -474,14 +470,10 @@ async function createRestaurant(options = {}) {
   db.close();
 
   // 6. Copy service template and inject config
-  const appType = vertical;
-  const customServicePath = path.join(__dirname, '..', appType, 'functions.js');
-
   let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
-  // If hms/functions.js exists, we could use it to override or extend service template
-  // For now, we use the standard template and inject appType
-  const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\nconst APP_TYPE = '${appType}';\n`;
+  // Inject restaurant-specific constants at the top
+  const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\n`;
   template = injection + template;
 
   const servicePath = path.join(restaurantDir, 'service.js');
@@ -504,7 +496,6 @@ async function createRestaurant(options = {}) {
     contact_phone,
     subscription,
     paymentHistory,
-    appType: vertical,
     blockedFeatures: options.blockedFeatures || []
   });
   writeRegistry(registry);

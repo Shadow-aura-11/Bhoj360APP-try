@@ -27,13 +27,6 @@ const CounterDashboard = lazy(() => import('./pages/counter/CounterDashboard'));
 const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'));
 const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
-const HMSDashboard = lazy(() => import('./pages/hms/HMSDashboard'));
-const HMSPatients = lazy(() => import('./pages/hms/Patients'));
-const HMSPatientDetails = lazy(() => import('./pages/hms/PatientDetails'));
-const HMSAppointments = lazy(() => import('./pages/hms/Appointments'));
-const HMSBilling = lazy(() => import('./pages/hms/Billing'));
-const HMSPharmacy = lazy(() => import('./pages/hms/Pharmacy'));
-const HMSLab = lazy(() => import('./pages/hms/Lab'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
 // Spa & Wellness Pages
@@ -273,7 +266,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/r/:restaurantId/admin/tables"
           element={
