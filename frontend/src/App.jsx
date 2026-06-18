@@ -36,6 +36,19 @@ const HMSPharmacy = lazy(() => import('./pages/hms/Pharmacy'));
 const HMSLab = lazy(() => import('./pages/hms/Lab'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// Spa & Wellness Pages
+const SpaDashboard = lazy(() => import('./pages/spa/SpaDashboard'));
+const SpaPOS = lazy(() => import('./pages/spa/SpaPOS'));
+const AppointmentBooking = lazy(() => import('./pages/spa/AppointmentBooking'));
+const TherapistManagement = lazy(() => import('./pages/spa/TherapistManagement'));
+const MembershipsPackages = lazy(() => import('./pages/spa/MembershipsPackages'));
+const CustomerCRM = lazy(() => import('./pages/spa/CustomerCRM'));
+const SpaInventory = lazy(() => import('./pages/spa/SpaInventory'));
+const CustomerFeedback = lazy(() => import('./pages/spa/CustomerFeedback'));
+const EnterprisePortals = lazy(() => import('./pages/spa/EnterprisePortals'));
+const SpecializedPortals = lazy(() => import('./pages/spa/SpecializedPortals'));
+const MarketingLoyalty = lazy(() => import('./pages/spa/MarketingLoyalty'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -184,6 +197,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* HMS Routes */}
         <Route
           path="/r/:restaurantId/hms/lab"
           element={
@@ -232,6 +247,33 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Spa & Wellness Specialized Routes */}
+        <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/r/:restaurantId/admin/tables"
           element={
@@ -353,6 +395,72 @@ export default function App() {
           }
         />
 
+        {/* Spa & Wellness Routes */}
+        <Route
+          path="/r/:restaurantId/spa"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <SpaPOS />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/bookings"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <AppointmentBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/therapists"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TherapistManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/memberships"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <MembershipsPackages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/crm"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'therapist']}>
+              <CustomerCRM />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/feedback"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CustomerFeedback />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Waiter Dashboard Protected Route */}
         <Route
           path="/r/:restaurantId/waiter"
@@ -392,7 +500,7 @@ export default function App() {
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
 
-        {/* HMS Routes */}
+        {/* HMS Dashboard Route */}
         <Route
           path="/r/:restaurantId/hms"
           element={

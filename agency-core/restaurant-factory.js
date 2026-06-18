@@ -51,6 +51,7 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
+  const vertical = options.vertical || options.appType || 'restaurant';
 
   // 1. Generate unique ID
   let id;
@@ -95,6 +96,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
+    vertical,
     createdAt: new Date().toISOString(),
     active: true,
     online: true,
@@ -130,13 +132,80 @@ async function createRestaurant(options = {}) {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
 
-  const appType = options.appType || 'restaurant';
+  if (vertical === 'spa') {
+    const spaSchemaPath = path.join(__dirname, '..', 'spa-wellness', 'schema.sql');
+    const spaSchema = fs.readFileSync(spaSchemaPath, 'utf8');
+    db.exec(spaSchema);
 
-  if (appType === 'hms') {
+    // Seed Spa Data
+    const serviceInsert = db.prepare(
+      'INSERT INTO services (name, description, category, duration_minutes, price, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+
+    const spaServices = [
+      ['Swedish Massage', 'Classic full body massage for relaxation', 'Massage', 60, 1500, 'https://images.unsplash.com/photo-1544161515-4ae6b91829d2?w=400'],
+      ['Deep Tissue Massage', 'Focuses on realigning deeper layers of muscles', 'Massage', 90, 2200, 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400'],
+      ['Aromatherapy Facial', 'Rejuvenating facial with essential oils', 'Facial', 45, 1800, 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400'],
+      ['Hot Stone Therapy', 'Warm stones placed on key points of the body', 'Body Treatment', 75, 2500, 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=400'],
+      ['Reflexology', 'Pressure applied to specific points on feet', 'Massage', 30, 1000, 'https://images.unsplash.com/photo-1519824141121-997454a93f78?w=400'],
+    ];
+
+    const seedSpaServices = db.transaction(() => {
+      for (const service of spaServices) {
+        serviceInsert.run(...service);
+      }
+    });
+    seedSpaServices();
+
+    const therapistInsert = db.prepare(
+      'INSERT INTO therapists (name, specialization, phone, status) VALUES (?, ?, ?, ?)'
+    );
+    const seedTherapists = db.transaction(() => {
+      therapistInsert.run('Sarah Johnson', 'Massage Specialist', '+91-9876543230', 'active');
+      therapistInsert.run('Michael Chen', 'Skin Care Expert', '+91-9876543231', 'active');
+      therapistInsert.run('Emma Davis', 'Holistic Therapist', '+91-9876543232', 'active');
+    });
+    seedTherapists();
+
+    const membershipInsert = db.prepare(
+      'INSERT INTO memberships (name, description, price, duration_months, benefits_json) VALUES (?, ?, ?, ?, ?)'
+    );
+    const seedMemberships = db.transaction(() => {
+      membershipInsert.run('Wellness Silver', '1 Treatment per month', 1200, 12, JSON.stringify(['1x 60min Swedish Massage', '10% off retail']));
+      membershipInsert.run('Wellness Gold', '2 Treatments per month', 2000, 12, JSON.stringify(['2x 60min Treatments', '15% off retail', 'Free Sauna access']));
+    });
+    seedMemberships();
+
+    // Enterprise Seeding
+    const orgInsert = db.prepare('INSERT INTO organizations (name, country, currency) VALUES (?, ?, ?)');
+    const orgResult = orgInsert.run(name, 'India', 'INR');
+    const orgId = orgResult.lastInsertRowid;
+
+    const branchInsert = db.prepare('INSERT INTO branches (organization_id, name, address) VALUES (?, ?, ?)');
+    const branchResult = branchInsert.run(orgId, 'Main Branch', 'City Center');
+    const branchId = branchResult.lastInsertRowid;
+
+    const roomInsert = db.prepare('INSERT INTO rooms (branch_id, name, type) VALUES (?, ?, ?)');
+    const seedRooms = db.transaction(() => {
+      roomInsert.run(branchId, 'Massage Suite 1', 'Massage');
+      roomInsert.run(branchId, 'Facial Room A', 'Facial');
+      roomInsert.run(branchId, 'Medical Consultation', 'Consultation');
+    });
+    seedRooms();
+
+    const campaignInsert = db.prepare('INSERT INTO campaigns (name, type, status) VALUES (?, ?, ?)');
+    const seedCampaigns = db.transaction(() => {
+      campaignInsert.run('Summer Glow Promo', 'Email', 'sent');
+      campaignInsert.run('Membership Renewal Reminder', 'WhatsApp', 'draft');
+    });
+    seedCampaigns();
+
+  } else if (vertical === 'hms') {
     db.exec(hmsSchema);
     seedHMS(db);
   } else {
-    // Create tables (Standard Restaurant)
+    // Default: Restaurant / POS vertical
+    // Create tables
     db.exec(`
       CREATE TABLE IF NOT EXISTS tables (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -405,7 +474,7 @@ async function createRestaurant(options = {}) {
   db.close();
 
   // 6. Copy service template and inject config
-  const appType = options.appType || 'restaurant';
+  const appType = vertical;
   const customServicePath = path.join(__dirname, '..', appType, 'functions.js');
 
   let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
@@ -423,6 +492,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
+    vertical,
     active: true,
     online: true,
     logo_url,
@@ -434,7 +504,7 @@ async function createRestaurant(options = {}) {
     contact_phone,
     subscription,
     paymentHistory,
-    appType: options.appType || 'restaurant',
+    appType: vertical,
     blockedFeatures: options.blockedFeatures || []
   });
   writeRegistry(registry);
