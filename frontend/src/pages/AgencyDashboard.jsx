@@ -99,6 +99,7 @@ export default function AgencyDashboard() {
   // New restaurant creation form state
   const [formData, setFormData] = useState({
     name: '',
+    vertical: 'restaurant',
     tenantType: 'restaurant',
     tableCount: 8,
     logo_url: '',
@@ -1296,6 +1297,7 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
+                        href={res.vertical === 'pms' ? `/r/${res.id}/admin/pms` : `/r/${res.id}/login`}
                         href={res.tenantType === 'tms' ? `/t/${res.id}/login` : `/r/${res.id}/login`}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
@@ -1682,6 +1684,7 @@ export default function AgencyDashboard() {
             ) : (
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
                       Instance Type
@@ -1704,6 +1707,23 @@ export default function AgencyDashboard() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g. Skyline Apartments"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Service Type
+                    </label>
+                    <select
+                      value={formData.vertical}
+                      onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="restaurant">🍴 Restaurant (RMS)</option>
+                      <option value="pms">🏢 Property Management (PMS)</option>
+                    </select>
+                  </div>
                       placeholder={formData.tenantType === 'tms' ? "e.g. Global Travel" : "e.g. Punjabi Tadka"}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                     />
