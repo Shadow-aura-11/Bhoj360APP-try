@@ -1686,7 +1686,7 @@ export default function AgencyDashboard() {
                   >
                     <option value="restaurant">Bhoj360 - Restaurant POS / PMS</option>
                     <option value="mes-erp">Manufacturing ERP / MES OS</option>
-                    <option value="wms">WMS - Warehouse Management</option>
+
                     <option value="hms">HMS - Hotel Management</option>
                   </select>
                 </div>

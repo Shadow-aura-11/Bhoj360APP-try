@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 const { createTenant } = require('./tenant-factory');
+const { createHospital } = require('./hms-factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;
@@ -420,6 +421,17 @@ app.post('/api/restaurants', requireAgencyAuth, async (req, res) => {
   } catch (err) {
     console.error('[Agency] Error creating tenant:', err.message);
     res.status(500).json({ error: err.message || 'Failed to create tenant' });
+  }
+});
+
+// POST /api/hospitals — Create a new hospital (HMS)
+app.post('/api/hospitals', requireAgencyAuth, async (req, res) => {
+  try {
+    const config = await createHospital(req.body);
+    res.status(201).json(config);
+  } catch (err) {
+    console.error('[Agency] Error creating hospital:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to create hospital' });
   }
 });
 

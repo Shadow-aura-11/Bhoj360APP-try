@@ -64,9 +64,9 @@ async function startRestaurant(restaurant) {
   await killPort(restaurant.port);
 
   // 2. Ensure directory exists
-  const restaurantDir = path.join(__dirname, '..', 'restaurants', restaurant.id);
-  if (!fs.existsSync(restaurantDir)) {
-    fs.mkdirSync(restaurantDir, { recursive: true });
+  const restaurantDir_fix = path.join(__dirname, '..', 'restaurants', restaurant.id);
+  if (!fs.existsSync(restaurantDir_fix)) {
+    fs.mkdirSync(restaurantDir_fix, { recursive: true });
   }
 
   // 3. Sync template to service.js
@@ -79,7 +79,8 @@ async function startRestaurant(restaurant) {
     // Also sync functions.js if it exists in template
     const functionsPath = path.join(templateDir, 'functions.js');
     if (fs.existsSync(functionsPath)) {
-        fs.copyFileSync(functionsPath, path.join(restaurantDir, 'functions.js'));
+        const targetFunctionsPath = path.join(__dirname, '..', 'restaurants', restaurant.id, 'functions.js');
+        fs.copyFileSync(functionsPath, targetFunctionsPath);
     }
 
     console.log(`  [Startup] Synced service.js template for ${restaurant.id} [${templateType}]`);

@@ -35,6 +35,24 @@ const MESPlantManagerPortal = lazy(() => import('./pages/mes-erp/PlantManagerPor
 const MESWarehousePortal = lazy(() => import('./pages/mes-erp/WarehousePortal'));
 const MESOperatorPortal = lazy(() => import('./pages/mes-erp/OperatorPortal'));
 
+// Spa & Wellness Pages
+const SpaDashboard = lazy(() => import('./pages/spa/SpaDashboard'));
+const SpaPOS = lazy(() => import('./pages/spa/SpaPOS'));
+const AppointmentBooking = lazy(() => import('./pages/spa/AppointmentBooking'));
+const TherapistManagement = lazy(() => import('./pages/spa/TherapistManagement'));
+const MembershipsPackages = lazy(() => import('./pages/spa/MembershipsPackages'));
+const CustomerCRM = lazy(() => import('./pages/spa/CustomerCRM'));
+const SpaInventory = lazy(() => import('./pages/spa/SpaInventory'));
+const CustomerFeedback = lazy(() => import('./pages/spa/CustomerFeedback'));
+const EnterprisePortals = lazy(() => import('./pages/spa/EnterprisePortals'));
+const SpecializedPortals = lazy(() => import('./pages/spa/SpecializedPortals'));
+const MarketingLoyalty = lazy(() => import('./pages/spa/MarketingLoyalty'));
+
+// HMS Pages
+const PatientRegistration = lazy(() => import('./pages/hms/PatientRegistration'));
+const EMRDashboard = lazy(() => import('./pages/hms/EMRDashboard'));
+const AIMedicalAssistant = lazy(() => import('./pages/hms/AIMedicalAssistant'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -184,6 +202,30 @@ export default function App() {
           }
         />
         <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/r/:restaurantId/admin/tables"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
@@ -304,6 +346,72 @@ export default function App() {
           }
         />
 
+        {/* Spa & Wellness Routes */}
+        <Route
+          path="/r/:restaurantId/spa"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <SpaPOS />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/bookings"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <AppointmentBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/therapists"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TherapistManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/memberships"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <MembershipsPackages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/crm"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'therapist']}>
+              <CustomerCRM />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/feedback"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CustomerFeedback />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Waiter Dashboard Protected Route */}
         <Route
           path="/r/:restaurantId/waiter"
@@ -376,6 +484,11 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* HMS Routes */}
+        <Route path="/r/:restaurantId/hms/registration" element={<PatientRegistration />} />
+        <Route path="/r/:restaurantId/hms/emr" element={<EMRDashboard />} />
+        <Route path="/r/:restaurantId/hms/ai" element={<AIMedicalAssistant />} />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
