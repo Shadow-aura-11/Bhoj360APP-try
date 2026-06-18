@@ -1,49 +1,50 @@
-# Spa & Wellness Management System - Enterprise Design Document
+# Enterprise Spa & Wellness SaaS Platform - Design Document
 
-## Team Perspectives
+## 1. Architectural Vision
+A cloud-native, multi-tenant SaaS platform designed for global scalability, supporting multi-branch organizations across different countries, currencies, and languages.
 
-### Enterprise Solution Architect
-The system is designed as a modular extension of the existing multi-tenant SaaS platform. It leverages the isolated microservice architecture where each spa tenant has a dedicated SQLite database and process, ensuring data sovereignty and high availability.
+### Key Pillars
+- **Multi-Tenant Isolation**: Each organization has its own isolated data and microservice instance.
+- **Multi-Branch Hierarchy**: Centralized management for chains with branch-specific operations.
+- **Global Ready**: Built-in support for multiple currencies, tax systems (GST, VAT, etc.), and localized languages.
+- **White-Labeling**: Customizable branding (logo, colors, domain) for each tenant.
 
-### Product Manager
-Focuses on the end-to-end wellness journey. Core modules include seamless appointment booking, therapist management to optimize utilization, and recurring revenue drivers like memberships and packages. AI features target high-value outcomes: retention and revenue growth.
+## 2. User Roles & RBAC
+- **Super Admin**: Platform-wide management, subscription billing, global reporting.
+- **Business Owner**: Multi-branch revenue analytics, organization-wide staff/settings.
+- **Branch Manager**: Local operational control, branch inventory, staff schedules.
+- **Receptionist**: Front-desk operations, appointments, payments, membership sales.
+- **Therapist/Beautician**: Service delivery, treatment notes, personal schedules.
+- **Doctor (MedSpa)**: Medical consultations, prescriptions, clinical charting.
+- **Inventory Manager**: Procurement, stock control, vendor management.
+- **Customer**: Online bookings, membership tracking, loyalty rewards.
 
-### UX/UI Designer
-The interface prioritize calm and clarity. A "Zen" theme with soft tones and intuitive calendar interactions for bookings. The CRM provides a holistic view of the customer's wellness history and preferences.
+## 3. Core Enterprise Modules
 
-### Backend Architect
-Implemented using Node.js/Express. The service template is extended to support Spa-specific logic (e.g., resource-based scheduling). State management for memberships and packages is handled via atomic database transactions.
+### Operational Excellence
+- **Unified Booking Engine**: Real-time availability check across therapists, rooms, and equipment.
+- **Therapist & Staff Mgmt**: Skill-based assignment, commission tracking, and performance metrics.
+- **Facility Mgmt**: Resource scheduling for massage rooms, saunas, yoga studios, and consultation rooms.
+- **Advanced POS & Billing**: Unified checkout for services, retail, memberships, and gift cards with split-payment support.
 
-### Frontend Architect
-React-based SPA using Tailwind CSS for responsive, accessible design. Modular components for the calendar, POS, and CRM to ensure maintainability.
+### Growth & Retention
+- **Membership & Packages**: Recurring revenue engines with automated renewals and usage tracking.
+- **Loyalty & Rewards**: Multi-tier point systems and referral bonuses.
+- **Marketing Automation**: Multi-channel (SMS/WhatsApp/Email) campaigns triggered by customer behavior.
+- **Gift Card Engine**: Digital and physical card sales with balance tracking.
 
-### DevOps Engineer
-Automated tenant provisioning via the `RestaurantFactory`. Isolated processes managed by the agency core.
+### Specialized Verticals
+- **MedSpa (Clinical)**: Digital consent forms, photo documentation (before/after), and prescription management.
+- **Ayurveda & Wellness**: Detailed consultation workflows and traditional treatment plans.
 
-### Database Architect
-Relational schema optimized for scheduling. Tables for `therapists`, `appointments`, `memberships`, `packages`, and `inventory` with foreign key constraints for data integrity.
+## 4. AI & Machine Learning Capabilities
+- **Booking Optimization**: Predicts peak hours to optimize staff requirements and resource utilization.
+- **Customer Retention AI**: Churn risk prediction and automated "re-engagement" offers.
+- **Wellness Recommendation Engine**: Personalized treatment and product suggestions based on customer history and preferences.
+- **AI Marketing**: Generative content for campaigns and dynamic segment creation.
 
-### QA Lead
-Focus on booking conflicts and membership balance accuracy.
-
-### Security Architect
-Role-based access control (RBAC) via PIN-based authentication. Data isolation at the process and filesystem level.
-
----
-
-## Data Model
-
-### Core Tables
-- **therapists**: Name, specialization, availability.
-- **services**: Treatment details, duration, price.
-- **appointments**: Customer, therapist, service, time, status.
-- **memberships**: Tiered plans with benefits.
-- **packages**: Bundled services with credit tracking.
-- **customers**: CRM profiles, wellness notes, preferences.
-- **inventory**: Spa products, stock levels, usage logs.
-- **billing**: Invoices, payment methods, transaction history.
-
-## AI Features (Mock/Logic-based)
-- **Retention Prediction**: Analyzing visit frequency and feedback scores.
-- **Personalized Recommendations**: Based on past treatments and preferences.
-- **Revenue Forecasting**: Linear projection based on historical booking data.
+## 5. Technical Architecture
+- **Backend**: Node.js/Express microservices template.
+- **Database**: Dedicated SQLite (per tenant) with relational schema for complex operations.
+- **Event-Driven**: Internal event dispatcher simulating Kafka topics (e.g., `appointment.completed`, `inventory.low`).
+- **Frontend**: React-based SPA with Tailwind CSS, supporting internationalization (i18n) and dynamic theming.

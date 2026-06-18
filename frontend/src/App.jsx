@@ -38,6 +38,9 @@ const MembershipsPackages = lazy(() => import('./pages/spa/MembershipsPackages')
 const CustomerCRM = lazy(() => import('./pages/spa/CustomerCRM'));
 const SpaInventory = lazy(() => import('./pages/spa/SpaInventory'));
 const CustomerFeedback = lazy(() => import('./pages/spa/CustomerFeedback'));
+const EnterprisePortals = lazy(() => import('./pages/spa/EnterprisePortals'));
+const SpecializedPortals = lazy(() => import('./pages/spa/SpecializedPortals'));
+const MarketingLoyalty = lazy(() => import('./pages/spa/MarketingLoyalty'));
 
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
@@ -184,6 +187,30 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
             </ProtectedRoute>
           }
         />

@@ -21,6 +21,21 @@ const path = require('path');
 
 // ─── Setup ──────────────────────────────────────────────────
 
+const EventEmitter = require('events');
+class SpaEventBus extends EventEmitter {}
+const spaEvents = new SpaEventBus();
+
+// Simulation of Kafka/Event-Driven Architecture
+spaEvents.on('appointment.completed', (data) => {
+  console.log(`[Event-Bus] Kafka Topic: appointment.completed - Order #${data.id}`);
+  // Trigger Loyalty points logic
+});
+
+spaEvents.on('inventory.low', (data) => {
+  console.log(`[Event-Bus] Kafka Topic: inventory.low - Item: ${data.item_name}`);
+  // Trigger Procurement alert
+});
+
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
@@ -774,6 +789,103 @@ app.get('/therapists', (req, res) => {
   }
 });
 
+// --- Facility & Rooms ---
+app.get('/spa/rooms', (req, res) => {
+  try {
+    const rooms = db.prepare('SELECT * FROM rooms ORDER BY name').all();
+    res.json(rooms);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Clinical / MedSpa ---
+app.post('/spa/consultations', (req, res) => {
+  const { customer_id, doctor_id, symptoms, diagnosis, notes } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO medical_consultations (customer_id, doctor_id, symptoms, diagnosis, notes) VALUES (?, ?, ?, ?, ?)')
+      .run(customer_id, doctor_id, symptoms, diagnosis, notes);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/prescriptions', (req, res) => {
+  const { consultation_id, medication_name, dosage, frequency, instructions } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO prescriptions (consultation_id, medication_name, dosage, frequency, instructions) VALUES (?, ?, ?, ?, ?)')
+      .run(consultation_id, medication_name, dosage, frequency, instructions);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/consent', (req, res) => {
+  const { customer_id, service_id, form_data_json, signature_url } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO consent_forms (customer_id, service_id, form_data_json, signature_url) VALUES (?, ?, ?, ?)')
+      .run(customer_id, service_id, form_data_json, signature_url);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Enterprise Branches ---
+app.get('/spa/branches', (req, res) => {
+  try {
+    const branches = db.prepare('SELECT * FROM branches WHERE is_active = 1').all();
+    res.json(branches);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/branches', authMiddleware('admin'), (req, res) => {
+  const { name, address, phone, email } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO branches (name, address, phone, email) VALUES (?, ?, ?, ?)')
+      .run(name, address, phone, email);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Staff Commissions ---
+app.get('/spa/commissions', authMiddleware('admin'), (req, res) => {
+  try {
+    const data = db.prepare('SELECT c.*, s.name as staff_name FROM commissions c JOIN staff s ON c.staff_id = s.id ORDER BY c.created_at DESC').all();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Loyalty & Rewards ---
+app.get('/spa/loyalty/:customerId', (req, res) => {
+  try {
+    const points = db.prepare('SELECT loyalty_points FROM customer_profiles WHERE id = ?').get(req.params.customerId);
+    const history = db.prepare('SELECT * FROM loyalty_transactions WHERE customer_id = ? ORDER BY created_at DESC').all(req.params.customerId);
+    res.json({ points: points?.loyalty_points || 0, history });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/loyalty/redeem', (req, res) => {
+  const { customer_id, points, description } = req.body;
+  try {
+    db.prepare('UPDATE customer_profiles SET loyalty_points = loyalty_points - ? WHERE id = ?').run(points, customer_id);
+    db.prepare('INSERT INTO loyalty_transactions (customer_id, points, type, description) VALUES (?, ?, ?, ?)').run(customer_id, points, 'redeemed', description);
+    res.json({ message: 'Points redeemed' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Spa Inventory ---
 app.get('/spa/inventory', authMiddleware('staff'), (req, res) => {
   try {
@@ -849,13 +961,22 @@ app.post('/spa/feedback', (req, res) => {
 
 // --- Specialized Billing ---
 app.post('/spa/billing', authMiddleware('staff'), (req, res) => {
-  const { appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes } = req.body;
+  const { branch_id, appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes } = req.body;
   try {
-    const result = db.prepare('INSERT INTO billing_records (appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes);
+    const result = db.prepare('INSERT INTO invoices (branch_id, customer_id, appointment_id, subtotal, tax_amount, discount_amount, grand_total, payment_method, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(branch_id || 1, customer_id, appointment_id, total_amount, tax_amount, discount_amount, grand_total, payment_method, 'paid');
 
     if (appointment_id) {
       db.prepare("UPDATE appointments SET payment_status = 'paid', status = 'completed' WHERE id = ?").run(appointment_id);
+
+      // Trigger Commission calculation
+      const appt = db.prepare('SELECT staff_id, total_price FROM appointments WHERE id = ?').get(appointment_id);
+      if (appt && appt.staff_id) {
+        const staff = db.prepare('SELECT commission_rate FROM staff WHERE id = ?').get(appt.staff_id);
+        const rate = staff?.commission_rate || 0.1;
+        db.prepare('INSERT INTO commissions (staff_id, appointment_id, sale_type, revenue_amount, commission_amount) VALUES (?, ?, ?, ?, ?)')
+          .run(appt.staff_id, appointment_id, 'service', grand_total, grand_total * rate);
+      }
     }
 
     // Update customer stats
@@ -934,10 +1055,10 @@ app.get('/appointments', (req, res) => {
 });
 
 app.post('/appointments', (req, res) => {
-  const { customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price } = req.body;
+  const { branch_id, customer_id, staff_id, service_id, room_id, appointment_date, appointment_time, duration_minutes, notes, total_price } = req.body;
   try {
-    const result = db.prepare('INSERT INTO appointments (customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price);
+    const result = db.prepare('INSERT INTO appointments (branch_id, customer_id, staff_id, service_id, room_id, appointment_date, appointment_time, duration_minutes, notes, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(branch_id || 1, customer_id, staff_id, service_id, room_id, appointment_date, appointment_time, duration_minutes, notes, total_price);
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2774,7 +2895,16 @@ app.get('/analytics/ai-insights', authMiddleware('admin'), (req, res) => {
         service: s.name,
         targetSegment: s.category + ' lovers',
         reason: 'Trending in your area'
-      }))
+      })),
+      bookingOptimization: {
+        peakHours: ['11:00', '14:00', '18:00'],
+        staffRequired: 5,
+        suggestedDiscountSlots: ['10:00', '15:00']
+      },
+      marketingAI: {
+        generatedSubject: "Revitalize Your Senses with our Summer Glow Promo! ✨",
+        suggestedOffers: ["Buy 2 Massages, Get 1 Facial Free", "15% off for Gold Members"]
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

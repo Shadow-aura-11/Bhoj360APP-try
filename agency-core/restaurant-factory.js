@@ -175,6 +175,30 @@ async function createRestaurant(options = {}) {
     });
     seedMemberships();
 
+    // Enterprise Seeding
+    const orgInsert = db.prepare('INSERT INTO organizations (name, country, currency) VALUES (?, ?, ?)');
+    const orgResult = orgInsert.run(name, 'India', 'INR');
+    const orgId = orgResult.lastInsertRowid;
+
+    const branchInsert = db.prepare('INSERT INTO branches (organization_id, name, address) VALUES (?, ?, ?)');
+    const branchResult = branchInsert.run(orgId, 'Main Branch', 'City Center');
+    const branchId = branchResult.lastInsertRowid;
+
+    const roomInsert = db.prepare('INSERT INTO rooms (branch_id, name, type) VALUES (?, ?, ?)');
+    const seedRooms = db.transaction(() => {
+      roomInsert.run(branchId, 'Massage Suite 1', 'Massage');
+      roomInsert.run(branchId, 'Facial Room A', 'Facial');
+      roomInsert.run(branchId, 'Medical Consultation', 'Consultation');
+    });
+    seedRooms();
+
+    const campaignInsert = db.prepare('INSERT INTO campaigns (name, type, status) VALUES (?, ?, ?)');
+    const seedCampaigns = db.transaction(() => {
+      campaignInsert.run('Summer Glow Promo', 'Email', 'sent');
+      campaignInsert.run('Membership Renewal Reminder', 'WhatsApp', 'draft');
+    });
+    seedCampaigns();
+
   } else {
     // Default: Restaurant / POS vertical
     // Create tables
