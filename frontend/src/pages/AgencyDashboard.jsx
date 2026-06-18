@@ -51,6 +51,7 @@ const FEATURES_LIST = [
 export default function AgencyDashboard() {
   const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState([]);
+  const [emsTenants, setEmsTenants] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -100,6 +101,8 @@ export default function AgencyDashboard() {
   const [formData, setFormData] = useState({
     name: '',
     templateType: 'restaurant',
+    vertical: 'restaurant',
+    tenantType: 'restaurant',
     tableCount: 8,
     logo_url: '',
     description: '',
@@ -474,6 +477,9 @@ export default function AgencyDashboard() {
       const list = data.restaurants || [];
       setRestaurants(list);
 
+      const { data: emsData } = await agencyApi.get('/ems-tenants');
+      setEmsTenants(emsData.tenants || []);
+
       // Aggregate overall stats
       let activeCount = 0;
       let totalOrders = 0;
@@ -671,18 +677,24 @@ export default function AgencyDashboard() {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!formData.name) {
-      toast.error('Restaurant name is required');
+      toast.error('Name is required');
       return;
     }
     try {
       setSubmitting(true);
-      const { data } = await agencyApi.post('/restaurants', formData);
-      setNewRestaurantResult(data);
-      toast.success('Restaurant created successfully!');
+      if (formData.type === 'EMS') {
+         const { data } = await agencyApi.post('/ems-tenants', formData);
+         setNewRestaurantResult(data);
+         toast.success('EMS Tenant created successfully!');
+      } else {
+         const { data } = await agencyApi.post('/restaurants', formData);
+         setNewRestaurantResult(data);
+         toast.success('Restaurant created successfully!');
+      }
       fetchRestaurants();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create restaurant');
+      toast.error('Failed to create instance');
     } finally {
       setSubmitting(false);
     }
@@ -845,6 +857,7 @@ export default function AgencyDashboard() {
     setNewRestaurantResult(null);
     setFormData({
       name: '',
+      type: 'REST',
       tableCount: 8,
       logo_url: '',
       description: '',
@@ -984,6 +997,38 @@ export default function AgencyDashboard() {
 
       {activeTab === 'tenants' && (
         <>
+          {/* EMS SECTION */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold font-display text-slate-805 flex items-center gap-2">
+                Venue & Event Management Nodes (Standalone OS)
+              </h2>
+            </div>
+            {emsTenants.length === 0 ? (
+              <div className="text-center py-10 bg-indigo-50/50 border border-dashed border-indigo-200 rounded-3xl text-indigo-400">
+                No EMS tenants active. Click "Add Restaurant" and select EMS type.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {emsTenants.map((res) => (
+                  <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between mb-4">
+                      <span className="text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100">{res.id}</span>
+                      <span className="text-[10px] font-bold text-indigo-500 uppercase">EMS OS</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">{res.name}</h3>
+                    <p className="text-[10px] text-slate-400 mb-4">Port: {res.port} • Created: {new Date(res.createdAt).toLocaleDateString()}</p>
+                    <div className="flex gap-2">
+                      <a href={`/e/${res.id}/login`} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold text-center transition-all shadow-lg shadow-indigo-100">
+                        Open OS Dashboard
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Agency settings & global stats grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
@@ -1211,9 +1256,16 @@ export default function AgencyDashboard() {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
-                        {res.name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
+                          {res.name}
+                        </h3>
+                        {res.tenantType === 'tms' && (
+                          <span className="bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1">
+                            <Plane size={10} /> TMS
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-mono tracking-wider">
                         <span>Port: {res.port}</span>
                         {res.location && (
@@ -1289,7 +1341,8 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
-                        href={`/r/${res.id}/login`}
+                        href={res.vertical === 'pms' ? `/r/${res.id}/admin/pms` : `/r/${res.id}/login`}
+                        href={res.tenantType === 'tms' ? `/t/${res.id}/login` : `/r/${res.id}/login`}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
                             ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm' 
@@ -1711,6 +1764,24 @@ export default function AgencyDashboard() {
                 </div>
 
                 <div className="hidden">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                    Instance Type / OS
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="REST">Restaurant OS (POS + Tables)</option>
+                    <option value="EMS">Venue & Event Management OS</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                    Business Name *
+                  </label>
                   <input
                     type="text"
                     required
@@ -1719,6 +1790,51 @@ export default function AgencyDashboard() {
                     placeholder="e.g. Punjabi Tadka"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                   />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Instance Type
+                    </label>
+                    <select
+                      value={formData.tenantType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tenantType: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="restaurant">🍴 Restaurant POS</option>
+                      <option value="tms">✈️ Travel Management</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Instance Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g. Skyline Apartments"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Service Type
+                    </label>
+                    <select
+                      value={formData.vertical}
+                      onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="restaurant">🍴 Restaurant (RMS)</option>
+                      <option value="pms">🏢 Property Management (PMS)</option>
+                    </select>
+                  </div>
+                      placeholder={formData.tenantType === 'tms' ? "e.g. Global Travel" : "e.g. Punjabi Tadka"}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1761,20 +1877,22 @@ export default function AgencyDashboard() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Default Table Count
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    required
-                    value={formData.tableCount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
+                {formData.tenantType === 'restaurant' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Default Table Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      required={formData.tenantType === 'restaurant'}
+                      value={formData.tableCount}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">

@@ -17,6 +17,7 @@ const PORT = process.env.GATEWAY_PORT || 4000;
 const AGENCY_PORT = process.env.AGENCY_PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const REGISTRY_PATH = path.join(__dirname, '..', 'agency-core', 'registry.json');
+const EMS_REGISTRY_PATH = path.join(__dirname, '..', 'venue-event', 'registry.json');
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -31,10 +32,28 @@ function readRegistry() {
   }
 }
 
+function readEmsRegistry() {
+  try {
+    return JSON.parse(fs.readFileSync(EMS_REGISTRY_PATH, 'utf8'));
+  } catch {
+    return { tenants: [] };
+  }
+}
+
 function findRestaurantPort(restaurantId) {
   const registry = readRegistry();
   const entry = registry.restaurants.find((r) => r.id === restaurantId);
   return entry ? entry.port : null;
+}
+
+function findEmsPort(tenantId) {
+  const registry = readEmsRegistry();
+  const entry = registry.tenants.find((t) => t.id === tenantId);
+  return entry ? entry.port : null;
+function findHospitalServicePort(hospitalId, serviceName) {
+  const registry = readRegistry();
+  const entry = registry.hospitals?.find((h) => h.id === hospitalId);
+  return entry ? entry.ports[serviceName] : null;
 }
 
 // ─── 1. Agency Core Proxy: /api/* → :3000 ──────────────────
@@ -59,9 +78,9 @@ app.use(
 
 // ─── 2. Restaurant Proxy: /r/:restaurantId/* → :31XX ───────
 
-// Handle Socket.IO connections for restaurants
-app.use('/r/:restaurantId/socket.io', (req, res, next) => {
-  const restaurantId = req.params.restaurantId;
+// Handle Socket.IO connections for restaurants and gyms
+app.use(['/r/:restaurantId/socket.io', '/gym/:gymId/socket.io'], (req, res, next) => {
+  const restaurantId = req.params.restaurantId || req.params.gymId;
   const port = findRestaurantPort(restaurantId);
 
   if (!port) {
@@ -80,8 +99,8 @@ app.use('/r/:restaurantId/socket.io', (req, res, next) => {
     changeOrigin: true,
     ws: true,
     pathRewrite: (reqPath) => {
-      // Strip /r/:restaurantId prefix
-      return reqPath.replace(`/r/${restaurantId}`, '');
+      // Strip /r/:restaurantId or /gym/:gymId prefix
+      return reqPath.replace(/^\/(r|gym)\/[^/]+/, '');
     },
     on: {
       error: (err, req, res) => {
@@ -97,27 +116,69 @@ app.use('/r/:restaurantId/socket.io', (req, res, next) => {
   proxy(req, res, next);
 });
 
-// Handle REST API requests for restaurants
-app.use('/r/:restaurantId', (req, res, next) => {
-  const restaurantId = req.params.restaurantId;
+// Handle REST API requests for restaurants and gyms
+app.use(['/r/:restaurantId', '/gym/:gymId'], (req, res, next) => {
+  const restaurantId = req.params.restaurantId || req.params.gymId;
   const port = findRestaurantPort(restaurantId);
 
   if (!port) {
-    return res.status(503).json({ error: `Restaurant ${restaurantId} not found` });
+    return res.status(503).json({ error: `Tenant ${restaurantId} not found` });
+// Handle REST API requests for tenants (Restaurants & TMS)
+const tenantProxyMiddleware = (prefix) => (req, res, next) => {
+  const tenantId = req.params.tenantId || req.params.restaurantId;
+  const port = findRestaurantPort(tenantId);
+// Handle REST API requests for restaurants
+app.use('/r/:restaurantId', (req, res, next) => {
+  const restaurantId = req.params.restaurantId;
+
+  // Handle HMS routing
+  if (restaurantId.startsWith('HMS-')) {
+    const relativePath = req.path || '';
+    const parts = relativePath.split('/').filter(Boolean);
+    const serviceName = parts[0]; // e.g. /patient/list -> patient
+
+    const port = findHospitalServicePort(restaurantId, serviceName);
+    if (!port) {
+      // If it's a page navigation (HTML request), let frontend handle it
+      const accept = req.headers.accept || '';
+      if (accept.includes('text/html')) {
+        return next();
+      }
+      return res.status(503).json({ error: `Hospital service ${serviceName} not found for ${restaurantId}` });
+    }
+
+    const proxy = createProxyMiddleware({
+      target: `http://localhost:${port}`,
+      changeOrigin: true,
+      pathRewrite: (reqPath) => {
+        // Strip /r/:id/serviceName
+        return reqPath.replace(`/r/${restaurantId}/${serviceName}`, '') || '/';
+      },
+    });
+    return proxy(req, res, next);
+  }
+
+  const port = findRestaurantPort(restaurantId);
+
+  if (!port) {
+    return res.status(503).json({ error: `Tenant ${tenantId} not found` });
   }
 
   // Intercept if tenant is blocked (active is false)
   const registry = readRegistry();
-  const entry = registry.restaurants.find((r) => r.id === restaurantId);
+  const entry = registry.restaurants.find((r) => r.id === tenantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
     const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/rms'];
+      const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
     const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
     const accept = req.headers.accept || '';
 
     if (isApiRequest && !accept.includes('text/html')) {
       return res.status(403).json({ 
-        error: 'This restaurant portal has been suspended by the administrator.', 
+        error: 'This portal has been suspended by the administrator.',
         blocked: true 
       });
     }
@@ -139,12 +200,30 @@ app.use('/r/:restaurantId', (req, res, next) => {
       '/outlets': 'outlets',
       '/venues': 'venues',
       '/rms': 'rms'
+        '/venues': 'venues',
+        '/events': 'events',
+        '/tickets': 'ticketing',
+        '/attendees': 'attendees',
+        '/vendors': 'vendors',
+        '/catering-orders': 'catering',
+        '/crm': 'marketing',
+        '/marketing': 'marketing'
+      '/venues': 'venues',
+      '/leads': 'crm',
+      '/equipment': 'facility',
+      '/classes': 'classes',
+      '/loyalty': 'loyalty',
+      '/ai': 'ai',
+      '/attendance': 'attendance',
+      '/workouts': 'workouts',
+      '/diet-plans': 'diet',
+      '/sales': 'pos'
     };
 
     for (const [pathPrefix, featureKey] of Object.entries(featurePathMapping)) {
       if (relativePath.startsWith(pathPrefix) && entry.blockedFeatures.includes(featureKey)) {
         return res.status(403).json({
-          error: `The ${featureKey} feature has been disabled for this restaurant by the administrator.`,
+          error: `The ${featureKey} feature has been disabled for this tenant by the administrator.`,
           featureBlocked: true
         });
       }
@@ -154,6 +233,9 @@ app.use('/r/:restaurantId', (req, res, next) => {
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/rms'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
   const accept = req.headers.accept || '';
 
@@ -165,15 +247,60 @@ app.use('/r/:restaurantId', (req, res, next) => {
     target: `http://localhost:${port}`,
     changeOrigin: true,
     pathRewrite: (reqPath) => {
-      // Strip /r/:restaurantId prefix
-      return reqPath.replace(`/r/${restaurantId}`, '') || '/';
+      // Strip /r/:restaurantId or /gym/:gymId prefix
+      return reqPath.replace(/^\/(r|gym)\/[^/]+/, '') || '/';
+      // Strip prefix
+      return reqPath.replace(`/${prefix}/${tenantId}`, '') || '/';
     },
     on: {
       error: (err, req, res) => {
-        console.error(`[Gateway] REST proxy error for ${restaurantId}:`, err.message);
+        console.error(`[Gateway] REST proxy error for ${tenantId}:`, err.message);
         if (res.writeHead) {
           res.writeHead(503, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: `Restaurant ${restaurantId} is offline` }));
+          res.end(JSON.stringify({ error: `Tenant ${tenantId} is offline` }));
+        }
+      },
+    },
+  });
+
+  proxy(req, res, next);
+};
+
+app.use('/r/:tenantId', tenantProxyMiddleware('r'));
+app.use('/t/:tenantId', tenantProxyMiddleware('t'));
+
+// ─── 2.5. EMS Proxy: /e/:tenantId/* → :41XX ─────────────────
+
+app.use('/e/:tenantId', (req, res, next) => {
+  const tenantId = req.params.tenantId;
+  const port = findEmsPort(tenantId);
+
+  if (!port) {
+    return res.status(503).json({ error: `EMS Tenant ${tenantId} not found` });
+  }
+
+  // Bypass proxy for non-API routes or HTML document requests
+  const relativePath = req.path || '';
+  const apiRoots = ['/auth', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai', '/health', '/uploads'];
+  const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
+  const accept = req.headers.accept || '';
+
+  if (!isApiRequest || (accept.includes('text/html') && !relativePath.startsWith('/uploads'))) {
+    return next();
+  }
+
+  const proxy = createProxyMiddleware({
+    target: `http://localhost:${port}`,
+    changeOrigin: true,
+    pathRewrite: (reqPath) => {
+      return reqPath.replace(`/e/${tenantId}`, '') || '/';
+    },
+    on: {
+      error: (err, req, res) => {
+        console.error(`[Gateway] EMS proxy error for ${tenantId}:`, err.message);
+        if (res.writeHead) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `EMS Tenant ${tenantId} is offline` }));
         }
       },
     },
@@ -234,16 +361,17 @@ const server = app.listen(PORT, () => {
   console.log(`  Routes:`);
   console.log(`    /api/*             → Agency Core (:${AGENCY_PORT})`);
   console.log(`    /r/:id/*           → Restaurant microservice`);
+  console.log(`    /t/:id/*           → TMS microservice`);
   console.log(`    /*                 → ${NODE_ENV === 'production' ? 'frontend/dist/' : 'Vite dev (:5173)'}`);
   console.log('');
 });
 
 // Handle WebSocket upgrades for restaurant Socket.IO
 server.on('upgrade', (req, socket, head) => {
-  // Check if this is a restaurant Socket.IO connection
-  const match = req.url.match(/^\/r\/([^/]+)\//);
+  // Check if this is a restaurant or gym Socket.IO connection
+  const match = req.url.match(/^\/(r|gym)\/([^/]+)\//);
   if (match) {
-    const restaurantId = match[1];
+    const restaurantId = match[2];
     const port = findRestaurantPort(restaurantId);
 
     if (port) {
@@ -259,7 +387,7 @@ server.on('upgrade', (req, socket, head) => {
         ws: true,
         changeOrigin: true,
         pathRewrite: (reqPath) => {
-          return reqPath.replace(`/r/${restaurantId}`, '');
+          return reqPath.replace(/^\/(r|gym)\/[^/]+/, '');
         },
       });
 

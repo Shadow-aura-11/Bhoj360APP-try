@@ -32,9 +32,10 @@ import DashboardShell from '../../components/Layout/DashboardShell';
 import toast from 'react-hot-toast';
 import { compressImage } from '../../utils/image';
 
-export default function StaffSettings() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+export default function StaffSettings({ isEMS = false }) {
+  const { restaurantId, tenantId } = useParams();
+  const currentId = isEMS ? tenantId : restaurantId;
+  const api = createApi(currentId);
 
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'billing' | 'printing' | 'integrations' | 'staff' | 'customers'
   
@@ -447,6 +448,77 @@ export default function StaffSettings() {
       (cust.email && cust.email.toLowerCase().includes(term))
     );
   });
+
+  if (isEMS) {
+    return (
+      <div className="p-8 space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold text-slate-900">EMS Settings</h1>
+          <p className="text-slate-500">Configure your venue and system preferences.</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-lg mb-6">Venue Profile</h3>
+            <form onSubmit={handleSaveConfig} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Venue Name</label>
+                  <input
+                    type="text"
+                    value={config.name}
+                    onChange={e => setConfig({...config, name: e.target.value})}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Contact Email</label>
+                  <input
+                    type="email"
+                    value={config.contact_email}
+                    onChange={e => setConfig({...config, contact_email: e.target.value})}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Location</label>
+                <textarea
+                  rows="3"
+                  value={config.location}
+                  onChange={e => setConfig({...config, location: e.target.value})}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl resize-none"
+                ></textarea>
+              </div>
+              <button type="submit" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20">
+                Save Changes
+              </button>
+            </form>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-sm">
+              <h4 className="font-bold text-sm uppercase mb-4 text-indigo-400">Security & Access</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] text-slate-500 uppercase mb-1">Admin PIN</label>
+                  <input
+                    type="password"
+                    value="••••"
+                    disabled
+                    className="w-full bg-slate-800 border border-slate-700 p-2 rounded-lg text-sm"
+                  />
+                </div>
+                <button className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg transition-colors">
+                  Update Credentials
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DashboardShell title="Platform Configurations & Settings" restaurantId={restaurantId} role="admin">

@@ -1,0 +1,11 @@
+{
+  "id": "EMS-1CLWAR",
+  "name": "Grand Plaza Ballroom",
+  "port": 4100,
+  "type": "EMS",
+  "createdAt": "2026-06-18T18:51:15.761Z",
+  "active": true,
+  "pins": {
+    "admin": "admin123"
+  }
+}

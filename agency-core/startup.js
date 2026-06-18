@@ -47,7 +47,13 @@ function killPort(port) {
 
 async function startRestaurant(restaurant) {
   const servicePath = path.join(__dirname, '..', 'restaurants', restaurant.id, 'service.js');
-  const templatePath = path.join(__dirname, 'service-template.js');
+  const isGym = restaurant.type === 'gym';
+  const templateFile = isGym ? 'gms-service-template.js' : 'service-template.js';
+  const templatePath = path.join(__dirname, templateFile);
+  const tenantType = restaurant.tenantType || 'restaurant';
+  const templatePath = tenantType === 'tms'
+    ? path.join(__dirname, 'tms-service-template.js')
+    : path.join(__dirname, 'service-template.js');
 
   if (!fs.existsSync(templatePath)) {
     console.warn(`  [Startup] service-template.js not found.`);
@@ -66,10 +72,11 @@ async function startRestaurant(restaurant) {
   // 3. Sync template to service.js
   try {
     let template = fs.readFileSync(templatePath, 'utf8');
-    const injection = `const RESTAURANT_ID = '${restaurant.id}';\nconst PORT = ${restaurant.port};\n`;
+    const idConst = isGym ? 'GYM_ID' : 'RESTAURANT_ID';
+    const injection = `const ${idConst} = '${restaurant.id}';\nconst PORT = ${restaurant.port};\n`;
     template = injection + template;
     fs.writeFileSync(servicePath, template, 'utf8');
-    console.log(`  [Startup] Synced service.js template for ${restaurant.id}`);
+    console.log(`  [Startup] Synced service.js template for ${restaurant.id} (${restaurant.type || 'restaurant'})`);
   } catch (err) {
     console.error(`  [Startup] Failed to sync template for ${restaurant.id}: ${err.message}`);
   }
@@ -79,7 +86,13 @@ async function startRestaurant(restaurant) {
     const child = spawn('node', [servicePath], {
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, NODE_PATH: path.join(__dirname, 'node_modules') },
+      env: {
+        ...process.env,
+        NODE_PATH: [
+          path.join(__dirname, 'node_modules'),
+          path.join(__dirname, '..', 'node_modules')
+        ].join(path.delimiter)
+      },
     });
     child.unref();
     runningProcesses[restaurant.id] = child;
@@ -90,21 +103,51 @@ async function startRestaurant(restaurant) {
 }
 
 async function startAll() {
+  // 1. Boot Restaurants
   const registry = readRegistry();
   const active = registry.restaurants.filter((r) => r.active);
 
-  if (active.length === 0) {
-    console.log('  [Startup] No active restaurants to boot.');
-    return;
+  if (active.length > 0) {
+    console.log(`  [Startup] Booting ${active.length} restaurant(s)...`);
+    for (const restaurant of active) {
+      await startRestaurant(restaurant);
+    }
   }
 
-  console.log(`  [Startup] Booting ${active.length} restaurant(s)...`);
-
-  for (const restaurant of active) {
-    await startRestaurant(restaurant);
+  // 2. Boot EMS Tenants
+  const emsRegistryPath = path.join(__dirname, '..', 'venue-event', 'registry.json');
+  if (fs.existsSync(emsRegistryPath)) {
+    try {
+      const emsRegistry = JSON.parse(fs.readFileSync(emsRegistryPath, 'utf8'));
+      const activeEms = (emsRegistry.tenants || []).filter(t => t.active);
+      if (activeEms.length > 0) {
+        console.log(`  [Startup] Booting ${activeEms.length} EMS tenant(s)...`);
+        for (const tenant of activeEms) {
+          const servicePath = path.join(__dirname, '..', 'venue-event', 'tenants', tenant.id, 'service.js');
+          if (fs.existsSync(servicePath)) {
+            await killPort(tenant.port);
+            const child = spawn('node', [servicePath], {
+              detached: true,
+              stdio: 'ignore',
+              env: {
+                ...process.env,
+                NODE_PATH: [
+                  path.join(__dirname, 'node_modules'),
+                  path.join(__dirname, '..', 'node_modules')
+                ].join(path.delimiter)
+              },
+            });
+            child.unref();
+            console.log(`  [Startup] ✓ EMS ${tenant.id} → port ${tenant.port}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('  [Startup] Failed to boot EMS tenants:', e.message);
+    }
   }
 
-  console.log('  [Startup] All restaurants booted.');
+  console.log('  [Startup] All systems booted.');
   console.log('');
 }
 
