@@ -36,6 +36,9 @@ const io = new SocketIO(server, {
   cors: { origin: '*' },
 });
 
+// Detect App Type (Injected by factory)
+// const APP_TYPE = 'restaurant'; // Injected above
+
 const DB_PATH = path.join(__dirname, 'db.sqlite');
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 const QR_SECRET_SALT = process.env.QR_SECRET_SALT || 'change-this-in-production';
@@ -446,6 +449,7 @@ app.get('/health', (req, res) => {
     login_theme_color: config.login_theme_color || '#fafaf9',
     theme: config.qr_theme || 'classic',
     billing: config.billing || {},
+    appType: typeof APP_TYPE !== 'undefined' ? APP_TYPE : 'restaurant',
     uptime: process.uptime(),
   });
 });
@@ -2895,9 +2899,21 @@ setInterval(() => {
   }
 }, 300000);
 
+// ─── HMS Routing ────────────────────────────────────────────
+if (typeof APP_TYPE !== 'undefined' && APP_TYPE === 'hms') {
+  try {
+    const hmsRoutes = require('../../hms/routes')(db, io);
+    app.use('/api/hms', hmsRoutes);
+    console.log(`  [HMS] ✓ HMS API routes mounted at /api/hms`);
+  } catch (err) {
+    console.error(`  [HMS] ✗ Failed to load HMS routes: ${err.message}`);
+  }
+}
+
 // ─── Start Server ───────────────────────────────────────────
 
 server.listen(PORT, () => {
   const config = readConfig();
-  console.log(`  🍽️  Restaurant ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
+  const label = (typeof APP_TYPE !== 'undefined') ? APP_TYPE.toUpperCase() : 'SERVICE';
+  console.log(`  🚀 ${label} ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
 });

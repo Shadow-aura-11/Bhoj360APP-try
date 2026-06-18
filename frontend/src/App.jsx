@@ -27,6 +27,13 @@ const CounterDashboard = lazy(() => import('./pages/counter/CounterDashboard'));
 const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'));
 const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
+const HMSDashboard = lazy(() => import('./pages/hms/HMSDashboard'));
+const HMSPatients = lazy(() => import('./pages/hms/Patients'));
+const HMSPatientDetails = lazy(() => import('./pages/hms/PatientDetails'));
+const HMSAppointments = lazy(() => import('./pages/hms/Appointments'));
+const HMSBilling = lazy(() => import('./pages/hms/Billing'));
+const HMSPharmacy = lazy(() => import('./pages/hms/Pharmacy'));
+const HMSLab = lazy(() => import('./pages/hms/Lab'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
 // Marketing Subpages
@@ -174,6 +181,54 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/lab"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'nurse', 'doctor']}>
+              <HMSLab />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/pharmacy"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'nurse', 'receptionist']}>
+              <HMSPharmacy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/patients"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}>
+              <HMSPatients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/patients/:patientId"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse']}>
+              <HMSPatientDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/appointments"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}>
+              <HMSAppointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/billing"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <HMSBilling />
             </ProtectedRoute>
           }
         />
@@ -336,6 +391,16 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* HMS Routes */}
+        <Route
+          path="/r/:restaurantId/hms"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist', 'waiter']}>
+              <HMSDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

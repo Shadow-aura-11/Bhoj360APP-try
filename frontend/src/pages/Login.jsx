@@ -442,14 +442,18 @@ export default function Login() {
 
           {/* PWA Install Banner */}
           {showInstallBtn && !isRoleLocked && (
-            <div className="w-full mb-6 p-4 bg-amber-50 border border-amber-150 rounded-2xl flex items-center justify-between gap-3 animate-pulse-ready">
-              <div className="flex items-center gap-2 text-amber-800 text-xs">
-                <Download className="w-4.5 h-4.5 text-amber-600 shrink-0" />
+            <div className={`w-full mb-6 p-4 border rounded-2xl flex items-center justify-between gap-3 animate-pulse-ready ${
+              appType === 'hms' ? 'bg-blue-50 border-blue-150 text-blue-800' : 'bg-amber-50 border-amber-150 text-amber-800'
+            }`}>
+              <div className="flex items-center gap-2 text-xs">
+                <Download className={`w-4.5 h-4.5 shrink-0 ${appType === 'hms' ? 'text-blue-600' : 'text-amber-600'}`} />
                 <span className="font-semibold text-slate-700">Install the {restaurantName} app!</span>
               </div>
               <button
                 onClick={handleInstallApp}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-550 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                className={`px-3 py-1.5 text-white rounded-lg text-xs font-semibold shadow-sm transition-all ${
+                  appType === 'hms' ? 'bg-blue-600 hover:bg-blue-550' : 'bg-amber-600 hover:bg-amber-550'
+                }`}
               >
                 Install
               </button>
