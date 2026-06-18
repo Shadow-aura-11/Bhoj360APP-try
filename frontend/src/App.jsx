@@ -29,6 +29,13 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// TMS Pages
+const TMSDashboard = lazy(() => import('./pages/tms/TMSDashboard'));
+const TravelRequestForm = lazy(() => import('./pages/tms/TravelRequestForm'));
+const ApprovalPortal = lazy(() => import('./pages/tms/ApprovalPortal'));
+const ExpenseManager = lazy(() => import('./pages/tms/ExpenseManager'));
+const TMSLogin = lazy(() => import('./pages/tms/TMSLogin'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -57,7 +64,8 @@ function AgencyProtectedRoute({ children }) {
 
 // Route Guard for staff / admin roles
 function ProtectedRoute({ allowedRoles, children }) {
-  const { restaurantId } = useParams();
+  const { restaurantId, tenantId } = useParams();
+  const effectiveId = restaurantId || tenantId;
   const location = useLocation();
   const sessionStr = localStorage.getItem('session');
   
@@ -67,15 +75,18 @@ function ProtectedRoute({ allowedRoles, children }) {
     else if (location.pathname.endsWith('/counter')) roleParam = 'counter';
     else if (location.pathname.endsWith('/cashier')) roleParam = 'cashier';
     else if (location.pathname.includes('/admin')) roleParam = 'admin';
-    return <Navigate to={`/r/${restaurantId}/login?role=${roleParam}&redirect=${encodeURIComponent(location.pathname)}`} replace />;
+
+    const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
+    return <Navigate to={`${loginPath}?role=${roleParam}&redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   try {
     const session = JSON.parse(sessionStr);
     
     // Check if session belongs to this restaurant
-    if (session.restaurantId !== restaurantId) {
-      return <Navigate to={`/r/${restaurantId}/login`} replace />;
+    if (session.restaurantId !== effectiveId) {
+      const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
+      return <Navigate to={loginPath} replace />;
     }
 
     // Check if role is allowed
@@ -167,6 +178,7 @@ export default function App() {
 
         {/* Auth Route */}
         <Route path="/r/:restaurantId/login" element={<Login />} />
+        <Route path="/t/:tenantId/login" element={<TMSLogin />} />
 
         {/* Admin Dashboard Protected Routes */}
         <Route
@@ -336,6 +348,40 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* TMS Routes */}
+        <Route
+          path="/t/:tenantId"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>
+              <TMSDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/request"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'admin']}>
+              <TravelRequestForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/approvals"
+          element={
+            <ProtectedRoute allowedRoles={['manager', 'admin']}>
+              <ApprovalPortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/expenses"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>
+              <ExpenseManager />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
