@@ -29,6 +29,16 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// Spa & Wellness Pages
+const SpaDashboard = lazy(() => import('./pages/spa/SpaDashboard'));
+const SpaPOS = lazy(() => import('./pages/spa/SpaPOS'));
+const AppointmentBooking = lazy(() => import('./pages/spa/AppointmentBooking'));
+const TherapistManagement = lazy(() => import('./pages/spa/TherapistManagement'));
+const MembershipsPackages = lazy(() => import('./pages/spa/MembershipsPackages'));
+const CustomerCRM = lazy(() => import('./pages/spa/CustomerCRM'));
+const SpaInventory = lazy(() => import('./pages/spa/SpaInventory'));
+const CustomerFeedback = lazy(() => import('./pages/spa/CustomerFeedback'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -294,6 +304,72 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <InventoryManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Spa & Wellness Routes */}
+        <Route
+          path="/r/:restaurantId/spa"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <SpaPOS />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/bookings"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <AppointmentBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/therapists"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TherapistManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/memberships"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <MembershipsPackages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/crm"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'therapist']}>
+              <CustomerCRM />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/feedback"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CustomerFeedback />
             </ProtectedRoute>
           }
         />

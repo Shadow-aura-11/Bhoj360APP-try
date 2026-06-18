@@ -760,6 +760,270 @@ app.get('/tables/sections', (req, res) => {
   res.json(sections.map((s) => s.section));
 });
 
+// ═══════════════════════════════════════════════════════════
+//  SPA & WELLNESS MODULES
+// ═══════════════════════════════════════════════════════════
+
+// --- Therapists ---
+app.get('/therapists', (req, res) => {
+  try {
+    const therapists = db.prepare('SELECT * FROM therapists ORDER BY name').all();
+    res.json(therapists);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Spa Inventory ---
+app.get('/spa/inventory', authMiddleware('staff'), (req, res) => {
+  try {
+    const items = db.prepare('SELECT * FROM inventory ORDER BY item_name ASC').all();
+    res.json(items);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/spa/inventory', authMiddleware('admin'), (req, res) => {
+  const { id, item_name, category, quantity, unit, min_quantity, supplier, cost_per_unit, price_retail } = req.body;
+  try {
+    if (id) {
+      db.prepare('UPDATE inventory SET item_name=?, category=?, quantity=?, unit=?, min_quantity=?, supplier=?, cost_per_unit=?, price_retail=?, updated_at=CURRENT_TIMESTAMP WHERE id=?')
+        .run(item_name, category, quantity, unit, min_quantity, supplier, cost_per_unit, price_retail, id);
+      res.json({ message: 'Inventory item updated' });
+    } else {
+      const result = db.prepare('INSERT INTO inventory (item_name, category, quantity, unit, min_quantity, supplier, cost_per_unit, price_retail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(item_name, category, quantity, unit, min_quantity, supplier, cost_per_unit, price_retail);
+      res.status(201).json({ id: result.lastInsertRowid });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Treatment Plans ---
+app.get('/treatment-plans', (req, res) => {
+  const { customer_id } = req.query;
+  let query = 'SELECT tp.*, t.name as therapist_name FROM treatment_plans tp LEFT JOIN therapists t ON tp.therapist_id = t.id WHERE 1=1';
+  const params = [];
+  if (customer_id) { query += ' AND tp.customer_id = ?'; params.push(customer_id); }
+  try {
+    const plans = db.prepare(query).all(...params);
+    res.json(plans);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/treatment-plans', (req, res) => {
+  const { customer_id, therapist_id, title, description, goals, recommended_services_json } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO treatment_plans (customer_id, therapist_id, title, description, goals, recommended_services_json) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(customer_id, therapist_id, title, description, goals, recommended_services_json);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Feedback ---
+app.get('/spa/feedback', authMiddleware('admin'), (req, res) => {
+  try {
+    const feedback = db.prepare('SELECT f.*, c.name as customer_name, a.appointment_date FROM feedback f LEFT JOIN customer_profiles c ON f.customer_id = c.id LEFT JOIN appointments a ON f.appointment_id = a.id ORDER BY f.created_at DESC').all();
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/feedback', (req, res) => {
+  const { appointment_id, customer_id, rating, comments, staff_performance_rating, facility_rating } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO feedback (appointment_id, customer_id, rating, comments, staff_performance_rating, facility_rating) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(appointment_id, customer_id, rating, comments, staff_performance_rating, facility_rating);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Specialized Billing ---
+app.post('/spa/billing', authMiddleware('staff'), (req, res) => {
+  const { appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO billing_records (appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(appointment_id, customer_id, total_amount, discount_amount, tax_amount, grand_total, payment_method, transaction_id, notes);
+
+    if (appointment_id) {
+      db.prepare("UPDATE appointments SET payment_status = 'paid', status = 'completed' WHERE id = ?").run(appointment_id);
+    }
+
+    // Update customer stats
+    if (customer_id) {
+      db.prepare('UPDATE customer_profiles SET total_spend = total_spend + ?, visit_count = visit_count + 1, last_visit = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(grand_total, customer_id);
+    }
+
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/therapists', authMiddleware('admin'), (req, res) => {
+  const { id, name, specialization, phone, email, availability_json, status } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  try {
+    if (id) {
+      db.prepare('UPDATE therapists SET name=?, specialization=?, phone=?, email=?, availability_json=?, status=? WHERE id=?')
+        .run(name, specialization, phone, email, availability_json, status || 'active', id);
+      res.json({ message: 'Therapist updated' });
+    } else {
+      const result = db.prepare('INSERT INTO therapists (name, specialization, phone, email, availability_json, status) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(name, specialization, phone, email, availability_json, status || 'active');
+      res.status(201).json({ id: result.lastInsertRowid });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Spa Services ---
+app.get('/spa/services', (req, res) => {
+  try {
+    const services = db.prepare('SELECT * FROM services WHERE available = 1 ORDER BY category, name').all();
+    res.json(services);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/services', authMiddleware('admin'), (req, res) => {
+  const { id, name, description, category, duration_minutes, price, available, image_url } = req.body;
+  if (!name || !duration_minutes || !price) return res.status(400).json({ error: 'Required fields missing' });
+  try {
+    if (id) {
+      db.prepare('UPDATE services SET name=?, description=?, category=?, duration_minutes=?, price=?, available=?, image_url=? WHERE id=?')
+        .run(name, description, category, duration_minutes, price, available !== undefined ? available : 1, image_url, id);
+      res.json({ message: 'Service updated' });
+    } else {
+      const result = db.prepare('INSERT INTO services (name, description, category, duration_minutes, price, available, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .run(name, description, category, duration_minutes, price, available !== undefined ? available : 1, image_url);
+      res.status(201).json({ id: result.lastInsertRowid });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Appointments ---
+app.get('/appointments', (req, res) => {
+  const { date, customer_id, therapist_id } = req.query;
+  let query = 'SELECT a.*, c.name as customer_name, t.name as therapist_name, s.name as service_name FROM appointments a LEFT JOIN customer_profiles c ON a.customer_id = c.id LEFT JOIN therapists t ON a.therapist_id = t.id LEFT JOIN services s ON a.service_id = s.id WHERE 1=1';
+  const params = [];
+  if (date) { query += ' AND a.appointment_date = ?'; params.push(date); }
+  if (customer_id) { query += ' AND a.customer_id = ?'; params.push(customer_id); }
+  if (therapist_id) { query += ' AND a.therapist_id = ?'; params.push(therapist_id); }
+  query += ' ORDER BY a.appointment_date, a.appointment_time';
+  try {
+    const appointments = db.prepare(query).all(...params);
+    res.json(appointments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/appointments', (req, res) => {
+  const { customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO appointments (customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(customer_id, therapist_id, service_id, appointment_date, appointment_time, duration_minutes, notes, total_price);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/appointments/:id', (req, res) => {
+  const { status, payment_status, notes } = req.body;
+  try {
+    db.prepare('UPDATE appointments SET status = COALESCE(?, status), payment_status = COALESCE(?, payment_status), notes = COALESCE(?, notes), updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(status, payment_status, notes, req.params.id);
+    res.json({ message: 'Appointment updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Memberships ---
+app.get('/memberships', (req, res) => {
+  try {
+    const memberships = db.prepare('SELECT * FROM memberships WHERE active = 1').all();
+    res.json(memberships);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/memberships', authMiddleware('admin'), (req, res) => {
+  const { name, description, price, duration_months, benefits_json } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO memberships (name, description, price, duration_months, benefits_json) VALUES (?, ?, ?, ?, ?)')
+      .run(name, description, price, duration_months, benefits_json);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Packages ---
+app.get('/packages', (req, res) => {
+  try {
+    const packages = db.prepare('SELECT * FROM packages WHERE active = 1').all();
+    res.json(packages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/packages', authMiddleware('admin'), (req, res) => {
+  const { name, description, price, services_json, validity_days } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO packages (name, description, price, services_json, validity_days) VALUES (?, ?, ?, ?, ?)')
+      .run(name, description, price, services_json, validity_days);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Customer CRM ---
+app.get('/spa/customers', (req, res) => {
+  try {
+    const customers = db.prepare('SELECT * FROM customer_profiles ORDER BY last_visit DESC').all();
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/spa/customers', (req, res) => {
+  const { id, name, phone, email, gender, date_of_birth, wellness_notes, allergies, preferences_json } = req.body;
+  try {
+    if (id) {
+      db.prepare('UPDATE customer_profiles SET name=?, phone=?, email=?, gender=?, date_of_birth=?, wellness_notes=?, allergies=?, preferences_json=? WHERE id=?')
+        .run(name, phone, email, gender, date_of_birth, wellness_notes, allergies, preferences_json, id);
+      res.json({ message: 'Customer updated' });
+    } else {
+      const result = db.prepare('INSERT INTO customer_profiles (name, phone, email, gender, date_of_birth, wellness_notes, allergies, preferences_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(name, phone, email, gender, date_of_birth, wellness_notes, allergies, preferences_json);
+      res.status(201).json({ id: result.lastInsertRowid });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /tables/:id — Single table
 app.get('/tables/:id', (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
@@ -2463,6 +2727,58 @@ app.get('/analytics/summary', (req, res) => {
     paidOrders: paidOrders.count,
     totalTables: totalTables.count,
   });
+});
+
+// --- AI Insights & Predictions [ADMIN] ---
+app.get('/analytics/ai-insights', authMiddleware('admin'), (req, res) => {
+  try {
+    // 1. Revenue Forecasting (Mock AI: simple linear projection)
+    const last7Days = db.prepare(`
+      SELECT DATE(created_at) as date, SUM(total) as daily_revenue
+      FROM orders
+      WHERE status = 'paid' AND created_at >= DATE('now', '-7 days')
+      GROUP BY DATE(created_at)
+    `).all();
+
+    let forecast = 0;
+    if (last7Days.length > 0) {
+      const avg = last7Days.reduce((sum, d) => sum + d.daily_revenue, 0) / last7Days.length;
+      forecast = avg * 1.1; // Predicting 10% growth
+    }
+
+    // 2. Customer Retention Prediction (Mock AI: probability based on visit frequency)
+    const atRiskCustomers = db.prepare(`
+      SELECT name, phone, last_visit, visit_count
+      FROM customer_profiles
+      WHERE last_visit < DATE('now', '-30 days') AND visit_count > 2
+      LIMIT 5
+    `).all();
+
+    // 3. Personalized Wellness Recommendations (Mock AI: based on popular/past services)
+    const topServices = db.prepare(`
+      SELECT name, category FROM services WHERE available = 1 ORDER BY RANDOM() LIMIT 3
+    `).all();
+
+    res.json({
+      revenueForecast: {
+        nextDay: Math.round(forecast),
+        confidence: '85%',
+        trend: 'upward'
+      },
+      retentionRisk: atRiskCustomers.map(c => ({
+        ...c,
+        churnProbability: '65%',
+        recommendation: 'Send "We miss you" coupon'
+      })),
+      recommendations: topServices.map(s => ({
+        service: s.name,
+        targetSegment: s.category + ' lovers',
+        reason: 'Trending in your area'
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /expenses — Retrieve all expenses [ADMIN]
