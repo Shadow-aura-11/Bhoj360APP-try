@@ -99,7 +99,7 @@ export default function AgencyDashboard() {
   // New restaurant creation form state
   const [formData, setFormData] = useState({
     name: '',
-    type: 'restaurant',
+    vertical: 'restaurant',
     tableCount: 8,
     logo_url: '',
     description: '',
@@ -1215,8 +1215,8 @@ export default function AgencyDashboard() {
                         {res.name}
                       </h3>
                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-mono tracking-wider">
-                        <span className={`px-1.5 py-0.5 rounded ${res.type === 'warehouse' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {res.type === 'warehouse' ? 'WMOS' : 'BHOJ360'}
+                <span className={`px-1.5 py-0.5 rounded ${res.vertical === 'warehouse' ? 'bg-amber-100 text-amber-700' : (res.vertical === 'spa' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700')}`}>
+                  {res.vertical === 'warehouse' ? 'WMOS' : (res.vertical === 'spa' ? 'SPA' : 'BHOJ360')}
                         </span>
                         <span>Port: {res.port}</span>
                         {res.location && (
@@ -1292,7 +1292,7 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
-                        href={res.type === 'warehouse' ? `/r/${res.id}/warehouse` : `/r/${res.id}/login`}
+                        href={res.vertical === 'warehouse' ? `/r/${res.id}/warehouse` : (res.vertical === 'spa' ? `/r/${res.id}/spa` : `/r/${res.id}/login`)}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
                             ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm' 
@@ -1679,28 +1679,29 @@ export default function AgencyDashboard() {
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Tenant Type
+                    Tenant Vertical
                   </label>
                   <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    value={formData.vertical}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="restaurant">Restaurant (Bhoj360)</option>
                     <option value="warehouse">Warehouse (WMOS)</option>
+                    <option value="spa">Spa & Wellness</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    {formData.type === 'restaurant' ? 'Restaurant Name *' : 'Warehouse Name *'}
+                    {formData.vertical === 'restaurant' ? 'Restaurant Name *' : (formData.vertical === 'spa' ? 'Spa Name *' : 'Warehouse Name *')}
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder={formData.type === 'restaurant' ? "e.g. Punjabi Tadka" : "e.g. Global Logistics Hub"}
+                    placeholder={formData.vertical === 'restaurant' ? "e.g. Punjabi Tadka" : (formData.vertical === 'spa' ? "e.g. Serenity Spa" : "e.g. Global Logistics Hub")}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>

@@ -51,7 +51,7 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
-  const type = options.type || 'restaurant';
+  const vertical = options.vertical || options.type || 'restaurant';
 
   // 1. Generate unique ID
   let id;
@@ -131,7 +131,7 @@ async function createRestaurant(options = {}) {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
 
-  if (type === 'warehouse') {
+  if (vertical === 'warehouse') {
     const { initializeWmosSchema } = require('./wmos-schema');
     initializeWmosSchema(db);
 
@@ -139,6 +139,12 @@ async function createRestaurant(options = {}) {
     db.prepare('INSERT INTO locations (code, type, zone, aisle, rack, shelf, bin) VALUES (?, ?, ?, ?, ?, ?, ?)').run('DOCK-01', 'dock', 'Receiving', 'A', '1', '1', '1');
     db.prepare('INSERT INTO items (sku, name, category) VALUES (?, ?, ?)').run('SKU-TEST-01', 'Industrial Forklift', 'Equipment');
     db.prepare('INSERT INTO staff (username, name, role, pin) VALUES (?, ?, ?, ?)').run('wh-admin', 'Warehouse Admin', 'manager', options.pins?.admin || '1111');
+  } else if (vertical === 'spa') {
+    const spaSchemaPath = path.join(__dirname, '..', 'spa-wellness', 'schema.sql');
+    if (fs.existsSync(spaSchemaPath)) {
+      const spaSchema = fs.readFileSync(spaSchemaPath, 'utf8');
+      db.exec(spaSchema);
+    }
   } else {
   // Create tables
   db.exec(`
@@ -409,7 +415,7 @@ async function createRestaurant(options = {}) {
   db.close();
 
   // 6. Copy service template and inject config
-  const selectedTemplatePath = type === 'warehouse' ? WMOS_TEMPLATE_PATH : TEMPLATE_PATH;
+  const selectedTemplatePath = vertical === 'warehouse' ? WMOS_TEMPLATE_PATH : TEMPLATE_PATH;
   let template = fs.readFileSync(selectedTemplatePath, 'utf8');
 
   // Inject restaurant-specific constants at the top
@@ -424,7 +430,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
-    type,
+    vertical,
     active: true,
     online: true,
     logo_url,
