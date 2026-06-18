@@ -20,6 +20,9 @@ const CouponsManager = lazy(() => import('./pages/admin/CouponsManager'));
 const MoneyManager = lazy(() => import('./pages/admin/MoneyManager'));
 const ExpensesManager = lazy(() => import('./pages/admin/ExpensesManager'));
 const InventoryManager = lazy(() => import('./pages/admin/InventoryManager'));
+const RMSPOS = lazy(() => import('./pages/rms/POS'));
+const RMSInventory = lazy(() => import('./pages/rms/Inventory'));
+const RMSAI = lazy(() => import('./pages/rms/AIAnalytics'));
 const QRPrintPage = lazy(() => import('./components/QR/QRPrintPage'));
 const StaffMobileApps = lazy(() => import('./pages/admin/StaffMobileApps'));
 const WaiterDashboard = lazy(() => import('./pages/waiter/WaiterDashboard'));
@@ -294,6 +297,32 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <InventoryManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* RMS Specific Routes */}
+        <Route
+          path="/r/:restaurantId/rms/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'cashier', 'waiter']}>
+              <RMSPOS />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/rms/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'counter']}>
+              <RMSInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/rms/ai"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <RMSAI />
             </ProtectedRoute>
           }
         />
