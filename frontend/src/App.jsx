@@ -29,6 +29,11 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// HMS Pages
+const PatientRegistration = lazy(() => import('./pages/hms/PatientRegistration'));
+const EMRDashboard = lazy(() => import('./pages/hms/EMRDashboard'));
+const AIMedicalAssistant = lazy(() => import('./pages/hms/AIMedicalAssistant'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -336,6 +341,11 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* HMS Routes */}
+        <Route path="/r/:restaurantId/hms/registration" element={<PatientRegistration />} />
+        <Route path="/r/:restaurantId/hms/emr" element={<EMRDashboard />} />
+        <Route path="/r/:restaurantId/hms/ai" element={<AIMedicalAssistant />} />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
