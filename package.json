@@ -7,6 +7,8 @@
     "start": "node scripts/start.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^25.9.3",
     "concurrently": "^8.2.2"
   },
   "dependencies": {

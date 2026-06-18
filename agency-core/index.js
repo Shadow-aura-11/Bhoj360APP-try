@@ -15,6 +15,8 @@ const nodemailer = require('nodemailer');
 
 const { createRestaurant } = require('./restaurant-factory');
 const emsFactory = require('../venue-event/factory');
+const { createGym } = require('./gms-factory');
+const { createHospital } = require('./hms-factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;
@@ -413,14 +415,31 @@ app.get('/api/restaurants', requireAgencyAuth, async (req, res) => {
   }
 });
 
-// POST /api/restaurants — Create a new restaurant
+// POST /api/restaurants — Create a new restaurant or gym
 app.post('/api/restaurants', requireAgencyAuth, async (req, res) => {
   try {
-    const config = await createRestaurant(req.body);
+    const { type } = req.body;
+    let config;
+    if (type === 'gym') {
+      config = await createGym(req.body);
+    } else {
+      config = await createRestaurant(req.body);
+    }
     res.status(201).json(config);
   } catch (err) {
-    console.error('[Agency] Error creating restaurant:', err.message);
-    res.status(500).json({ error: err.message || 'Failed to create restaurant' });
+    console.error('[Agency] Error creating tenant:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to create tenant' });
+  }
+});
+
+// POST /api/hospitals — Create a new hospital (HMS)
+app.post('/api/hospitals', requireAgencyAuth, async (req, res) => {
+  try {
+    const config = await createHospital(req.body);
+    res.status(201).json(config);
+  } catch (err) {
+    console.error('[Agency] Error creating hospital:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to create hospital' });
   }
 });
 
@@ -501,7 +520,7 @@ app.get('/api/restaurants/:id/stats', requireAgencyAuth, async (req, res) => {
 
 // PUT /api/restaurants/:id — Edit restaurant details
 app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
-  const { name, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone, blockedFeatures } = req.body;
+  const { name, vertical, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone, blockedFeatures } = req.body;
   const { id } = req.params;
 
   try {
@@ -513,6 +532,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
 
     const oldActive = entry.active;
     if (name !== undefined) entry.name = name;
+    if (vertical !== undefined) entry.vertical = vertical;
     if (active !== undefined) {
       entry.active = active;
       entry.online = active;
@@ -535,6 +555,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (name !== undefined) config.name = name;
+      if (vertical !== undefined) config.vertical = vertical;
       if (active !== undefined) {
         config.active = active;
         config.online = active;
