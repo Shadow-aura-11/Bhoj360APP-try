@@ -20,4 +20,10 @@ function paymentProcessing() {
   // TODO: Implement paymentProcessing
 }
 
-module.exports = { bookingManagement, itineraryPlanning, customerManagement, vendorManagement, paymentProcessing };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { bookingManagement, itineraryPlanning, customerManagement, vendorManagement, paymentProcessing, generateQRCode };

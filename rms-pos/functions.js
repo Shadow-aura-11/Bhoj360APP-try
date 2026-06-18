@@ -20,4 +20,10 @@ function employeeManagement() {
   // TODO: Implement employeeManagement
 }
 
-module.exports = { inventoryManagement, salesProcessing, customerLoyalty, reportingAndAnalytics, employeeManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { inventoryManagement, salesProcessing, customerLoyalty, reportingAndAnalytics, employeeManagement, generateQRCode };

@@ -20,4 +20,10 @@ function feeCollection() {
   // TODO: Implement feeCollection
 }
 
-module.exports = { studentRegistration, attendanceTracking, gradeManagement, courseScheduling, feeCollection };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { studentRegistration, attendanceTracking, gradeManagement, courseScheduling, feeCollection, generateQRCode };

@@ -20,4 +20,10 @@ function taskTracking() {
   // TODO: Implement taskTracking
 }
 
-module.exports = { leadManagement, clientCommunication, propertyMatching, salesPipeline, taskTracking };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { leadManagement, clientCommunication, propertyMatching, salesPipeline, taskTracking, generateQRCode };

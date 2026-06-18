@@ -20,4 +20,10 @@ function orderFulfillment() {
   // TODO: Implement orderFulfillment
 }
 
-module.exports = { productionPlanning, inventoryManagement, qualityControl, supplyChainManagement, orderFulfillment };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { productionPlanning, inventoryManagement, qualityControl, supplyChainManagement, orderFulfillment, generateQRCode };

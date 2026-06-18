@@ -20,4 +20,10 @@ function housekeepingManagement() {
   // TODO: Implement housekeepingManagement
 }
 
-module.exports = { manageReservations, manageRooms, billingAndInvoicing, guestManagement, housekeepingManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { manageReservations, manageRooms, billingAndInvoicing, guestManagement, housekeepingManagement, generateQRCode };

@@ -20,4 +20,10 @@ function billingAndInvoicing() {
   // TODO: Implement billingAndInvoicing
 }
 
-module.exports = { fleetManagement, routeOptimization, freightTracking, orderManagement, billingAndInvoicing };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { fleetManagement, routeOptimization, freightTracking, orderManagement, billingAndInvoicing, generateQRCode };

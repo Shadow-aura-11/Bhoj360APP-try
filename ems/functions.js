@@ -20,4 +20,10 @@ function sponsorManagement() {
   // TODO: Implement sponsorManagement
 }
 
-module.exports = { eventPlanning, registrationManagement, ticketing, speakerManagement, sponsorManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { eventPlanning, registrationManagement, ticketing, speakerManagement, sponsorManagement, generateQRCode };

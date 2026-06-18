@@ -20,4 +20,10 @@ function vendorCoordination() {
   // TODO: Implement vendorCoordination
 }
 
-module.exports = { venueBooking, eventPlanning, attendeeManagement, ticketing, vendorCoordination };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { venueBooking, eventPlanning, attendeeManagement, ticketing, vendorCoordination, generateQRCode };

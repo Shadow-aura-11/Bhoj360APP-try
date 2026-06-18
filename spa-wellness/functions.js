@@ -20,4 +20,10 @@ function staffScheduling() {
   // TODO: Implement staffScheduling
 }
 
-module.exports = { appointmentBooking, clientManagement, serviceMenu, inventoryTracking, staffScheduling };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { appointmentBooking, clientManagement, serviceMenu, inventoryTracking, staffScheduling, generateQRCode };

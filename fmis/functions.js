@@ -20,4 +20,10 @@ function financialReporting() {
   // TODO: Implement financialReporting
 }
 
-module.exports = { cropPlanning, inventoryManagement, weatherTracking, equipmentMaintenance, financialReporting };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { cropPlanning, inventoryManagement, weatherTracking, equipmentMaintenance, financialReporting, generateQRCode };

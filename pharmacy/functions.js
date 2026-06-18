@@ -20,4 +20,10 @@ function supplierManagement() {
   // TODO: Implement supplierManagement
 }
 
-module.exports = { prescriptionManagement, inventoryControl, billingAndInsurance, patientRecords, supplierManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { prescriptionManagement, inventoryControl, billingAndInsurance, patientRecords, supplierManagement, generateQRCode };

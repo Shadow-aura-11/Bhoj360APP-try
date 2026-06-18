@@ -20,4 +20,10 @@ function clientCommunication() {
   // TODO: Implement clientCommunication
 }
 
-module.exports = { caseManagement, timeTracking, billingAndInvoicing, documentManagement, clientCommunication };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { caseManagement, timeTracking, billingAndInvoicing, documentManagement, clientCommunication, generateQRCode };

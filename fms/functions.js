@@ -20,4 +20,10 @@ function complianceManagement() {
   // TODO: Implement complianceManagement
 }
 
-module.exports = { franchiseOnboarding, royaltyTracking, performanceMonitoring, marketingSupport, complianceManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { franchiseOnboarding, royaltyTracking, performanceMonitoring, marketingSupport, complianceManagement, generateQRCode };

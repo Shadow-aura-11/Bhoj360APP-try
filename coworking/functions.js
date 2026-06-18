@@ -20,4 +20,10 @@ function facilityManagement() {
   // TODO: Implement facilityManagement
 }
 
-module.exports = { deskBooking, memberManagement, billingAndInvoicing, communityEngagement, facilityManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { deskBooking, memberManagement, billingAndInvoicing, communityEngagement, facilityManagement, generateQRCode };

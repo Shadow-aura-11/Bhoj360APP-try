@@ -20,4 +20,10 @@ function staffManagement() {
   // TODO: Implement staffManagement
 }
 
-module.exports = { patientRegistration, appointmentScheduling, electronicHealthRecords, billingAndClaims, staffManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { patientRegistration, appointmentScheduling, electronicHealthRecords, billingAndClaims, staffManagement, generateQRCode };

@@ -20,4 +20,10 @@ function progressTracking() {
   // TODO: Implement progressTracking
 }
 
-module.exports = { projectPlanning, resourceManagement, budgeting, documentControl, progressTracking };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { projectPlanning, resourceManagement, budgeting, documentControl, progressTracking, generateQRCode };

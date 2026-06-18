@@ -20,4 +20,10 @@ function safetyCompliance() {
   // TODO: Implement safetyCompliance
 }
 
-module.exports = { taskManagement, resourceAllocation, performanceTracking, equipmentMaintenance, safetyCompliance };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { taskManagement, resourceAllocation, performanceTracking, equipmentMaintenance, safetyCompliance, generateQRCode };

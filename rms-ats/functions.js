@@ -20,4 +20,10 @@ function offerManagement() {
   // TODO: Implement offerManagement
 }
 
-module.exports = { jobPosting, candidateTracking, interviewScheduling, resumeParsing, offerManagement };
+
+function generateQRCode(data) {
+  // TODO: Implement QR code generation
+  console.log('Generating QR code for:', data);
+}
+
+module.exports = { jobPosting, candidateTracking, interviewScheduling, resumeParsing, offerManagement, generateQRCode };
