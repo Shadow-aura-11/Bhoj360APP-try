@@ -29,6 +29,14 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// MES Modules
+const MESSalesOrders = lazy(() => import('./pages/mes/SalesOrders'));
+const MESProductionPlanning = lazy(() => import('./pages/mes/ProductionPlanning'));
+const MESInventoryWarehouse = lazy(() => import('./pages/mes/InventoryWarehouse'));
+const MESQualityControl = lazy(() => import('./pages/mes/QualityControl'));
+const MESMachineMonitoring = lazy(() => import('./pages/mes/MachineMonitoring'));
+const MESFinanceHR = lazy(() => import('./pages/mes/FinanceHR'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -294,6 +302,56 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <InventoryManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* MES Routes */}
+        <Route
+          path="/r/:restaurantId/mes/sales"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESSalesOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/mes/production"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESProductionPlanning />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/mes/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESInventoryWarehouse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/mes/quality"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESQualityControl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/mes/monitoring"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESMachineMonitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/mes/finance"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESFinanceHR />
             </ProtectedRoute>
           }
         />

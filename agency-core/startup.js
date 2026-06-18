@@ -66,7 +66,7 @@ async function startRestaurant(restaurant) {
   // 3. Sync template to service.js
   try {
     let template = fs.readFileSync(templatePath, 'utf8');
-    const injection = `const RESTAURANT_ID = '${restaurant.id}';\nconst PORT = ${restaurant.port};\n`;
+    const injection = `const TENANT_ID = '${restaurant.id}';\nconst PORT = ${restaurant.port};\n`;
     template = injection + template;
     fs.writeFileSync(servicePath, template, 'utf8');
     console.log(`  [Startup] Synced service.js template for ${restaurant.id}`);

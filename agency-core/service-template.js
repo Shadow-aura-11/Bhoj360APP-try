@@ -2,9 +2,9 @@
  * Restaurant Microservice — Service Template
  * ═══════════════════════════════════════════
  * This file is copied per restaurant by the factory.
- * The factory injects RESTAURANT_ID and PORT at the top.
+ * The factory injects TENANT_ID and PORT at the top.
  *
- * DO NOT add RESTAURANT_ID or PORT here — they are injected at copy time.
+ * DO NOT add TENANT_ID or PORT here — they are injected at copy time.
  */
 
 // ─── Dependencies ───────────────────────────────────────────
@@ -421,7 +421,7 @@ function updateTableStatus(tableId) {
 function generateQrToken(tableNumber) {
   return crypto
     .createHash('sha256')
-    .update(RESTAURANT_ID + tableNumber + QR_SECRET_SALT)
+    .update(TENANT_ID + tableNumber + QR_SECRET_SALT)
     .digest('hex');
 }
 
@@ -438,7 +438,7 @@ app.get('/health', (req, res) => {
   const config = readConfig();
   res.json({
     status: 'ok',
-    restaurantId: RESTAURANT_ID,
+    restaurantId: TENANT_ID,
     name: config.name,
     logo_url: config.logo_url || '',
     description: config.description || '',
@@ -477,7 +477,7 @@ app.get('/manifest.json', (req, res) => {
         purpose: "any maskable"
       }
     ],
-    start_url: `/r/${RESTAURANT_ID}/login`,
+    start_url: `/r/${TENANT_ID}/login`,
     background_color: "#ffffff",
     theme_color: "#ffffff",
     display: "standalone",
@@ -500,7 +500,7 @@ app.post('/auth', (req, res) => {
       return res.status(401).json({ error: 'Invalid Admin Password' });
     }
     db.prepare('INSERT INTO sessions (role) VALUES (?)').run('admin');
-    return res.json({ role: 'admin', restaurantId: RESTAURANT_ID, name: config.name, staffName: 'Admin' });
+    return res.json({ role: 'admin', restaurantId: TENANT_ID, name: config.name, staffName: 'Admin' });
   }
 
   // If logging in as staff member (requires username/number and pin/password)
@@ -513,7 +513,7 @@ app.post('/auth', (req, res) => {
       db.prepare('INSERT INTO sessions (role) VALUES (?)').run(user.role);
       return res.json({
         role: user.role,
-        restaurantId: RESTAURANT_ID,
+        restaurantId: TENANT_ID,
         name: config.name,
         staffName: user.name,
         username: user.username,
@@ -534,7 +534,7 @@ app.post('/auth', (req, res) => {
         return res.status(401).json({ error: 'Invalid Password' });
       }
       db.prepare('INSERT INTO sessions (role) VALUES (?)').run(role);
-      return res.json({ role, restaurantId: RESTAURANT_ID, name: config.name, staffName: role.toUpperCase() });
+      return res.json({ role, restaurantId: TENANT_ID, name: config.name, staffName: role.toUpperCase() });
     }
     return res.status(401).json({ error: 'Global role login is disabled. Please log in with your Staff account.' });
   }
@@ -637,7 +637,7 @@ app.put('/settings/pins', authMiddleware('admin'), (req, res) => {
     const agencyRegistryPath = path.join(__dirname, '..', '..', 'agency-core', 'registry.json');
     if (fs.existsSync(agencyRegistryPath)) {
       const reg = JSON.parse(fs.readFileSync(agencyRegistryPath, 'utf8'));
-      const rIndex = reg.restaurants.findIndex(r => r.id === RESTAURANT_ID);
+      const rIndex = reg.restaurants.findIndex(r => r.id === TENANT_ID);
       if (rIndex !== -1) {
         reg.restaurants[rIndex].pins = config.pins;
         fs.writeFileSync(agencyRegistryPath, JSON.stringify(reg, null, 2), 'utf8');
@@ -910,7 +910,7 @@ app.get('/tables/:id/qr', async (req, res) => {
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
   const origin = req.query.origin || `http://localhost:${GATEWAY_PORT}`;
-  const url = `${origin.replace(/\/$/, '')}/r/${RESTAURANT_ID}/customer?table=${table.number}&token=${table.qr_token}`;
+  const url = `${origin.replace(/\/$/, '')}/r/${TENANT_ID}/customer?table=${table.number}&token=${table.qr_token}`;
 
   try {
     const qrDataUrl = await QRCode.toDataURL(url, {
@@ -999,7 +999,7 @@ app.get('/menu/public', (req, res) => {
     });
     res.json({
       restaurant: {
-        id: RESTAURANT_ID,
+        id: TENANT_ID,
         name: config.name,
         logo_url: config.logo_url || '',
         google_review_url: config.google_review_url || '',
@@ -1098,7 +1098,7 @@ app.post('/menu/upload', authMiddleware('admin'), (req, res) => {
 
     fs.writeFileSync(targetPath, buffer);
 
-    res.json({ url: `/r/${RESTAURANT_ID}/uploads/${safeFilename}` });
+    res.json({ url: `/r/${TENANT_ID}/uploads/${safeFilename}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to save uploaded image' });
@@ -1846,7 +1846,7 @@ app.put('/settings/config', authMiddleware('admin'), (req, res) => {
     const agencyRegistryPath = path.join(__dirname, '..', '..', 'agency-core', 'registry.json');
     if (fs.existsSync(agencyRegistryPath)) {
       const reg = JSON.parse(fs.readFileSync(agencyRegistryPath, 'utf8'));
-      const rIndex = reg.restaurants.findIndex(r => r.id === RESTAURANT_ID);
+      const rIndex = reg.restaurants.findIndex(r => r.id === TENANT_ID);
       if (rIndex !== -1) {
         reg.restaurants[rIndex].name = config.name || reg.restaurants[rIndex].name;
         reg.restaurants[rIndex].contact_phone = config.contact_phone || reg.restaurants[rIndex].contact_phone;
@@ -2899,5 +2899,5 @@ setInterval(() => {
 
 server.listen(PORT, () => {
   const config = readConfig();
-  console.log(`  🍽️  Restaurant ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
+  console.log(`  🍽️  Restaurant ${TENANT_ID} (${config.name}) running on port ${PORT}`);
 });
