@@ -169,6 +169,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const entry = registry.restaurants.find((r) => r.id === tenantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/rms'];
       const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
     const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
     const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];
@@ -197,6 +198,8 @@ app.use('/r/:restaurantId', (req, res, next) => {
       '/expenses': 'expenses',
       '/inventory': 'inventory',
       '/outlets': 'outlets',
+      '/venues': 'venues',
+      '/rms': 'rms'
         '/venues': 'venues',
         '/events': 'events',
         '/tickets': 'ticketing',
@@ -229,6 +232,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/rms'];
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/events', '/tickets', '/attendees', '/vendors', '/catering-orders', '/crm', '/marketing', '/ai'];
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/members', '/plans', '/subscriptions', '/leads', '/equipment', '/classes', '/loyalty', '/ai', '/attendance', '/workouts', '/diet-plans', '/exercises', '/sales'];
   const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/travel-requests', '/employees', '/bookings', '/policies', '/vendors'];

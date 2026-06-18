@@ -100,6 +100,7 @@ export default function AgencyDashboard() {
   // New restaurant creation form state
   const [formData, setFormData] = useState({
     name: '',
+    templateType: 'restaurant',
     vertical: 'restaurant',
     tenantType: 'restaurant',
     tableCount: 8,
@@ -1662,6 +1663,13 @@ export default function AgencyDashboard() {
 
             {newRestaurantResult ? (
               <div className="space-y-6 overflow-y-auto">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-800">
+                  <Info className="w-6 h-6 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-bold text-sm uppercase">Template: {newRestaurantResult.templateType || 'Standard'}</h4>
+                    <p className="text-xs text-slate-500">Industry-specific modules have been provisioned.</p>
+                  </div>
+                </div>
                 <div className="p-4 bg-emerald-50 border border-emerald-250 rounded-2xl flex items-center gap-3 text-emerald-800">
                   <CheckCircle className="w-6 h-6 flex-shrink-0" />
                   <div>
@@ -1726,6 +1734,36 @@ export default function AgencyDashboard() {
               </div>
             ) : (
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Instance Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g. Punjabi Tadka or Global Retail"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                      Business Template
+                    </label>
+                    <select
+                      value={formData.templateType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, templateType: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors font-bold"
+                    >
+                      <option value="restaurant">🍽️ Restaurant Management (HMS/PMS)</option>
+                      <option value="retail">🛍️ Retail POS & Inventory (RMS)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="hidden">
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
                     Instance Type / OS

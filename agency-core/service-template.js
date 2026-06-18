@@ -53,12 +53,16 @@ const io = new SocketIO(server, {
 
 const DB_PATH = path.join(__dirname, 'db.sqlite');
 const CONFIG_PATH = path.join(__dirname, 'config.json');
+const FUNCTIONS_PATH = path.join(__dirname, 'functions.js');
 const QR_SECRET_SALT = process.env.QR_SECRET_SALT || 'change-this-in-production';
 const GATEWAY_PORT = process.env.GATEWAY_PORT || 4000;
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+
+// Load business logic
+const tenantLogic = require(FUNCTIONS_PATH);
 
 const BILLS_DB_PATH = path.join(__dirname, 'bills.sqlite');
 const billsDb = new Database(BILLS_DB_PATH);
@@ -454,6 +458,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     restaurantId: RESTAURANT_ID,
+    templateType: TEMPLATE_TYPE,
     name: config.name,
     logo_url: config.logo_url || '',
     description: config.description || '',
@@ -2778,11 +2783,79 @@ app.delete('/venues/:id', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
+//  RETAIL RMS API
+// ═══════════════════════════════════════════════════════════
+
+if (TEMPLATE_TYPE === 'retail') {
+  app.get('/rms/products', authMiddleware('staff'), (req, res) => {
+    const products = db.prepare('SELECT * FROM products').all();
+    res.json(products);
+  });
+
+  app.get('/rms/inventory', authMiddleware('staff'), (req, res) => {
+    const inv = db.prepare(`
+      SELECT inventory.*, products.name as product_name, products.sku
+      FROM inventory
+      JOIN products ON products.id = inventory.product_id
+    `).all();
+    res.json(inv);
+  });
+
+  app.post('/rms/sales', authMiddleware('staff'), (req, res) => {
+    try {
+      const result = tenantLogic.processSale(db, req.body);
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.get('/rms/forecast/:productId', authMiddleware('admin'), (req, res) => {
+    const prediction = tenantLogic.forecastDemand(db, req.params.productId);
+    res.json({ productId: req.params.productId, predicted_demand: prediction });
+  });
+
+  app.post('/rms/returns', authMiddleware('staff'), (req, res) => {
+    try {
+      const { saleId, productId, quantity, reason } = req.body;
+      const result = tenantLogic.processReturn(db, saleId, productId, quantity, reason);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post('/rms/sync-ecommerce', authMiddleware('admin'), (req, res) => {
+    const result = tenantLogic.syncEcommerce(db, req.body.platform || 'Shopify');
+    res.json(result);
+  });
+
+  app.post('/rms/optimize-prices', authMiddleware('admin'), (req, res) => {
+    const result = tenantLogic.optimizePrices(db);
+    res.json(result);
+  });
+
+  app.post('/rms/segment-customers', authMiddleware('admin'), (req, res) => {
+    const result = tenantLogic.segmentCustomers(db);
+    res.json(result);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
 //  ANALYTICS API [ADMIN]
 // ═══════════════════════════════════════════════════════════
 
 // GET /analytics/summary — Today's summary
 app.get('/analytics/summary', (req, res) => {
+  if (TEMPLATE_TYPE === 'retail') {
+    const todayRevenue = db.prepare("SELECT SUM(final_amount) as revenue FROM sales WHERE DATE(created_at) = DATE('now', 'localtime')").get();
+    const todayOrders = db.prepare("SELECT COUNT(*) as count FROM sales WHERE DATE(created_at) = DATE('now', 'localtime')").get();
+    return res.json({
+      revenue: todayRevenue.revenue || 0,
+      orderCount: todayOrders.count || 0,
+      templateType: 'retail'
+    });
+  }
   const todayRevenue = db
     .prepare(
       "SELECT COALESCE(SUM(total), 0) as revenue FROM orders WHERE status = 'paid' AND DATE(created_at) = DATE('now', 'localtime')"
