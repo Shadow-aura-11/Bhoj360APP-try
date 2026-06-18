@@ -277,22 +277,6 @@ async function createRestaurant(options = {}) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS venue_bookings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      event_type TEXT NOT NULL,
-      event_date TEXT NOT NULL,
-      event_time TEXT NOT NULL,
-      guest_count INTEGER NOT NULL,
-      notes TEXT,
-      status TEXT DEFAULT 'Pending',
-      customer_father_name TEXT,
-      customer_village TEXT,
-      customer_aadhaar TEXT,
-      venue_areas TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
   `);
 
   // Seed menu items (16 items across 4 categories)
@@ -384,15 +368,6 @@ async function createRestaurant(options = {}) {
   });
   seedOutlets();
 
-  // Seed sample venue bookings
-  const venueInsert = db.prepare(
-    'INSERT INTO venue_bookings (customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  );
-  const seedVenues = db.transaction(() => {
-    venueInsert.run('Rajesh Gupta', '+91-9876543220', 'Marriage', today, 'Full Day', 250, 'Grand Hall, standard decor needed', 'Confirmed');
-    venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
-  });
-  seedVenues();
 
   db.close();
 

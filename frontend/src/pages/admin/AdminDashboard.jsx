@@ -23,15 +23,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function AdminDashboard() {
-  const { restaurantId } = useParams();
+export default function AdminDashboard({ isEMS = false }) {
+  const { restaurantId, tenantId } = useParams();
+  const currentId = isEMS ? tenantId : restaurantId;
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
-  const { socket, isConnected } = useSocket(restaurantId);
+  const api = createApi(currentId);
+  const { socket, isConnected } = useSocket(currentId);
   
-  const { tables, loading: tablesLoading } = useTables(restaurantId, socket);
-  const { orders, loading: ordersLoading } = useOrders(restaurantId, socket);
-  const { reservations, loading: reservationsLoading, refreshReservations } = useReservations(restaurantId, socket);
+  const { tables, loading: tablesLoading } = useTables(!isEMS ? restaurantId : null, socket);
+  const { orders, loading: ordersLoading } = useOrders(!isEMS ? restaurantId : null, socket);
+  const { reservations, loading: reservationsLoading, refreshReservations } = useReservations(!isEMS ? restaurantId : null, socket);
   
   const [summary, setSummary] = useState({
     revenue: 0,
@@ -110,10 +111,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (restaurantId && !ordersLoading) {
+    if (currentId && !ordersLoading && !isEMS) {
       fetchSummary();
     }
-  }, [restaurantId, ordersLoading]);
+  }, [currentId, ordersLoading, isEMS]);
 
   // Listen to order updates or table changes to reload summary stats
   useEffect(() => {
@@ -152,6 +153,79 @@ export default function AdminDashboard() {
   };
 
   const recentOrders = orders.slice(0, 10);
+
+  if (isEMS) {
+    return (
+      <div className="p-8 space-y-8">
+        <header className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">EMS Command Center</h1>
+            <p className="text-slate-500">Overview of venue operations and event analytics.</p>
+          </div>
+          <button onClick={fetchSummary} className="p-2 hover:bg-slate-100 rounded-lg">
+            <RefreshCw className="w-5 h-5 text-slate-400" />
+          </button>
+        </header>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase">Active Events</span>
+            <p className="text-2xl font-bold text-slate-900 mt-1">12</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-4">
+              <Users className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase">Registered Attendees</span>
+            <p className="text-2xl font-bold text-slate-900 mt-1">1,482</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 mb-4">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase">Gross Revenue</span>
+            <p className="text-2xl font-bold text-slate-900 mt-1">₹4,82,500</p>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4">
+              <FileText className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase">Tickets Sold</span>
+            <p className="text-2xl font-bold text-slate-900 mt-1">89%</p>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-lg mb-4">Event Success Trend</h3>
+            <div className="h-64 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 italic">
+              AI Insight: High demand for corporate tech events this quarter.
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-lg mb-4">Upcoming Schedule</h3>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center border border-slate-200">
+                    <span className="text-[10px] font-bold text-indigo-600">OCT</span>
+                    <span className="text-sm font-black">{14 + i}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm">Tech Summit 2026</h4>
+                    <p className="text-xs text-slate-500">Main Convention Hall • 09:00 AM</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DashboardShell title="Overview" restaurantId={restaurantId} role="admin">

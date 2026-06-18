@@ -41,6 +41,13 @@ export default function DashboardShell({
     if (path.endsWith('/admin/staff-apps')) return 'staff-apps';
     if (path.endsWith('/admin/outlets')) return 'outlets';
     if (path.endsWith('/admin/venues')) return 'venues';
+    if (path.endsWith('/admin/events')) return 'events';
+    if (path.endsWith('/admin/ticketing')) return 'ticketing';
+    if (path.endsWith('/admin/attendees')) return 'attendees';
+    if (path.endsWith('/admin/vendors')) return 'vendors';
+    if (path.endsWith('/admin/catering')) return 'catering';
+    if (path.endsWith('/admin/accounting')) return 'accounting';
+    if (path.endsWith('/admin/marketing')) return 'marketing';
     return null;
   };
 

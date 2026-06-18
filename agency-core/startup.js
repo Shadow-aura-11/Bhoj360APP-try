@@ -79,7 +79,13 @@ async function startRestaurant(restaurant) {
     const child = spawn('node', [servicePath], {
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, NODE_PATH: path.join(__dirname, 'node_modules') },
+      env: {
+        ...process.env,
+        NODE_PATH: [
+          path.join(__dirname, 'node_modules'),
+          path.join(__dirname, '..', 'node_modules')
+        ].join(path.delimiter)
+      },
     });
     child.unref();
     runningProcesses[restaurant.id] = child;
@@ -90,21 +96,51 @@ async function startRestaurant(restaurant) {
 }
 
 async function startAll() {
+  // 1. Boot Restaurants
   const registry = readRegistry();
   const active = registry.restaurants.filter((r) => r.active);
 
-  if (active.length === 0) {
-    console.log('  [Startup] No active restaurants to boot.');
-    return;
+  if (active.length > 0) {
+    console.log(`  [Startup] Booting ${active.length} restaurant(s)...`);
+    for (const restaurant of active) {
+      await startRestaurant(restaurant);
+    }
   }
 
-  console.log(`  [Startup] Booting ${active.length} restaurant(s)...`);
-
-  for (const restaurant of active) {
-    await startRestaurant(restaurant);
+  // 2. Boot EMS Tenants
+  const emsRegistryPath = path.join(__dirname, '..', 'venue-event', 'registry.json');
+  if (fs.existsSync(emsRegistryPath)) {
+    try {
+      const emsRegistry = JSON.parse(fs.readFileSync(emsRegistryPath, 'utf8'));
+      const activeEms = (emsRegistry.tenants || []).filter(t => t.active);
+      if (activeEms.length > 0) {
+        console.log(`  [Startup] Booting ${activeEms.length} EMS tenant(s)...`);
+        for (const tenant of activeEms) {
+          const servicePath = path.join(__dirname, '..', 'venue-event', 'tenants', tenant.id, 'service.js');
+          if (fs.existsSync(servicePath)) {
+            await killPort(tenant.port);
+            const child = spawn('node', [servicePath], {
+              detached: true,
+              stdio: 'ignore',
+              env: {
+                ...process.env,
+                NODE_PATH: [
+                  path.join(__dirname, 'node_modules'),
+                  path.join(__dirname, '..', 'node_modules')
+                ].join(path.delimiter)
+              },
+            });
+            child.unref();
+            console.log(`  [Startup] ✓ EMS ${tenant.id} → port ${tenant.port}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('  [Startup] Failed to boot EMS tenants:', e.message);
+    }
   }
 
-  console.log('  [Startup] All restaurants booted.');
+  console.log('  [Startup] All systems booted.');
   console.log('');
 }
 

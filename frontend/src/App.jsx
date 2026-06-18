@@ -11,6 +11,13 @@ const TablesManager = lazy(() => import('./pages/admin/TablesManager'));
 const ReservationsManager = lazy(() => import('./pages/admin/ReservationsManager'));
 const OutletsDeliveryManager = lazy(() => import('./pages/admin/OutletsDeliveryManager'));
 const VenueReservationsManager = lazy(() => import('./pages/admin/VenueReservationsManager'));
+const EventPlanner = lazy(() => import('./pages/admin/EventPlanner'));
+const TicketingSystem = lazy(() => import('./pages/admin/TicketingSystem'));
+const AttendeeManager = lazy(() => import('./pages/admin/AttendeeManager'));
+const VendorManager = lazy(() => import('./pages/admin/VendorManager'));
+const CateringManager = lazy(() => import('./pages/admin/CateringManager'));
+const AccountingReports = lazy(() => import('./pages/admin/AccountingReports'));
+const MarketingCRM = lazy(() => import('./pages/admin/MarketingCRM'));
 const MenuManager = lazy(() => import('./pages/admin/MenuManager'));
 const Analytics = lazy(() => import('./pages/admin/Analytics'));
 const StaffSettings = lazy(() => import('./pages/admin/StaffSettings'));
@@ -28,6 +35,8 @@ const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'
 const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
+
+const EMSDashboardShell = lazy(() => import('./components/ems/EMSDashboardShell'));
 
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
@@ -53,6 +62,27 @@ function AgencyProtectedRoute({ children }) {
     return <Navigate to="/app/login" replace />;
   }
   return children;
+}
+
+// EMS auth route guard
+function EMSProtectedRoute({ children }) {
+  const { tenantId } = useParams();
+  const token = localStorage.getItem(`ems_token_${tenantId}`);
+  const sessionStr = localStorage.getItem('ems_session');
+
+  if (!sessionStr) {
+    return <Navigate to={`/e/${tenantId}/login`} replace />;
+  }
+
+  try {
+    const session = JSON.parse(sessionStr);
+    if (session.tenantId !== tenantId) {
+      return <Navigate to={`/e/${tenantId}/login`} replace />;
+    }
+    return children;
+  } catch {
+    return <Navigate to={`/e/${tenantId}/login`} replace />;
+  }
 }
 
 // Route Guard for staff / admin roles
@@ -202,14 +232,6 @@ export default function App() {
           }
         />
         <Route
-          path="/r/:restaurantId/admin/venues"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <VenueReservationsManager />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/r/:restaurantId/admin/menu"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
@@ -297,6 +319,29 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* EMS Standalone OS Routes */}
+        <Route path="/e/:tenantId/login" element={<Login isEMS={true} />} />
+
+        <Route
+          path="/e/:tenantId"
+          element={
+            <EMSProtectedRoute>
+              <EMSDashboardShell />
+            </EMSProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<AdminDashboard isEMS={true} />} />
+          <Route path="planner" element={<EventPlanner />} />
+          <Route path="ticketing" element={<TicketingSystem />} />
+          <Route path="attendees" element={<AttendeeManager />} />
+          <Route path="vendors" element={<VendorManager />} />
+          <Route path="catering" element={<CateringManager />} />
+          <Route path="reports" element={<AccountingReports />} />
+          <Route path="crm" element={<MarketingCRM />} />
+          <Route path="marketing" element={<MarketingCRM />} />
+          <Route path="settings" element={<StaffSettings isEMS={true} />} />
+        </Route>
 
         {/* Waiter Dashboard Protected Route */}
         <Route

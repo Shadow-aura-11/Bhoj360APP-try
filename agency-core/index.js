@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 const { createRestaurant } = require('./restaurant-factory');
+const emsFactory = require('../venue-event/factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;
@@ -420,6 +421,32 @@ app.post('/api/restaurants', requireAgencyAuth, async (req, res) => {
   } catch (err) {
     console.error('[Agency] Error creating restaurant:', err.message);
     res.status(500).json({ error: err.message || 'Failed to create restaurant' });
+  }
+});
+
+// GET /api/ems-tenants — List all EMS tenants
+app.get('/api/ems-tenants', requireAgencyAuth, async (req, res) => {
+  try {
+    const emsRegistryPath = path.join(__dirname, '..', 'venue-event', 'registry.json');
+    let tenants = [];
+    if (fs.existsSync(emsRegistryPath)) {
+      const data = JSON.parse(fs.readFileSync(emsRegistryPath, 'utf8'));
+      tenants = data.tenants || [];
+    }
+    res.json({ tenants });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to list EMS tenants' });
+  }
+});
+
+// POST /api/ems-tenants — Create a new EMS tenant
+app.post('/api/ems-tenants', requireAgencyAuth, async (req, res) => {
+  try {
+    const config = await emsFactory.createTenant(req.body);
+    res.status(201).json(config);
+  } catch (err) {
+    console.error('[Agency] Error creating EMS tenant:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to create EMS tenant' });
   }
 });
 
