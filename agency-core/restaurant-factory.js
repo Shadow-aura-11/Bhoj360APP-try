@@ -53,13 +53,13 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
-  const tenantType = options.tenantType || 'restaurant';
+  const vertical = options.vertical || 'restaurant';
 
   // 1. Generate unique ID
   let id;
   const existingIds = new Set(registry.restaurants.map((r) => r.id));
   do {
-    id = generateId(tenantType);
+    id = generateId(vertical);
   } while (existingIds.has(id));
 
   // 2. Auto-assign port
@@ -97,7 +97,7 @@ async function createRestaurant(options = {}) {
   const config = {
     id,
     name,
-    tenantType,
+    vertical,
     port,
     createdAt: new Date().toISOString(),
     active: true,
@@ -134,7 +134,7 @@ async function createRestaurant(options = {}) {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
 
-  if (tenantType === 'pms') {
+  if (vertical === 'pms') {
     const schema = fs.readFileSync(PMS_SCHEMA_PATH, 'utf8');
     db.exec(schema);
 
@@ -428,7 +428,7 @@ async function createRestaurant(options = {}) {
   db.close();
 
   // 6. Copy service template and inject config
-  const templatePath = tenantType === 'pms' ? PMS_TEMPLATE_PATH : RESTAURANT_TEMPLATE_PATH;
+  const templatePath = vertical === 'pms' ? PMS_TEMPLATE_PATH : RESTAURANT_TEMPLATE_PATH;
   let template = fs.readFileSync(templatePath, 'utf8');
 
   // Inject restaurant-specific constants at the top
@@ -442,7 +442,7 @@ async function createRestaurant(options = {}) {
   registry.restaurants.push({
     id,
     name,
-    tenantType,
+    vertical,
     port,
     active: true,
     online: true,

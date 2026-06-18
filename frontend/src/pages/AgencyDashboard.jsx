@@ -99,7 +99,7 @@ export default function AgencyDashboard() {
   // New restaurant creation form state
   const [formData, setFormData] = useState({
     name: '',
-    tenantType: 'restaurant',
+    vertical: 'restaurant',
     tableCount: 8,
     logo_url: '',
     description: '',
@@ -1289,7 +1289,7 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
-                        href={res.tenantType === 'pms' ? `/r/${res.id}/admin/pms` : `/r/${res.id}/login`}
+                        href={res.vertical === 'pms' ? `/r/${res.id}/admin/pms` : `/r/${res.id}/login`}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
                             ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm' 
@@ -1693,8 +1693,8 @@ export default function AgencyDashboard() {
                       Service Type
                     </label>
                     <select
-                      value={formData.tenantType}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tenantType: e.target.value }))}
+                      value={formData.vertical}
+                      onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                     >
                       <option value="restaurant">🍴 Restaurant (RMS)</option>
