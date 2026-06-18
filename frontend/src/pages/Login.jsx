@@ -5,12 +5,14 @@ import { createApi } from '../api/client';
 import toast from 'react-hot-toast';
 
 export default function Login() {
-  const { restaurantId } = useParams();
+  const { restaurantId, gymId } = useParams();
+  const tenantId = restaurantId || gymId;
+  const isGym = !!gymId;
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null); // 'admin' | 'waiter' | 'counter' | 'cashier' | 'customer'
   const [staffUsername, setStaffUsername] = useState('');
   const [staffPin, setStaffPin] = useState('');
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const [restaurantName, setRestaurantName] = useState(isGym ? 'Gym' : 'Restaurant');
   const [logoUrl, setLogoUrl] = useState('');
   const [description, setDescription] = useState('');
   const [tableNumber, setTableNumber] = useState('');
@@ -31,10 +33,18 @@ export default function Login() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
   const isRoleLocked = new URLSearchParams(window.location.search).has('role');
 
   const getRoleLabel = (role) => {
+    if (isGym) {
+      switch (role) {
+        case 'admin': return 'Owner/Admin';
+        case 'staff': return 'Staff';
+        case 'trainer': return 'Trainer';
+        default: return role ? role.toUpperCase() : 'Staff';
+      }
+    }
     switch (role) {
       case 'admin': return 'Admin';
       case 'waiter': return 'Waiter';
@@ -46,7 +56,7 @@ export default function Login() {
 
   // 1. Dynamic Manifest injection
   useEffect(() => {
-    if (restaurantId) {
+    if (tenantId) {
       let manifestLink = document.getElementById('dynamic-manifest');
       if (!manifestLink) {
         manifestLink = document.createElement('link');
@@ -54,9 +64,10 @@ export default function Login() {
         manifestLink.rel = 'manifest';
         document.head.appendChild(manifestLink);
       }
-      manifestLink.href = `/r/${restaurantId}/manifest.json`;
+      const prefix = isGym ? 'gym' : 'r';
+      manifestLink.href = `/${prefix}/${tenantId}/manifest.json`;
     }
-  }, [restaurantId]);
+  }, [tenantId, isGym]);
 
   // 2. iOS and Standalone detection for showing install button on phones
   useEffect(() => {
@@ -149,11 +160,11 @@ export default function Login() {
         }
       } catch (err) { /* silent */ }
     };
-    if (restaurantId) {
+    if (tenantId) {
       loadRestaurantDetails();
       loadAgencySettings();
     }
-  }, [restaurantId]);
+  }, [tenantId]);
 
   // Set body background style to match theme color
   useEffect(() => {
@@ -232,7 +243,8 @@ export default function Login() {
       // Save session
       localStorage.setItem('session', JSON.stringify({
         role: data.role,
-        restaurantId,
+        restaurantId: isGym ? undefined : tenantId,
+        gymId: isGym ? tenantId : undefined,
         pin: staffPin,
         name: data.name,
         staffName: data.staffName || (isAd ? 'Admin' : data.role.toUpperCase()),
@@ -247,10 +259,14 @@ export default function Login() {
       if (redirectUrl) {
         navigate(redirectUrl);
       } else {
-        if (data.role === 'admin') navigate(`/r/${restaurantId}/admin`);
-        else if (data.role === 'waiter') navigate(`/r/${restaurantId}/waiter`);
-        else if (data.role === 'counter') navigate(`/r/${restaurantId}/counter`);
-        else if (data.role === 'cashier') navigate(`/r/${restaurantId}/cashier`);
+        if (isGym) {
+          navigate(`/gym/${tenantId}/dashboard`);
+        } else {
+          if (data.role === 'admin') navigate(`/r/${tenantId}/admin`);
+          else if (data.role === 'waiter') navigate(`/r/${tenantId}/waiter`);
+          else if (data.role === 'counter') navigate(`/r/${tenantId}/counter`);
+          else if (data.role === 'cashier') navigate(`/r/${tenantId}/cashier`);
+        }
       }
 
     } catch (err) {
@@ -361,7 +377,7 @@ export default function Login() {
         
         {/* Left Side: Graphical marketing/info panel (Visible on Desktop, Hidden on Mobile) */}
         {!isRoleLocked && (
-          <div className="hidden md:flex md:w-1/2 bg-gradient-to-tr from-amber-800 to-amber-955 p-12 text-white flex-col justify-between relative overflow-hidden">
+          <div className={`hidden md:flex md:w-1/2 bg-gradient-to-tr ${isGym ? 'from-blue-800 to-indigo-900' : 'from-amber-800 to-amber-955'} p-12 text-white flex-col justify-between relative overflow-hidden`}>
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-20 -translate-y-20 animate-pulse" />
             
             <div className="space-y-6 z-10">
@@ -374,19 +390,22 @@ export default function Login() {
                 />
               ) : (
                 <div className="w-16 h-16 rounded-2xl bg-white/10 text-white flex items-center justify-center border border-white/20 shadow-md">
-                  <Utensils className="w-8 h-8" />
+                  {isGym ? <Shield className="w-8 h-8" /> : <Utensils className="w-8 h-8" />}
                 </div>
               )}
 
               <div>
                 <h2 className="text-3xl font-black font-display tracking-tight leading-tight">{restaurantName}</h2>
                 {description ? (
-                  <p className="text-sm text-amber-100/90 mt-3 leading-relaxed font-medium">
+                  <p className={`text-sm ${isGym ? 'text-blue-100/90' : 'text-amber-100/90'} mt-3 leading-relaxed font-medium`}>
                     {description}
                   </p>
                 ) : (
-                  <p className="text-sm text-amber-100/90 mt-3 leading-relaxed font-medium">
-                    Welcome to our restaurant. Log in to your portal to start managing tables, cooking orders, or dining.
+                  <p className={`text-sm ${isGym ? 'text-blue-100/90' : 'text-amber-100/90'} mt-3 leading-relaxed font-medium`}>
+                    {isGym
+                      ? 'Welcome to your fitness hub. Manage members, track workouts, and monitor performance from one unified dashboard.'
+                      : 'Welcome to our restaurant. Log in to your portal to start managing tables, cooking orders, or dining.'
+                    }
                   </p>
                 )}
               </div>
@@ -394,24 +413,29 @@ export default function Login() {
 
             {/* Graphical points */}
             <div className="space-y-4 z-10 my-8">
-              {[
+              {(isGym ? [
+                { title: 'Member 360 & CRM', desc: 'Complete view of member history, attendance, and interaction logs.', icon: '👤' },
+                { title: 'AI Workout & Diet Plans', desc: 'Automated personal training recommendations based on performance metrics.', icon: '🤖' },
+                { title: 'Real-time Access Tracking', desc: 'Monitor check-ins and capacity across your facilities instantly.', icon: '⚡' },
+                { title: 'Automated Billing & Renewals', desc: 'Hands-off subscription management and payment recovery.', icon: '💳' },
+              ] : [
                 { title: 'Scan & Order Self Service', desc: 'Customers scan QR code at tables to view menu and order directly.', icon: '🍽️' },
                 { title: 'Real-time Tracking & Alerts', desc: 'Instant socket synchronization between Waiters, Kitchen, and Customers.', icon: '⚡' },
                 { title: 'One-Tap Waiter Calling', desc: 'Send alert requests directly to waiter dashboard with a single button.', icon: '🔔' },
                 { title: 'Contactless Digital Settlement', desc: 'Secure UPI, card, and cash settle flow directly from table checks.', icon: '💳' },
-              ].map((pt, i) => (
+              ]).map((pt, i) => (
                 <div key={i} className="flex gap-3.5 items-start p-3 bg-white/5 border border-white/10 rounded-2xl">
                   <span className="text-xl shrink-0 mt-0.5">{pt.icon}</span>
                   <div>
                     <h4 className="font-bold text-xs leading-none text-white">{pt.title}</h4>
-                    <p className="text-[10px] text-amber-100/70 mt-1 leading-snug">{pt.desc}</p>
+                    <p className={`text-[10px] ${isGym ? 'text-blue-100/70' : 'text-amber-100/70'} mt-1 leading-snug`}>{pt.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="z-10 text-[10px] text-amber-105/50 font-mono tracking-wider uppercase">
-              Restaurant Management Agency Suite
+            <div className={`z-10 text-[10px] ${isGym ? 'text-blue-105/50' : 'text-amber-105/50'} font-mono tracking-wider uppercase`}>
+              {isGym ? 'Enterprise Gym Management Suite' : 'Restaurant Management Agency Suite'}
             </div>
           </div>
         )}
@@ -486,60 +510,99 @@ export default function Login() {
                 Select Your Role
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* Admin */}
-                <button
-                  onClick={() => handleSelectRole('admin')}
-                  className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-300 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-605 flex items-center justify-center">
-                    <Shield className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-705 font-display">Admin</span>
-                </button>
+                {isGym ? (
+                  <>
+                    {/* Admin */}
+                    <button
+                      onClick={() => handleSelectRole('admin')}
+                      className="p-4 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Owner/Admin</span>
+                    </button>
 
-                {/* Waiter */}
-                <button
-                  onClick={() => handleSelectRole('waiter')}
-                  className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
-                    <Utensils className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-705 font-display">Waiter</span>
-                </button>
+                    {/* Staff */}
+                    <button
+                      onClick={() => handleSelectRole('staff')}
+                      className="p-4 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Staff</span>
+                    </button>
 
-                {/* Counter */}
-                <button
-                  onClick={() => handleSelectRole('counter')}
-                  className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
-                    <ClipboardList className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-705 font-display">Counter</span>
-                </button>
+                    {/* Trainer */}
+                    <button
+                      onClick={() => handleSelectRole('trainer')}
+                      className="p-4 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <ClipboardList className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Trainer</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Admin */}
+                    <button
+                      onClick={() => handleSelectRole('admin')}
+                      className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-300 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-605 flex items-center justify-center">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Admin</span>
+                    </button>
 
-                {/* Cashier */}
-                <button
-                  onClick={() => handleSelectRole('cashier')}
-                  className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
-                    <Landmark className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-705 font-display">Cashier</span>
-                </button>
+                    {/* Waiter */}
+                    <button
+                      onClick={() => handleSelectRole('waiter')}
+                      className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
+                        <Utensils className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Waiter</span>
+                    </button>
 
-                {/* Customer */}
-                <button
-                  onClick={() => handleSelectRole('customer')}
-                  className="p-4 bg-slate-50 hover:bg-amber-50/55 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all sm:col-span-2"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-705 font-display">Customer Seating</span>
-                </button>
+                    {/* Counter */}
+                    <button
+                      onClick={() => handleSelectRole('counter')}
+                      className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
+                        <ClipboardList className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Counter</span>
+                    </button>
+
+                    {/* Cashier */}
+                    <button
+                      onClick={() => handleSelectRole('cashier')}
+                      className="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
+                        <Landmark className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Cashier</span>
+                    </button>
+
+                    {/* Customer */}
+                    <button
+                      onClick={() => handleSelectRole('customer')}
+                      className="p-4 bg-slate-50 hover:bg-amber-50/55 border border-slate-200 hover:border-amber-350 rounded-2xl flex flex-col items-center text-center gap-2 group transition-all sm:col-span-2"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-655 flex items-center justify-center">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-705 font-display">Customer Seating</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : (
@@ -694,13 +757,13 @@ export default function Login() {
                           {logoUrl ? (
                             <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                           ) : (
-                            <Utensils className="w-6 h-6 text-amber-600" />
+                            isGym ? <Shield className="w-6 h-6 text-blue-600" /> : <Utensils className="w-6 h-6 text-amber-600" />
                           )}
                         </div>
                         <h2 className="text-lg font-bold font-display text-slate-800 leading-tight">
                           {restaurantName}
                         </h2>
-                        <span className="text-[10px] font-bold text-amber-600 uppercase mt-0.5">
+                        <span className={`text-[10px] font-bold ${isGym ? 'text-blue-600' : 'text-amber-600'} uppercase mt-0.5`}>
                           {getRoleLabel(selectedRole)} Portal
                         </span>
                       </div>
@@ -708,7 +771,7 @@ export default function Login() {
 
                     {!isRoleLocked && (
                       <div className="text-center mb-4">
-                        <span className="text-[10px] font-bold text-amber-750 uppercase tracking-wider block">
+                        <span className={`text-[10px] font-bold ${isGym ? 'text-blue-600' : 'text-amber-750'} uppercase tracking-wider block`}>
                           {selectedRole.toUpperCase()} PORTAL LOGIN
                         </span>
                         <p className="text-xs text-slate-500 mt-1">
@@ -728,7 +791,7 @@ export default function Login() {
                           value={selectedRole === 'admin' ? 'admin' : staffUsername}
                           onChange={(e) => setStaffUsername(e.target.value)}
                           placeholder="Staff ID or Username"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-amber-600 focus:bg-white text-center font-bold text-base placeholder:text-slate-350 disabled:opacity-75 disabled:cursor-not-allowed"
+                          className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none ${isGym ? 'focus:border-blue-600' : 'focus:border-amber-600'} focus:bg-white text-center font-bold text-base placeholder:text-slate-350 disabled:opacity-75 disabled:cursor-not-allowed`}
                         />
                       </div>
                       <div>
@@ -738,7 +801,7 @@ export default function Login() {
                           value={staffPin}
                           onChange={(e) => setStaffPin(e.target.value)}
                           placeholder="Password"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-amber-600 focus:bg-white text-center font-mono font-bold text-xl tracking-widest placeholder:text-slate-350"
+                          className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none ${isGym ? 'focus:border-blue-600' : 'focus:border-amber-600'} focus:bg-white text-center font-mono font-bold text-xl tracking-widest placeholder:text-slate-350`}
                         />
                       </div>
                     </div>
@@ -746,7 +809,7 @@ export default function Login() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3 bg-amber-600 hover:bg-amber-550 text-white rounded-xl font-semibold shadow-md shadow-amber-600/10 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                      className={`w-full py-3 ${isGym ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-550'} text-white rounded-xl font-semibold shadow-md ${isGym ? 'shadow-blue-600/10' : 'shadow-amber-600/10'} transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5`}
                     >
                       <span>{loading ? 'Logging in...' : 'Sign In'}</span>
                       <ArrowRight className="w-4 h-4" />

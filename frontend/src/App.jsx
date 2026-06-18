@@ -29,6 +29,13 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// GMS Pages
+const GmsDashboard = lazy(() => import('./pages/gms/GmsDashboard'));
+const GmsMemberManagement = lazy(() => import('./pages/gms/GmsMemberManagement'));
+const GmsWorkoutDietPlans = lazy(() => import('./pages/gms/GmsWorkoutDietPlans'));
+const GmsCrmManager = lazy(() => import('./pages/gms/GmsCrmManager'));
+const GmsFacilityManager = lazy(() => import('./pages/gms/GmsFacilityManager'));
+const GmsPosTerminal = lazy(() => import('./pages/gms/GmsPosTerminal'));
 // PMS Pages
 const PMSDashboard = lazy(() => import('./pages/pms/PMSDashboard'));
 const PropertyManager = lazy(() => import('./pages/pms/PropertyManager'));
@@ -83,16 +90,21 @@ function AgencyProtectedRoute({ children }) {
 
 // Route Guard for staff / admin roles
 function ProtectedRoute({ allowedRoles, children }) {
+  const { restaurantId, gymId } = useParams();
+  const tenantId = restaurantId || gymId;
   const { restaurantId, tenantId } = useParams();
   const effectiveId = restaurantId || tenantId;
   const location = useLocation();
   const sessionStr = localStorage.getItem('session');
+  const prefix = restaurantId ? 'r' : 'gym';
   
   if (!sessionStr) {
     let roleParam = 'waiter';
     if (location.pathname.endsWith('/waiter')) roleParam = 'waiter';
     else if (location.pathname.endsWith('/counter')) roleParam = 'counter';
     else if (location.pathname.endsWith('/cashier')) roleParam = 'cashier';
+    else if (location.pathname.includes('/admin') || location.pathname.includes('/dashboard')) roleParam = 'admin';
+    return <Navigate to={`/${prefix}/${tenantId}/login?role=${roleParam}&redirect=${encodeURIComponent(location.pathname)}`} replace />;
     else if (location.pathname.includes('/admin')) roleParam = 'admin';
 
     const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
@@ -102,6 +114,9 @@ function ProtectedRoute({ allowedRoles, children }) {
   try {
     const session = JSON.parse(sessionStr);
     
+    // Check if session belongs to this tenant
+    if (session.restaurantId !== tenantId && session.gymId !== tenantId) {
+      return <Navigate to={`/${prefix}/${tenantId}/login`} replace />;
     // Check if session belongs to this restaurant
     if (session.restaurantId !== effectiveId) {
       const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
@@ -114,12 +129,12 @@ function ProtectedRoute({ allowedRoles, children }) {
       if (session.role === 'customer') {
         return <Navigate to={`/r/${restaurantId}/customer`} replace />;
       }
-      return <Navigate to={`/r/${restaurantId}/login`} replace />;
+      return <Navigate to={`/${prefix}/${tenantId}/login`} replace />;
     }
 
     return children;
   } catch {
-    return <Navigate to={`/r/${restaurantId}/login`} replace />;
+    return <Navigate to={`/${prefix}/${tenantId}/login`} replace />;
   }
 }
 
@@ -550,6 +565,29 @@ export default function App() {
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
 
+        {/* GMS Routes */}
+        <Route path="/gym/:gymId/login" element={<Login />} />
+        <Route
+          path="/gym/:gymId/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gym/:gymId/members"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsMemberManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gym/:gymId/plans"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsWorkoutDietPlans />
         {/* HMS Dashboard Route */}
         <Route
           path="/r/:restaurantId/hms"
@@ -566,6 +604,10 @@ export default function App() {
           }
         />
         <Route
+          path="/gym/:gymId/crm"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsCrmManager />
           path="/t/:tenantId/request"
           element={
             <ProtectedRoute allowedRoles={['employee', 'admin']}>
@@ -574,6 +616,10 @@ export default function App() {
           }
         />
         <Route
+          path="/gym/:gymId/facility"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsFacilityManager />
           path="/t/:tenantId/approvals"
           element={
             <ProtectedRoute allowedRoles={['manager', 'admin']}>
@@ -582,6 +628,13 @@ export default function App() {
           }
         />
         <Route
+          path="/gym/:gymId/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'staff']}>
+              <GmsPosTerminal />
+            </ProtectedRoute>
+          }
+        />
           path="/t/:tenantId/expenses"
           element={
             <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>

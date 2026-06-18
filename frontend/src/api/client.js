@@ -26,12 +26,14 @@ agencyApi.interceptors.response.use(
   }
 );
 
+export function createApi(restaurantId) {
+  const prefix = restaurantId.startsWith('GYM-') ? 'gym' : 'r';
 export function createApi(restaurantId, type = 'restaurant') {
   const prefix = type === 'tms' ? 't' : 'r';
   const instance = axios.create({ baseURL: `${GATEWAY}/${prefix}/${restaurantId}` });
   instance.interceptors.request.use((config) => {
     const session = JSON.parse(localStorage.getItem('session') || '{}');
-    if (session.role && session.restaurantId === restaurantId) {
+    if (session.role && (session.restaurantId === restaurantId || session.gymId === restaurantId)) {
       config.headers['x-role'] = session.role;
       config.headers['x-pin'] = session.pin;
       if (session.employeeId) {
@@ -47,9 +49,10 @@ export function createApi(restaurantId, type = 'restaurant') {
 }
 
 export function createSocket(restaurantId) {
+  const prefix = restaurantId.startsWith('GYM-') ? 'gym' : 'r';
   // Use current origin and connect to the restaurantId namespace endpoint via gateway
   const socket = io(window.location.origin, {
-    path: `/r/${restaurantId}/socket.io`,
+    path: `/${prefix}/${restaurantId}/socket.io`,
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
