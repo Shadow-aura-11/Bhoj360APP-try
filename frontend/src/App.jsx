@@ -29,6 +29,14 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// PMS Pages
+const PMSDashboard = lazy(() => import('./pages/pms/PMSDashboard'));
+const PropertyManager = lazy(() => import('./pages/pms/PropertyManager'));
+const LeaseManager = lazy(() => import('./pages/pms/LeaseManager'));
+const BillingManager = lazy(() => import('./pages/pms/BillingManager'));
+const MaintenanceManager = lazy(() => import('./pages/pms/MaintenanceManager'));
+const PMSLayout = lazy(() => import('./pages/pms/PMSLayout'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -333,6 +341,22 @@ export default function App() {
           path="/r/:restaurantId/customer"
           element={<CustomerDashboard />}
         />
+
+        {/* PMS Routes */}
+        <Route
+          path="/r/:restaurantId/admin/pms"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <PMSLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<PMSDashboard />} />
+          <Route path="properties" element={<PropertyManager />} />
+          <Route path="leases" element={<LeaseManager />} />
+          <Route path="billing" element={<BillingManager />} />
+          <Route path="maintenance" element={<MaintenanceManager />} />
+        </Route>
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />

@@ -12,7 +12,9 @@ const Database = require('better-sqlite3');
 
 const REGISTRY_PATH = path.join(__dirname, 'registry.json');
 const RESTAURANTS_DIR = path.join(__dirname, '..', 'restaurants');
-const TEMPLATE_PATH = path.join(__dirname, 'service-template.js');
+const RESTAURANT_TEMPLATE_PATH = path.join(__dirname, 'service-template.js');
+const PMS_TEMPLATE_PATH = path.join(__dirname, 'pms-service-template.js');
+const PMS_SCHEMA_PATH = path.join(__dirname, 'pms-schema.sql');
 const BASE_PORT = 3100;
 const QR_SECRET_SALT = process.env.QR_SECRET_SALT || 'change-this-in-production';
 
@@ -30,13 +32,14 @@ function writeRegistry(data) {
   fs.writeFileSync(REGISTRY_PATH, JSON.stringify(data, null, 2), 'utf8');
 }
 
-function generateId() {
+function generateId(type = 'restaurant') {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
   for (let i = 0; i < 6; i++) {
     id += chars[Math.floor(Math.random() * chars.length)];
   }
-  return `REST-${id}`;
+  const prefix = type === 'pms' ? 'PMS' : 'REST';
+  return `${prefix}-${id}`;
 }
 
 function generateQrToken(restaurantId, tableNumber) {
@@ -50,12 +53,13 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
+  const tenantType = options.tenantType || 'restaurant';
 
   // 1. Generate unique ID
   let id;
   const existingIds = new Set(registry.restaurants.map((r) => r.id));
   do {
-    id = generateId();
+    id = generateId(tenantType);
   } while (existingIds.has(id));
 
   // 2. Auto-assign port
@@ -93,6 +97,7 @@ async function createRestaurant(options = {}) {
   const config = {
     id,
     name,
+    tenantType,
     port,
     createdAt: new Date().toISOString(),
     active: true,
@@ -129,8 +134,33 @@ async function createRestaurant(options = {}) {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
 
-  // Create tables
-  db.exec(`
+  if (tenantType === 'pms') {
+    const schema = fs.readFileSync(PMS_SCHEMA_PATH, 'utf8');
+    db.exec(schema);
+
+    // PMS Seeding
+    const propertyInsert = db.prepare('INSERT INTO properties (name, type, address, city, country) VALUES (?, ?, ?, ?, ?)');
+    const buildingInsert = db.prepare('INSERT INTO buildings (property_id, name) VALUES (?, ?)');
+    const floorInsert = db.prepare('INSERT INTO floors (building_id, floor_number) VALUES (?, ?)');
+    const unitInsert = db.prepare('INSERT INTO units (floor_id, unit_number, type, rent, status) VALUES (?, ?, ?, ?, ?)');
+
+    const seedPMS = db.transaction(() => {
+        const prop1 = propertyInsert.run('Skyline Apartments', 'Residential', '123 Tech Park', 'San Francisco', 'USA').lastInsertRowid;
+        const bld1 = buildingInsert.run(prop1, 'Tower A').lastInsertRowid;
+        const flr1 = floorInsert.run(bld1, '1').lastInsertRowid;
+        unitInsert.run(flr1, '101', '2BR', 2500, 'Vacant');
+        unitInsert.run(flr1, '102', 'Studio', 1500, 'Vacant');
+
+        const prop2 = propertyInsert.run('Innovation Hub', 'Commercial', '456 Innovation Way', 'Palo Alto', 'USA').lastInsertRowid;
+        const bld2 = buildingInsert.run(prop2, 'Main Block').lastInsertRowid;
+        const flr2 = floorInsert.run(bld2, 'G').lastInsertRowid;
+        unitInsert.run(flr2, 'S-1', 'Shop', 5000, 'Vacant');
+    });
+    seedPMS();
+
+  } else {
+    // Create restaurant tables
+    db.exec(`
     CREATE TABLE IF NOT EXISTS tables (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       number TEXT NOT NULL UNIQUE,
@@ -393,11 +423,13 @@ async function createRestaurant(options = {}) {
     venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
   });
   seedVenues();
+  }
 
   db.close();
 
   // 6. Copy service template and inject config
-  let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+  const templatePath = tenantType === 'pms' ? PMS_TEMPLATE_PATH : RESTAURANT_TEMPLATE_PATH;
+  let template = fs.readFileSync(templatePath, 'utf8');
 
   // Inject restaurant-specific constants at the top
   const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\n`;
@@ -410,6 +442,7 @@ async function createRestaurant(options = {}) {
   registry.restaurants.push({
     id,
     name,
+    tenantType,
     port,
     active: true,
     online: true,
