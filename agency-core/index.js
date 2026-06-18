@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 const { createRestaurant } = require('./restaurant-factory');
+const { createGym } = require('./gms-factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;
@@ -412,14 +413,20 @@ app.get('/api/restaurants', requireAgencyAuth, async (req, res) => {
   }
 });
 
-// POST /api/restaurants — Create a new restaurant
+// POST /api/restaurants — Create a new restaurant or gym
 app.post('/api/restaurants', requireAgencyAuth, async (req, res) => {
   try {
-    const config = await createRestaurant(req.body);
+    const { type } = req.body;
+    let config;
+    if (type === 'gym') {
+      config = await createGym(req.body);
+    } else {
+      config = await createRestaurant(req.body);
+    }
     res.status(201).json(config);
   } catch (err) {
-    console.error('[Agency] Error creating restaurant:', err.message);
-    res.status(500).json({ error: err.message || 'Failed to create restaurant' });
+    console.error('[Agency] Error creating tenant:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to create tenant' });
   }
 });
 
