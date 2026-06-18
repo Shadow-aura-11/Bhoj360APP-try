@@ -107,6 +107,7 @@ export default function AgencyDashboard() {
     location: '',
     contact_email: '',
     contact_phone: '',
+    templateType: 'restaurant',
     pins: {
       admin: 'admin123',
       waiter: '2222',
@@ -844,6 +845,7 @@ export default function AgencyDashboard() {
     setNewRestaurantResult(null);
     setFormData({
       name: '',
+      templateType: 'restaurant',
       tableCount: 8,
       logo_url: '',
       description: '',
@@ -851,7 +853,7 @@ export default function AgencyDashboard() {
       login_theme_color: '#fafaf9',
       location: '',
       pins: {
-        admin: '1111',
+        admin: 'admin123',
         waiter: '2222',
         counter: '3333',
         cashier: '4444',
@@ -1675,7 +1677,23 @@ export default function AgencyDashboard() {
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Restaurant Name *
+                    Industry Template / OS Type *
+                  </label>
+                  <select
+                    value={formData.templateType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, templateType: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors mb-4"
+                  >
+                    <option value="restaurant">Bhoj360 - Restaurant POS / PMS</option>
+                    <option value="mes-erp">Manufacturing ERP / MES OS</option>
+                    <option value="wms">WMS - Warehouse Management</option>
+                    <option value="hms">HMS - Hotel Management</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                    Tenant / Business Name *
                   </label>
                   <input
                     type="text"

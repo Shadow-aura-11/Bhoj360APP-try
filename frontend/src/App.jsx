@@ -29,6 +29,12 @@ const SelfOrder = lazy(() => import('./pages/customer/SelfOrder'));
 const CashierDashboard = lazy(() => import('./pages/cashier/CashierDashboard'));
 const PWAInstallLanding = lazy(() => import('./components/PWAInstallLanding'));
 
+// Manufacturing ERP / MES
+const MESExecutiveDashboard = lazy(() => import('./pages/mes-erp/ExecutiveDashboard'));
+const MESPlantManagerPortal = lazy(() => import('./pages/mes-erp/PlantManagerPortal'));
+const MESWarehousePortal = lazy(() => import('./pages/mes-erp/WarehousePortal'));
+const MESOperatorPortal = lazy(() => import('./pages/mes-erp/OperatorPortal'));
+
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/marketing/FeaturesPage'));
@@ -336,6 +342,40 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* Manufacturing ERP / MES Routes */}
+        <Route
+          path="/r/:restaurantId/executive"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MESExecutiveDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/plant-manager"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'waiter']}>
+              <MESPlantManagerPortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/warehouse"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'counter']}>
+              <MESWarehousePortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/operator"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'waiter', 'counter']}>
+              <MESOperatorPortal />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

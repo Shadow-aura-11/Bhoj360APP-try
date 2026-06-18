@@ -1,5 +1,3 @@
-const RESTAURANT_ID = 'REST-WWQ2RC';
-const PORT = 3101;
 /**
  * Restaurant Microservice — Service Template
  * ═══════════════════════════════════════════

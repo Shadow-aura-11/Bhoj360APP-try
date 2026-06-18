@@ -47,10 +47,16 @@ function killPort(port) {
 
 async function startRestaurant(restaurant) {
   const servicePath = path.join(__dirname, '..', 'restaurants', restaurant.id, 'service.js');
-  const templatePath = path.join(__dirname, 'service-template.js');
+  const templateType = restaurant.templateType || 'restaurant';
+  const templateDir = path.join(__dirname, '..', templateType);
+
+  let templatePath = path.join(templateDir, 'service-template.js');
+  if (!fs.existsSync(templatePath)) {
+    templatePath = path.join(__dirname, 'service-template.js');
+  }
 
   if (!fs.existsSync(templatePath)) {
-    console.warn(`  [Startup] service-template.js not found.`);
+    console.warn(`  [Startup] Service template not found for ${templateType}.`);
     return;
   }
 
@@ -66,10 +72,17 @@ async function startRestaurant(restaurant) {
   // 3. Sync template to service.js
   try {
     let template = fs.readFileSync(templatePath, 'utf8');
-    const injection = `const RESTAURANT_ID = '${restaurant.id}';\nconst PORT = ${restaurant.port};\n`;
+    const injection = `const RESTAURANT_ID = '${restaurant.id}';\nconst PORT = ${restaurant.port};\nconst TEMPLATE_TYPE = '${templateType}';\n`;
     template = injection + template;
     fs.writeFileSync(servicePath, template, 'utf8');
-    console.log(`  [Startup] Synced service.js template for ${restaurant.id}`);
+
+    // Also sync functions.js if it exists in template
+    const functionsPath = path.join(templateDir, 'functions.js');
+    if (fs.existsSync(functionsPath)) {
+        fs.copyFileSync(functionsPath, path.join(restaurantDir, 'functions.js'));
+    }
+
+    console.log(`  [Startup] Synced service.js template for ${restaurant.id} [${templateType}]`);
   } catch (err) {
     console.error(`  [Startup] Failed to sync template for ${restaurant.id}: ${err.message}`);
   }
