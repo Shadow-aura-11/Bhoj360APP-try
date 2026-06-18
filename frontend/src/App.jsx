@@ -36,6 +36,24 @@ const LeaseManager = lazy(() => import('./pages/pms/LeaseManager'));
 const BillingManager = lazy(() => import('./pages/pms/BillingManager'));
 const MaintenanceManager = lazy(() => import('./pages/pms/MaintenanceManager'));
 const PMSLayout = lazy(() => import('./pages/pms/PMSLayout'));
+// TMS Pages
+const TMSDashboard = lazy(() => import('./pages/tms/TMSDashboard'));
+const TravelRequestForm = lazy(() => import('./pages/tms/TravelRequestForm'));
+const ApprovalPortal = lazy(() => import('./pages/tms/ApprovalPortal'));
+const ExpenseManager = lazy(() => import('./pages/tms/ExpenseManager'));
+const TMSLogin = lazy(() => import('./pages/tms/TMSLogin'));
+// Spa & Wellness Pages
+const SpaDashboard = lazy(() => import('./pages/spa/SpaDashboard'));
+const SpaPOS = lazy(() => import('./pages/spa/SpaPOS'));
+const AppointmentBooking = lazy(() => import('./pages/spa/AppointmentBooking'));
+const TherapistManagement = lazy(() => import('./pages/spa/TherapistManagement'));
+const MembershipsPackages = lazy(() => import('./pages/spa/MembershipsPackages'));
+const CustomerCRM = lazy(() => import('./pages/spa/CustomerCRM'));
+const SpaInventory = lazy(() => import('./pages/spa/SpaInventory'));
+const CustomerFeedback = lazy(() => import('./pages/spa/CustomerFeedback'));
+const EnterprisePortals = lazy(() => import('./pages/spa/EnterprisePortals'));
+const SpecializedPortals = lazy(() => import('./pages/spa/SpecializedPortals'));
+const MarketingLoyalty = lazy(() => import('./pages/spa/MarketingLoyalty'));
 
 // Marketing Subpages
 const AboutPage = lazy(() => import('./pages/marketing/AboutPage'));
@@ -65,7 +83,8 @@ function AgencyProtectedRoute({ children }) {
 
 // Route Guard for staff / admin roles
 function ProtectedRoute({ allowedRoles, children }) {
-  const { restaurantId } = useParams();
+  const { restaurantId, tenantId } = useParams();
+  const effectiveId = restaurantId || tenantId;
   const location = useLocation();
   const sessionStr = localStorage.getItem('session');
   
@@ -75,15 +94,18 @@ function ProtectedRoute({ allowedRoles, children }) {
     else if (location.pathname.endsWith('/counter')) roleParam = 'counter';
     else if (location.pathname.endsWith('/cashier')) roleParam = 'cashier';
     else if (location.pathname.includes('/admin')) roleParam = 'admin';
-    return <Navigate to={`/r/${restaurantId}/login?role=${roleParam}&redirect=${encodeURIComponent(location.pathname)}`} replace />;
+
+    const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
+    return <Navigate to={`${loginPath}?role=${roleParam}&redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   try {
     const session = JSON.parse(sessionStr);
     
     // Check if session belongs to this restaurant
-    if (session.restaurantId !== restaurantId) {
-      return <Navigate to={`/r/${restaurantId}/login`} replace />;
+    if (session.restaurantId !== effectiveId) {
+      const loginPath = restaurantId ? `/r/${restaurantId}/login` : `/t/${tenantId}/login`;
+      return <Navigate to={loginPath} replace />;
     }
 
     // Check if role is allowed
@@ -175,6 +197,7 @@ export default function App() {
 
         {/* Auth Route */}
         <Route path="/r/:restaurantId/login" element={<Login />} />
+        <Route path="/t/:tenantId/login" element={<TMSLogin />} />
 
         {/* Admin Dashboard Protected Routes */}
         <Route
@@ -182,6 +205,30 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
             </ProtectedRoute>
           }
         />
@@ -306,6 +353,72 @@ export default function App() {
           }
         />
 
+        {/* Spa & Wellness Routes */}
+        <Route
+          path="/r/:restaurantId/spa"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/pos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <SpaPOS />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/bookings"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <AppointmentBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/therapists"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TherapistManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/memberships"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <MembershipsPackages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/crm"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'therapist']}>
+              <CustomerCRM />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <SpaInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/feedback"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CustomerFeedback />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Waiter Dashboard Protected Route */}
         <Route
           path="/r/:restaurantId/waiter"
@@ -360,6 +473,44 @@ export default function App() {
 
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
+
+        {/* TMS Routes */}
+        <Route
+          path="/t/:tenantId"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>
+              <TMSDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/request"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'admin']}>
+              <TravelRequestForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/approvals"
+          element={
+            <ProtectedRoute allowedRoles={['manager', 'admin']}>
+              <ApprovalPortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/t/:tenantId/expenses"
+          element={
+            <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>
+              <ExpenseManager />
+            </ProtectedRoute>
+          }
+        />
+        {/* HMS Routes */}
+        <Route path="/r/:restaurantId/hms/registration" element={<PatientRegistration />} />
+        <Route path="/r/:restaurantId/hms/emr" element={<EMRDashboard />} />
+        <Route path="/r/:restaurantId/hms/ai" element={<AIMedicalAssistant />} />
 
         {/* Catch-all Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
