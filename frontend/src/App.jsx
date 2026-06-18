@@ -208,6 +208,82 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* HMS Routes */}
+        <Route
+          path="/r/:restaurantId/hms/lab"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'nurse', 'doctor']}>
+              <HMSLab />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/pharmacy"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'nurse', 'receptionist']}>
+              <HMSPharmacy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/patients"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}>
+              <HMSPatients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/patients/:patientId"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse']}>
+              <HMSPatientDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/appointments"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}>
+              <HMSAppointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/hms/billing"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'receptionist', 'cashier']}>
+              <HMSBilling />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Spa & Wellness Specialized Routes */}
+        <Route
+          path="/r/:restaurantId/spa/enterprise"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EnterprisePortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/specialized"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'therapist', 'doctor']}>
+              <SpecializedPortals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/spa/marketing"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MarketingLoyalty />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/r/:restaurantId/spa/enterprise"
           element={
@@ -474,6 +550,12 @@ export default function App() {
         {/* Self-Ordering Public Landing QR Page */}
         <Route path="/r/:restaurantId/menu" element={<SelfOrder />} />
 
+        {/* HMS Dashboard Route */}
+        <Route
+          path="/r/:restaurantId/hms"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist', 'waiter']}>
+              <HMSDashboard />
         {/* TMS Routes */}
         <Route
           path="/t/:tenantId"
