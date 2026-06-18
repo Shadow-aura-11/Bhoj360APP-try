@@ -25,6 +25,17 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 
+// ─── OS Guard Middleware ────────────────────────────────────
+
+function requireOS(type) {
+  return (req, res, next) => {
+    if (OS_TYPE !== type) {
+      return res.status(404).json({ error: `Not Found: Endpoint only available for ${type} OS` });
+    }
+    next();
+  };
+}
+
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -35,6 +46,27 @@ const server = http.createServer(app);
 const io = new SocketIO(server, {
   cors: { origin: '*' },
 });
+
+let osFunctions = {};
+let osBilling = {};
+
+try {
+  const functionsPath = path.join(__dirname, '..', '..', OS_TYPE, 'functions.js');
+  if (fs.existsSync(functionsPath)) {
+    osFunctions = require(functionsPath);
+  }
+} catch (e) {
+  console.warn(`[Service] Could not load functions for ${OS_TYPE}:`, e.message);
+}
+
+try {
+  const billingPath = path.join(__dirname, '..', '..', OS_TYPE, 'billing.js');
+  if (fs.existsSync(billingPath)) {
+    osBilling = require(billingPath);
+  }
+} catch (e) {
+  console.warn(`[Service] Could not load billing for ${OS_TYPE}:`, e.message);
+}
 
 const DB_PATH = path.join(__dirname, 'db.sqlite');
 const CONFIG_PATH = path.join(__dirname, 'config.json');
@@ -291,9 +323,11 @@ function performAutomatedBillCleanup() {
 }
 
 // Run cleanup immediately on server startup
-performAutomatedBillCleanup();
-// Run cleanup every 24 hours
-setInterval(performAutomatedBillCleanup, 24 * 60 * 60 * 1000);
+if (OS_TYPE === 'restaurant') {
+  performAutomatedBillCleanup();
+  // Run cleanup every 24 hours
+  setInterval(performAutomatedBillCleanup, 24 * 60 * 60 * 1000);
+}
 
 
 function readConfig() {
@@ -543,7 +577,7 @@ app.post('/auth', (req, res) => {
 });
 
 // GET /staff — List all staff members [ADMIN]
-app.get('/staff', authMiddleware('admin'), (req, res) => {
+app.get('/staff', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const staff = db.prepare('SELECT id, username, name, role, pin, created_at FROM staff ORDER BY role, name').all();
     res.json(staff);
@@ -553,7 +587,7 @@ app.get('/staff', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /staff — Add a new staff member [ADMIN]
-app.post('/staff', authMiddleware('admin'), (req, res) => {
+app.post('/staff', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { username, name, role, pin } = req.body;
   if (!username || !name || !role || !pin) {
     return res.status(400).json({ error: 'Username, Name, Role, and PIN are required' });
@@ -585,7 +619,7 @@ app.post('/staff', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /staff/:id — Delete a staff member [ADMIN]
-app.delete('/staff/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/staff/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     db.prepare('DELETE FROM staff WHERE id = ?').run(req.params.id);
     res.json({ message: 'Staff member deleted' });
@@ -595,13 +629,13 @@ app.delete('/staff/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /settings/pins — Get current role login PINs [ADMIN]
-app.get('/settings/pins', authMiddleware('admin'), (req, res) => {
+app.get('/settings/pins', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const config = readConfig();
   res.json({ pins: config.pins });
 });
 
 // PUT /settings/pins — Update login credentials (PINs/passwords) for waiter, counter, cashier, admin [ADMIN]
-app.put('/settings/pins', authMiddleware('admin'), (req, res) => {
+app.put('/settings/pins', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { admin, waiter, counter, cashier } = req.body;
   const config = readConfig();
 
@@ -651,7 +685,7 @@ app.put('/settings/pins', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /settings/printer — Get current printer configs [ADMIN]
-app.get('/settings/printer', authMiddleware('admin'), (req, res) => {
+app.get('/settings/printer', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const config = readConfig();
   res.json({ printer: config.printer || { enabled: false, size: '80mm' } });
 });
@@ -671,7 +705,7 @@ app.put('/settings/printer', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /customers — Retrieve customer records and total statistics [ADMIN]
-app.get('/customers', authMiddleware('admin'), (req, res) => {
+app.get('/customers', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const customers = db.prepare(`
       SELECT 
@@ -725,7 +759,7 @@ app.get('/customers', authMiddleware('admin'), (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // GET /tables — All tables with active order + next reservation
-app.get('/tables', (req, res) => {
+app.get('/tables', requireOS('restaurant'), (req, res) => {
   const tables = db.prepare('SELECT * FROM tables ORDER BY section, number').all();
 
   const enriched = tables.map((table) => {
@@ -749,19 +783,19 @@ app.get('/tables', (req, res) => {
 });
 
 // GET /tables/status — Compact status
-app.get('/tables/status', (req, res) => {
+app.get('/tables/status', requireOS('restaurant'), (req, res) => {
   const tables = db.prepare('SELECT id, number, status, section FROM tables ORDER BY section, number').all();
   res.json(tables);
 });
 
 // GET /tables/sections — Distinct sections
-app.get('/tables/sections', (req, res) => {
+app.get('/tables/sections', requireOS('restaurant'), (req, res) => {
   const sections = db.prepare('SELECT DISTINCT section FROM tables').all();
   res.json(sections.map((s) => s.section));
 });
 
 // GET /tables/:id — Single table
-app.get('/tables/:id', (req, res) => {
+app.get('/tables/:id', requireOS('restaurant'), (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
@@ -782,7 +816,7 @@ app.get('/tables/:id', (req, res) => {
 });
 
 // POST /tables — Create table [ADMIN]
-app.post('/tables', authMiddleware('admin'), (req, res) => {
+app.post('/tables', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { number, capacity = 4, section = 'Main' } = req.body;
 
   if (!number) return res.status(400).json({ error: 'Table number is required' });
@@ -804,7 +838,7 @@ app.post('/tables', authMiddleware('admin'), (req, res) => {
 });
 
 // PUT /tables/:id — Update table [ADMIN/STAFF]
-app.put('/tables/:id', authMiddleware('staff'), (req, res) => {
+app.put('/tables/:id', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
@@ -845,7 +879,7 @@ app.put('/tables/:id', authMiddleware('staff'), (req, res) => {
 });
 
 // DELETE /tables/:id — Delete table [ADMIN]
-app.delete('/tables/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/tables/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
@@ -862,7 +896,7 @@ app.delete('/tables/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /tables/bulk — Create multiple tables [ADMIN]
-app.post('/tables/bulk', authMiddleware('admin'), (req, res) => {
+app.post('/tables/bulk', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { tables: tableDefs } = req.body;
 
   if (!Array.isArray(tableDefs) || tableDefs.length === 0) {
@@ -905,7 +939,7 @@ app.post('/tables/bulk', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /tables/:id/qr — Generate QR code
-app.get('/tables/:id/qr', async (req, res) => {
+app.get('/tables/:id/qr', requireOS('restaurant'), async (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
@@ -925,7 +959,7 @@ app.get('/tables/:id/qr', async (req, res) => {
 });
 
 // POST /tables/:id/qr/regenerate — Regenerate QR token [ADMIN]
-app.post('/tables/:id/qr/regenerate', authMiddleware('admin'), (req, res) => {
+app.post('/tables/:id/qr/regenerate', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const table = db.prepare('SELECT * FROM tables WHERE id = ?').get(req.params.id);
   if (!table) return res.status(404).json({ error: 'Table not found' });
 
@@ -945,7 +979,7 @@ app.post('/tables/:id/qr/regenerate', authMiddleware('admin'), (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // GET /menu — All items (with optional filters)
-app.get('/menu', (req, res) => {
+app.get('/menu', requireOS('restaurant'), (req, res) => {
   let query = 'SELECT * FROM menu_items WHERE 1=1';
   const params = [];
 
@@ -973,13 +1007,13 @@ app.get('/menu', (req, res) => {
 });
 
 // GET /menu/categories — Distinct categories
-app.get('/menu/categories', (req, res) => {
+app.get('/menu/categories', requireOS('restaurant'), (req, res) => {
   const categories = db.prepare('SELECT DISTINCT category FROM menu_items ORDER BY category').all();
   res.json(categories.map((c) => c.category));
 });
 
 // GET /menu/public — Public menu for QR self-order
-app.get('/menu/public', (req, res) => {
+app.get('/menu/public', requireOS('restaurant'), (req, res) => {
   const { table, token } = req.query;
   if (!table || !token) {
     return res.status(400).json({ error: 'Table number and token are required' });
@@ -1016,14 +1050,14 @@ app.get('/menu/public', (req, res) => {
 });
 
 // GET /menu/:id — Single item
-app.get('/menu/:id', (req, res) => {
+app.get('/menu/:id', requireOS('restaurant'), (req, res) => {
   const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id);
   if (!item) return res.status(404).json({ error: 'Menu item not found' });
   res.json(item);
 });
 
 // POST /menu — Create item [ADMIN]
-app.post('/menu', authMiddleware('admin'), (req, res) => {
+app.post('/menu', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { name, description, category, price, available = 1, image_placeholder, image_url } = req.body;
 
   if (!name || !category || price === undefined) {
@@ -1042,7 +1076,7 @@ app.post('/menu', authMiddleware('admin'), (req, res) => {
 });
 
 // PUT /menu/:id — Update item [ADMIN]
-app.put('/menu/:id', authMiddleware('admin'), (req, res) => {
+app.put('/menu/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id);
   if (!item) return res.status(404).json({ error: 'Menu item not found' });
 
@@ -1075,7 +1109,7 @@ app.put('/menu/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /menu/:id — Delete item [ADMIN]
-app.delete('/menu/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/menu/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id);
   if (!item) return res.status(404).json({ error: 'Menu item not found' });
 
@@ -1085,7 +1119,7 @@ app.delete('/menu/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /menu/upload — Upload menu item custom image [ADMIN]
-app.post('/menu/upload', authMiddleware('admin'), (req, res) => {
+app.post('/menu/upload', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { filename, base64Data } = req.body;
   if (!filename || !base64Data) {
     return res.status(400).json({ error: 'Filename and base64Data are required' });
@@ -1139,7 +1173,7 @@ function emitOrderUpdate(eventName, fullOrder) {
 }
 
 // GET /orders — All orders with items
-app.get('/orders', (req, res) => {
+app.get('/orders', requireOS('restaurant'), (req, res) => {
   let query = "SELECT * FROM orders WHERE 1=1";
   const params = [];
 
@@ -1170,7 +1204,7 @@ app.get('/orders', (req, res) => {
 });
 
 // GET /orders/active — Get active order by customer phone or table ID
-app.get('/orders/active', (req, res) => {
+app.get('/orders/active', requireOS('restaurant'), (req, res) => {
   const { phone, table_id } = req.query;
   let activeOrder = null;
 
@@ -1197,7 +1231,7 @@ app.get('/orders/active', (req, res) => {
 });
 
 // GET /orders/self — Self-order: get active order for table
-app.get('/orders/self', (req, res) => {
+app.get('/orders/self', requireOS('restaurant'), (req, res) => {
   const { table, token } = req.query;
   if (!table || !token) {
     return res.status(400).json({ error: 'Table number and token are required' });
@@ -1223,7 +1257,7 @@ app.get('/orders/self', (req, res) => {
 });
 
 // POST /orders/self — Self-order: create or add to order
-app.post('/orders/self', (req, res) => {
+app.post('/orders/self', requireOS('restaurant'), (req, res) => {
   const { table, token } = req.query;
   if (!table || !token) {
     return res.status(400).json({ error: 'Table number and token are required' });
@@ -1322,14 +1356,14 @@ app.post('/orders/self', (req, res) => {
 });
 
 // GET /orders/:id — Single order with items
-app.get('/orders/:id', (req, res) => {
+app.get('/orders/:id', requireOS('restaurant'), (req, res) => {
   const order = getOrderWithItems(Number(req.params.id));
   if (!order) return res.status(404).json({ error: 'Order not found' });
   res.json(order);
 });
 
 // POST /orders — Create order [STAFF]
-app.post('/orders', authMiddleware('staff'), (req, res) => {
+app.post('/orders', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const { table_id, table_number, type = 'dine-in', items, notes, customer_phone, customer_name, waiter_name, discount_amount = 0, coupon_code } = req.body;
 
   if (!table_id) {
@@ -1409,7 +1443,7 @@ app.post('/orders', authMiddleware('staff'), (req, res) => {
 });
 
 // PUT /orders/:id — Update order status [STAFF]
-app.put('/orders/:id', authMiddleware('staff'), (req, res) => {
+app.put('/orders/:id', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -1481,7 +1515,7 @@ app.put('/orders/:id', authMiddleware('staff'), (req, res) => {
 });
 
 // DELETE /orders/:id — Cancel order [ADMIN]
-app.delete('/orders/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/orders/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -1499,7 +1533,7 @@ app.delete('/orders/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /orders/:id/items — Add items to order [STAFF]
-app.post('/orders/:id/items', authMiddleware('staff'), (req, res) => {
+app.post('/orders/:id/items', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -1561,7 +1595,7 @@ app.post('/orders/:id/items', authMiddleware('staff'), (req, res) => {
 });
 
 // PUT /orders/:id/items/:itemId — Update item status [STAFF]
-app.put('/orders/:id/items/:itemId', authMiddleware('staff'), (req, res) => {
+app.put('/orders/:id/items/:itemId', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const orderItem = db
     .prepare('SELECT * FROM order_items WHERE id = ? AND order_id = ?')
     .get(req.params.itemId, req.params.id);
@@ -1606,7 +1640,7 @@ app.put('/orders/:id/items/:itemId', authMiddleware('staff'), (req, res) => {
 });
 
 // DELETE /orders/:id/items/:itemId — Remove item [STAFF]
-app.delete('/orders/:id/items/:itemId', authMiddleware('staff'), (req, res) => {
+app.delete('/orders/:id/items/:itemId', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const orderItem = db
     .prepare('SELECT * FROM order_items WHERE id = ? AND order_id = ?')
     .get(req.params.itemId, req.params.id);
@@ -1629,7 +1663,7 @@ app.delete('/orders/:id/items/:itemId', authMiddleware('staff'), (req, res) => {
 });
 
 // GET /orders/customer/:phone — Get customer historical orders
-app.get('/orders/customer/:phone', (req, res) => {
+app.get('/orders/customer/:phone', requireOS('restaurant'), (req, res) => {
   const phone = req.params.phone;
   if (!phone) return res.status(400).json({ error: 'Phone number is required' });
 
@@ -1643,7 +1677,7 @@ app.get('/orders/customer/:phone', (req, res) => {
 });
 
 // POST /orders/:id/pay-request — Customer requests checkout (payment pending)
-app.post('/orders/:id/pay-request', (req, res) => {
+app.post('/orders/:id/pay-request', requireOS('restaurant'), (req, res) => {
   const { table, token } = req.query;
   if (!table || !token) {
     return res.status(400).json({ error: 'Table and token are required' });
@@ -1670,7 +1704,7 @@ app.post('/orders/:id/pay-request', (req, res) => {
 });
 
 // POST /orders/:id/settle — Settle billing / close order [STAFF]
-app.post('/orders/:id/settle', authMiddleware('staff'), (req, res) => {
+app.post('/orders/:id/settle', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -1760,7 +1794,7 @@ app.post('/orders/:id/settle', authMiddleware('staff'), (req, res) => {
 });
 
 // POST /orders/:id/send-whatsapp — Simulate sending WhatsApp message with bill link/receipt details
-app.post('/orders/:id/send-whatsapp', (req, res) => {
+app.post('/orders/:id/send-whatsapp', requireOS('restaurant'), (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -1788,7 +1822,7 @@ app.get('/s/:id', (req, res) => {
 });
 
 // POST /orders/upload-image-bill — Upload base64 receipt image/PDF, save it to disk, and return direct path (no database storage)
-app.post('/orders/upload-image-bill', (req, res) => {
+app.post('/orders/upload-image-bill', requireOS('restaurant'), (req, res) => {
   const { base64Image, filename } = req.body;
   if (!base64Image) {
     return res.status(400).json({ error: 'base64Image is required' });
@@ -1864,7 +1898,7 @@ app.put('/settings/config', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /settings/upi-qr — Generates dynamic Base64 UPI QR code using the restaurant's UPI ID and details
-app.get('/settings/upi-qr', (req, res) => {
+app.get('/settings/upi-qr', requireOS('restaurant'), (req, res) => {
   const config = readConfig();
   const upiId = req.query.upi_id || config.billing?.upi_id;
   const amount = req.query.amount;
@@ -1887,7 +1921,7 @@ app.get('/settings/upi-qr', (req, res) => {
 });
 
 // GET /coupons — Get all coupons [STAFF/ADMIN/PUBLIC]
-app.get('/coupons', (req, res) => {
+app.get('/coupons', requireOS('restaurant'), (req, res) => {
   try {
     const coupons = db.prepare('SELECT * FROM coupons ORDER BY created_at DESC').all();
     res.json(coupons);
@@ -1897,7 +1931,7 @@ app.get('/coupons', (req, res) => {
 });
 
 // POST /coupons — Create/Update a coupon [ADMIN]
-app.post('/coupons', authMiddleware('admin'), (req, res) => {
+app.post('/coupons', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { id, code, discount_type, value, min_order_amount, active } = req.body;
   if (!code || !discount_type || value === undefined) {
     return res.status(400).json({ error: 'code, discount_type, and value are required' });
@@ -1921,7 +1955,7 @@ app.post('/coupons', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /coupons/:id — Delete coupon [ADMIN]
-app.delete('/coupons/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/coupons/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     db.prepare('DELETE FROM coupons WHERE id = ?').run(req.params.id);
     res.json({ message: 'Coupon deleted successfully' });
@@ -1931,7 +1965,7 @@ app.delete('/coupons/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /coupons/validate — Validate a coupon for a given order amount
-app.post('/coupons/validate', (req, res) => {
+app.post('/coupons/validate', requireOS('restaurant'), (req, res) => {
   const { code, amount } = req.body;
   if (!code) return res.status(400).json({ error: 'Coupon code is required' });
   if (amount === undefined) return res.status(400).json({ error: 'Order amount is required' });
@@ -1971,7 +2005,7 @@ app.post('/coupons/validate', (req, res) => {
 });
 
 // GET /menu/:id/addons — Retrieve all add-ons for a specific menu item
-app.get('/menu/:id/addons', (req, res) => {
+app.get('/menu/:id/addons', requireOS('restaurant'), (req, res) => {
   try {
     const addons = db.prepare('SELECT * FROM menu_item_addons WHERE menu_item_id = ?').all(req.params.id);
     res.json(addons);
@@ -1981,7 +2015,7 @@ app.get('/menu/:id/addons', (req, res) => {
 });
 
 // POST /menu/:id/addons — Add/Update an add-on for a menu item [ADMIN]
-app.post('/menu/:id/addons', authMiddleware('admin'), (req, res) => {
+app.post('/menu/:id/addons', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { id, name, price } = req.body;
   if (!name || price === undefined) {
     return res.status(400).json({ error: 'name and price are required' });
@@ -2005,7 +2039,7 @@ app.post('/menu/:id/addons', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /menu/:id/addons/:addonId — Delete an add-on [ADMIN]
-app.delete('/menu/:id/addons/:addonId', authMiddleware('admin'), (req, res) => {
+app.delete('/menu/:id/addons/:addonId', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     db.prepare('DELETE FROM menu_item_addons WHERE id = ? AND menu_item_id = ?').run(req.params.addonId, req.params.id);
     res.json({ message: 'Add-on deleted successfully' });
@@ -2015,7 +2049,7 @@ app.delete('/menu/:id/addons/:addonId', authMiddleware('admin'), (req, res) => {
 });
 
 // PUT /menu/reorder — Takes an array of { id, sort_order } to re-arrange menu listing [ADMIN]
-app.put('/menu/reorder', authMiddleware('admin'), (req, res) => {
+app.put('/menu/reorder', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { items } = req.body;
   if (!Array.isArray(items)) {
     return res.status(400).json({ error: 'items must be an array of { id, sort_order }' });
@@ -2041,7 +2075,7 @@ app.put('/menu/reorder', authMiddleware('admin'), (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // GET /reservations — All reservations with filters
-app.get('/reservations', (req, res) => {
+app.get('/reservations', requireOS('restaurant'), (req, res) => {
   let query = 'SELECT * FROM reservations WHERE 1=1';
   const params = [];
 
@@ -2064,7 +2098,7 @@ app.get('/reservations', (req, res) => {
 });
 
 // GET /reservations/today — Today's reservations
-app.get('/reservations/today', (req, res) => {
+app.get('/reservations/today', requireOS('restaurant'), (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const reservations = db
     .prepare(
@@ -2075,7 +2109,7 @@ app.get('/reservations/today', (req, res) => {
 });
 
 // GET /reservations/availability — Check available tables
-app.get('/reservations/availability', (req, res) => {
+app.get('/reservations/availability', requireOS('restaurant'), (req, res) => {
   const { date, time, party_size } = req.query;
 
   if (!date || !time || !party_size) {
@@ -2116,14 +2150,14 @@ app.get('/reservations/availability', (req, res) => {
 });
 
 // GET /reservations/:id — Single reservation
-app.get('/reservations/:id', (req, res) => {
+app.get('/reservations/:id', requireOS('restaurant'), (req, res) => {
   const reservation = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
   if (!reservation) return res.status(404).json({ error: 'Reservation not found' });
   res.json(reservation);
 });
 
 // POST /reservations — Create reservation
-app.post('/reservations', (req, res) => {
+app.post('/reservations', requireOS('restaurant'), (req, res) => {
   const {
     table_id,
     table_number,
@@ -2178,7 +2212,7 @@ app.post('/reservations', (req, res) => {
 });
 
 // PUT /reservations/:id — Update reservation
-app.put('/reservations/:id', (req, res) => {
+app.put('/reservations/:id', requireOS('restaurant'), (req, res) => {
   const existing = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Reservation not found' });
 
@@ -2236,7 +2270,7 @@ app.put('/reservations/:id', (req, res) => {
 });
 
 // DELETE /reservations/:id — Cancel reservation
-app.delete('/reservations/:id', (req, res) => {
+app.delete('/reservations/:id', requireOS('restaurant'), (req, res) => {
   const existing = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Reservation not found' });
 
@@ -2253,7 +2287,7 @@ app.delete('/reservations/:id', (req, res) => {
 //  OUTLETS & DELIVERY API [ADMIN]
 // ═══════════════════════════════════════════════════════════
 
-app.get('/outlets', (req, res) => {
+app.get('/outlets', requireOS('restaurant'), (req, res) => {
   try {
     const outlets = db.prepare('SELECT * FROM outlets ORDER BY id').all();
     res.json(outlets);
@@ -2262,7 +2296,7 @@ app.get('/outlets', (req, res) => {
   }
 });
 
-app.post('/outlets', (req, res) => {
+app.post('/outlets', requireOS('restaurant'), (req, res) => {
   const { id, name, address, phone, delivery_radius, delivery_charge, delivery_enabled, zomato_enabled, swiggy_enabled } = req.body;
   if (!name || !address) {
     return res.status(400).json({ error: 'Name and address are required' });
@@ -2296,7 +2330,7 @@ app.post('/outlets', (req, res) => {
   }
 });
 
-app.delete('/outlets/:id', (req, res) => {
+app.delete('/outlets/:id', requireOS('restaurant'), (req, res) => {
   try {
     db.prepare('DELETE FROM outlets WHERE id = ?').run(req.params.id);
     res.json({ success: true });
@@ -2309,7 +2343,7 @@ app.delete('/outlets/:id', (req, res) => {
 //  VENUE RESERVATIONS API [ADMIN]
 // ═══════════════════════════════════════════════════════════
 
-app.get('/venues', (req, res) => {
+app.get('/venues', requireOS('restaurant'), (req, res) => {
   try {
     const venues = db.prepare('SELECT * FROM venue_bookings ORDER BY event_date, event_time').all();
     res.json(venues);
@@ -2318,7 +2352,7 @@ app.get('/venues', (req, res) => {
   }
 });
 
-app.post('/venues', (req, res) => {
+app.post('/venues', requireOS('restaurant'), (req, res) => {
   const { id, customer_name, customer_phone, event_type, event_date, event_time, guest_count, notes, status, customer_father_name, customer_village, customer_aadhaar, venue_areas } = req.body;
   if (!customer_name || !customer_phone || !event_type || !event_date || !event_time || !guest_count) {
     return res.status(400).json({ error: 'Required fields missing' });
@@ -2383,7 +2417,7 @@ app.post('/venues', (req, res) => {
   }
 });
 
-app.delete('/venues/:id', (req, res) => {
+app.delete('/venues/:id', requireOS('restaurant'), (req, res) => {
   try {
     db.prepare('DELETE FROM venue_bookings WHERE id = ?').run(req.params.id);
     res.json({ success: true });
@@ -2397,7 +2431,7 @@ app.delete('/venues/:id', (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // GET /analytics/summary — Today's summary
-app.get('/analytics/summary', (req, res) => {
+app.get('/analytics/summary', requireOS('restaurant'), (req, res) => {
   const todayRevenue = db
     .prepare(
       "SELECT COALESCE(SUM(total), 0) as revenue FROM orders WHERE status = 'paid' AND DATE(created_at) = DATE('now', 'localtime')"
@@ -2466,7 +2500,7 @@ app.get('/analytics/summary', (req, res) => {
 });
 
 // GET /expenses — Retrieve all expenses [ADMIN]
-app.get('/expenses', authMiddleware('admin'), (req, res) => {
+app.get('/expenses', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const expenses = db.prepare('SELECT * FROM expenses ORDER BY expense_date DESC, id DESC').all();
     res.json(expenses);
@@ -2476,7 +2510,7 @@ app.get('/expenses', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /expenses — Add/Update an expense [ADMIN]
-app.post('/expenses', authMiddleware('admin'), (req, res) => {
+app.post('/expenses', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { id, title, amount, category, expense_date, description } = req.body;
   if (!title || amount === undefined || !category) {
     return res.status(400).json({ error: 'title, amount, and category are required' });
@@ -2502,7 +2536,7 @@ app.post('/expenses', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /expenses/:id — Delete an expense [ADMIN]
-app.delete('/expenses/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/expenses/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     db.prepare('DELETE FROM expenses WHERE id = ?').run(req.params.id);
     res.json({ message: 'Expense deleted successfully' });
@@ -2512,7 +2546,7 @@ app.delete('/expenses/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /expenses/summary — Retrieve expenses and profit metrics [ADMIN]
-app.get('/expenses/summary', authMiddleware('admin'), (req, res) => {
+app.get('/expenses/summary', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     // 1. Total revenue (all time)
     const allTimeRevenue = db.prepare("SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = 'paid'").get().total;
@@ -2555,7 +2589,7 @@ app.get('/expenses/summary', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /inventory — Retrieve all inventory items [ADMIN]
-app.get('/inventory', authMiddleware('admin'), (req, res) => {
+app.get('/inventory', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const items = db.prepare('SELECT * FROM inventory ORDER BY item_name ASC').all();
     res.json(items);
@@ -2565,7 +2599,7 @@ app.get('/inventory', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /inventory — Add/Update an inventory item [ADMIN]
-app.post('/inventory', authMiddleware('admin'), (req, res) => {
+app.post('/inventory', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { id, item_name, quantity, unit, min_quantity, supplier, cost_per_unit } = req.body;
   if (!item_name || !unit) {
     return res.status(400).json({ error: 'item_name and unit are required' });
@@ -2609,7 +2643,7 @@ app.post('/inventory', authMiddleware('admin'), (req, res) => {
 });
 
 // DELETE /inventory/:id — Delete an inventory item [ADMIN]
-app.delete('/inventory/:id', authMiddleware('admin'), (req, res) => {
+app.delete('/inventory/:id', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const item = db.prepare('SELECT item_name FROM inventory WHERE id = ?').get(req.params.id);
     if (!item) {
@@ -2623,7 +2657,7 @@ app.delete('/inventory/:id', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /inventory/logs — Retrieve inventory transaction log [ADMIN]
-app.get('/inventory/logs', authMiddleware('admin'), (req, res) => {
+app.get('/inventory/logs', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   try {
     const logs = db.prepare('SELECT * FROM inventory_logs ORDER BY created_at DESC LIMIT 100').all();
     res.json(logs);
@@ -2633,7 +2667,7 @@ app.get('/inventory/logs', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /inventory/adjust — Adjust stock levels [ADMIN]
-app.post('/inventory/adjust', authMiddleware('admin'), (req, res) => {
+app.post('/inventory/adjust', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { inventory_id, change_amount, type, notes } = req.body;
   if (!inventory_id || change_amount === undefined || !type) {
     return res.status(400).json({ error: 'inventory_id, change_amount, and type are required' });
@@ -2662,7 +2696,7 @@ app.post('/inventory/adjust', authMiddleware('admin'), (req, res) => {
 });
 
 // GET /analytics/revenue — Daily revenue breakdown
-app.get('/analytics/revenue', (req, res) => {
+app.get('/analytics/revenue', requireOS('restaurant'), (req, res) => {
   const period = req.query.period || 'week';
   let days = period === 'month' ? 30 : 7;
 
@@ -2686,7 +2720,7 @@ app.get('/analytics/revenue', (req, res) => {
 });
 
 // GET /analytics/popular — Top 5 most ordered items
-app.get('/analytics/popular', (req, res) => {
+app.get('/analytics/popular', requireOS('restaurant'), (req, res) => {
   const items = db
     .prepare(
       `SELECT item_name, SUM(quantity) as total_ordered, SUM(quantity) as quantity, COUNT(DISTINCT order_id) as order_count
@@ -2701,7 +2735,7 @@ app.get('/analytics/popular', (req, res) => {
 });
 
 // GET /analytics/money — Money management collections breakdown [ADMIN]
-app.get('/analytics/money', authMiddleware('admin'), (req, res) => {
+app.get('/analytics/money', requireOS('restaurant'), authMiddleware('admin'), (req, res) => {
   const { startDate, endDate } = req.query;
   let query = "SELECT id, total, cash_amount, online_amount, payment_method, settled_by, settled_at, customer_name, customer_phone, table_number FROM orders WHERE status = 'paid'";
   const params = [];
@@ -2760,7 +2794,7 @@ app.get('/analytics/money', authMiddleware('admin'), (req, res) => {
 });
 
 // POST /orders/delete-history — Delete orders in date range [ADMIN/CASHIER]
-app.post('/orders/delete-history', authMiddleware('staff'), (req, res) => {
+app.post('/orders/delete-history', requireOS('restaurant'), authMiddleware('staff'), (req, res) => {
   const role = req.role;
   if (role !== 'admin' && role !== 'cashier') {
     return res.status(403).json({ error: 'Admin or Cashier privilege required' });
@@ -2795,33 +2829,37 @@ app.post('/orders/delete-history', authMiddleware('staff'), (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 io.on('connection', (socket) => {
-  // Join restaurant room
-  socket.join('restaurant');
+  if (OS_TYPE === 'restaurant') {
+    // Join restaurant room
+    socket.join('restaurant');
 
-  // Send snapshot of all table statuses
-  const tables = db.prepare('SELECT id, number, status, section FROM tables ORDER BY section, number').all();
-  socket.emit('snapshot', { tables });
+    // Send snapshot of all table statuses
+    const tables = db.prepare('SELECT id, number, status, section FROM tables ORDER BY section, number').all();
+    socket.emit('snapshot', { tables });
 
-  // Join specific table room
-  socket.on('join-table', (tableNumber) => {
-    socket.join(`table-${tableNumber}`);
-  });
-
-  // Join specific customer room
-  socket.on('join-customer', (phone) => {
-    if (phone) {
-      socket.join(`customer-${phone}`);
-    }
-  });
-
-  // Waiter call
-  socket.on('waiter:call', (data) => {
-    io.to('restaurant').emit('waiter:called', {
-      table: data.table || data.tableNumber,
-      tableNumber: data.tableNumber || data.table,
-      timestamp: new Date().toISOString(),
+    // Join specific table room
+    socket.on('join-table', (tableNumber) => {
+      socket.join(`table-${tableNumber}`);
     });
-  });
+
+    // Join specific customer room
+    socket.on('join-customer', (phone) => {
+      if (phone) {
+        socket.join(`customer-${phone}`);
+      }
+    });
+
+    // Waiter call
+    socket.on('waiter:call', (data) => {
+      io.to('restaurant').emit('waiter:called', {
+        table: data.table || data.tableNumber,
+        tableNumber: data.tableNumber || data.table,
+        timestamp: new Date().toISOString(),
+      });
+    });
+  } else {
+    socket.join(OS_TYPE);
+  }
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -2830,6 +2868,7 @@ io.on('connection', (socket) => {
 
 // Reservation reminder — every 60 seconds
 setInterval(() => {
+  if (OS_TYPE !== 'restaurant') return;
   try {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -2858,6 +2897,7 @@ setInterval(() => {
 
 // Reservation status check — every 5 minutes
 setInterval(() => {
+  if (OS_TYPE !== 'restaurant') return;
   try {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -2895,9 +2935,140 @@ setInterval(() => {
   }
 }, 300000);
 
+// ═══════════════════════════════════════════════════════════
+//  PMS API (Property Management System)
+// ═══════════════════════════════════════════════════════════
+
+if (OS_TYPE === 'pms') {
+  // Property Endpoints
+  app.get('/properties', (req, res) => {
+    const props = db.prepare('SELECT * FROM properties').all();
+    res.json(props);
+  });
+
+  // Tenant Endpoints
+  app.get('/tenants', (req, res) => {
+    const tenants = db.prepare('SELECT * FROM tenants').all();
+    res.json(tenants);
+  });
+
+  app.post('/tenants', (req, res) => {
+    const { name, phone, email, unit_id } = req.body;
+    const result = db.prepare('INSERT INTO tenants (name, phone, email, unit_id) VALUES (?, ?, ?, ?)')
+      .run(name, phone, email, unit_id);
+    res.status(201).json({ id: result.lastInsertRowid });
+  });
+
+  // Lease Endpoints
+  app.post('/leases', (req, res) => {
+    try {
+      const result = osFunctions.manageLeases(db).createLease(req.body);
+      res.status(201).json({ id: result.lastInsertRowid });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Rent Invoicing
+  app.post('/leases/:id/invoice', (req, res) => {
+    try {
+      const result = osBilling.generateRentInvoice(db, req.params.id);
+      res.status(201).json({ id: result.lastInsertRowid });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Payment Recording
+  app.post('/invoices/:id/pay', (req, res) => {
+    const { amount, method, transaction_id } = req.body;
+    try {
+      const result = osBilling.processRentPayment(db, req.params.id, amount, method, transaction_id);
+      res.json(result);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Assets
+  app.get('/assets', (req, res) => {
+    const assets = db.prepare('SELECT * FROM assets').all();
+    res.json(assets);
+  });
+
+  // Facilities
+  app.get('/facilities', (req, res) => {
+    const facilities = db.prepare('SELECT * FROM facilities').all();
+    res.json(facilities);
+  });
+
+  // CRM: Leads
+  app.get('/leads', (req, res) => {
+    const leads = db.prepare('SELECT * FROM leads').all();
+    res.json(leads);
+  });
+
+  app.post('/leads', (req, res) => {
+    const { property_id, name, phone, email, source } = req.body;
+    const result = db.prepare('INSERT INTO leads (property_id, name, phone, email, source) VALUES (?, ?, ?, ?, ?)')
+      .run(property_id, name, phone, email, source);
+    res.status(201).json({ id: result.lastInsertRowid });
+  });
+
+  // Community: Announcements
+  app.get('/announcements', (req, res) => {
+    const ann = db.prepare('SELECT * FROM announcements').all();
+    res.json(ann);
+  });
+
+  app.post('/announcements', (req, res) => {
+    const { property_id, title, content } = req.body;
+    const result = db.prepare('INSERT INTO announcements (property_id, title, content) VALUES (?, ?, ?)')
+      .run(property_id, title, content);
+    res.status(201).json({ id: result.lastInsertRowid });
+  });
+
+  // Portfolios
+  app.get('/portfolios', (req, res) => {
+    const data = db.prepare('SELECT * FROM portfolios').all();
+    res.json(data);
+  });
+
+  // Buildings
+  app.get('/buildings', (req, res) => {
+    const data = db.prepare('SELECT * FROM buildings').all();
+    res.json(data);
+  });
+
+  // Units
+  app.get('/units', (req, res) => {
+    const data = db.prepare('SELECT * FROM units').all();
+    res.json(data);
+  });
+
+  // Maintenance Requests
+  app.get('/maintenance-requests', (req, res) => {
+    const data = db.prepare('SELECT * FROM maintenance_requests').all();
+    res.json(data);
+  });
+
+  // Work Orders
+  app.get('/work-orders', (req, res) => {
+    const data = db.prepare('SELECT * FROM work_orders').all();
+    res.json(data);
+  });
+
+  // Visitors
+  app.get('/visitors', (req, res) => {
+    const data = db.prepare('SELECT * FROM visitors').all();
+    res.json(data);
+  });
+}
+
 // ─── Start Server ───────────────────────────────────────────
 
 server.listen(PORT, () => {
   const config = readConfig();
-  console.log(`  🍽️  Restaurant ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
+  const label = OS_TYPE === 'pms' ? 'Property' : 'Restaurant';
+  console.log(`  🏢 ${label} ${RESTAURANT_ID} (${config.name}) running on port ${PORT}`);
 });

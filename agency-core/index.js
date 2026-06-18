@@ -13,7 +13,7 @@ const http = require('http');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-const { createRestaurant } = require('./restaurant-factory');
+const { createRestaurant } = require('./service-factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;

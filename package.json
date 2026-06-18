@@ -8,5 +8,14 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "cors": "2",
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.5",
+    "nodemailer": "^8.0.9",
+    "qrcode": "1",
+    "socket.io": "4"
   }
 }

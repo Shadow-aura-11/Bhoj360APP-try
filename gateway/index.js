@@ -111,13 +111,13 @@ app.use('/r/:restaurantId', (req, res, next) => {
   const entry = registry.restaurants.find((r) => r.id === restaurantId);
   if (entry && entry.active === false) {
     const relativePath = req.path || '';
-    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues'];
+    const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/properties', '/tenants', '/leases', '/invoices', '/assets', '/facilities', '/leads', '/announcements', '/portfolios', '/buildings', '/units', '/maintenance-requests', '/work-orders', '/visitors'];
     const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
     const accept = req.headers.accept || '';
 
     if (isApiRequest && !accept.includes('text/html')) {
       return res.status(403).json({ 
-        error: 'This restaurant portal has been suspended by the administrator.', 
+        error: 'This service portal has been suspended by the administrator.',
         blocked: true 
       });
     }
@@ -137,7 +137,14 @@ app.use('/r/:restaurantId', (req, res, next) => {
       '/expenses': 'expenses',
       '/inventory': 'inventory',
       '/outlets': 'outlets',
-      '/venues': 'venues'
+      '/venues': 'venues',
+      '/properties': 'properties',
+      '/tenants': 'tenants',
+      '/leases': 'leases',
+      '/assets': 'assets',
+      '/facilities': 'facilities',
+      '/leads': 'leads',
+      '/portfolios': 'portfolios'
     };
 
     for (const [pathPrefix, featureKey] of Object.entries(featurePathMapping)) {
@@ -152,7 +159,7 @@ app.use('/r/:restaurantId', (req, res, next) => {
 
   // Bypass proxy for non-API routes or HTML document requests (page navigation) so the React SPA handles routing
   const relativePath = req.path || '';
-  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues'];
+  const apiRoots = ['/auth', '/tables', '/menu', '/orders', '/reservations', '/analytics', '/health', '/uploads', '/manifest.json', '/staff', '/settings', '/customers', '/coupons', '/expenses', '/inventory', '/s', '/outlets', '/venues', '/properties', '/tenants', '/leases', '/invoices', '/assets', '/facilities', '/leads', '/announcements', '/portfolios', '/buildings', '/units', '/maintenance-requests', '/work-orders', '/visitors'];
   const isApiRequest = apiRoots.some((root) => relativePath.startsWith(root));
   const accept = req.headers.accept || '';
 

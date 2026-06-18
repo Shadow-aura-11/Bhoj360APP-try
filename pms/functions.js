@@ -1,29 +1,56 @@
-// Functions for pms
+// Functions for Property Management System (PMS)
 
-function manageReservations() {
-  // TODO: Implement manageReservations
+function manageLeases(db) {
+  return {
+    createLease: (data) => {
+      const { unit_id, tenant_id, start_date, end_date, rent_amount, deposit_amount } = data;
+      const stmt = db.prepare('INSERT INTO leases (unit_id, tenant_id, start_date, end_date, rent_amount, deposit_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      return stmt.run(unit_id, tenant_id, start_date, end_date, rent_amount, deposit_amount, 'Active');
+    },
+    getLeaseHistory: (tenant_id) => {
+      return db.prepare('SELECT * FROM leases WHERE tenant_id = ? ORDER BY start_date DESC').all(tenant_id);
+    }
+  };
 }
 
-function manageRooms() {
-  // TODO: Implement manageRooms
+function manageUnits(db) {
+  return {
+    updateStatus: (unit_id, status) => {
+      return db.prepare('UPDATE units SET status = ? WHERE id = ?').run(status, unit_id);
+    },
+    listByProperty: (property_id) => {
+      return db.prepare('SELECT u.* FROM units u JOIN floors f ON u.floor_id = f.id JOIN buildings b ON f.building_id = b.id WHERE b.property_id = ?').all(property_id);
+    }
+  };
 }
 
-function billingAndInvoicing() {
-  // TODO: Implement billingAndInvoicing
+function manageAssets(db) {
+  return {
+    trackMaintenance: (asset_id, date, type, cost, notes) => {
+      const stmt = db.prepare('INSERT INTO asset_maintenance (asset_id, maintenance_date, type, cost, notes) VALUES (?, ?, ?, ?, ?)');
+      return stmt.run(asset_id, date, type, cost, notes);
+    },
+    listByProperty: (property_id) => {
+      return db.prepare('SELECT * FROM assets WHERE property_id = ?').all(property_id);
+    }
+  };
 }
 
-function guestManagement() {
-  // TODO: Implement guestManagement
+function manageFacilities(db) {
+  return {
+    updateStatus: (facility_id, status) => {
+      return db.prepare('UPDATE facilities SET status = ? WHERE id = ?').run(status, facility_id);
+    },
+    listByProperty: (property_id) => {
+      return db.prepare('SELECT * FROM facilities WHERE property_id = ?').all(property_id);
+    }
+  };
 }
 
-function housekeepingManagement() {
-  // TODO: Implement housekeepingManagement
+function tenantCommunication(tenant_id, message) {
+  // Mock communication logic
+  console.log(`Sending message to tenant ${tenant_id}: ${message}`);
+  return { sent: true, timestamp: new Date().toISOString() };
 }
 
-
-function generateQRCode(data) {
-  // TODO: Implement QR code generation
-  console.log('Generating QR code for:', data);
-}
-
-module.exports = { manageReservations, manageRooms, billingAndInvoicing, guestManagement, housekeepingManagement, generateQRCode };
+module.exports = { manageLeases, manageUnits, manageAssets, manageFacilities, tenantCommunication };

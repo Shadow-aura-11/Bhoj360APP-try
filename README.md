@@ -158,7 +158,7 @@ curl -X POST http://localhost:4000/r/REST-XXXXXX/orders \
 restaurant-agency/
 ├── agency-core/          # Central management API
 │   ├── index.js          # Express server (:3000)
-│   ├── restaurant-factory.js  # Spins up new restaurants
+│   ├── service-factory.js     # Spins up new tenant instances (Restaurants, PMS, etc.)
 │   ├── startup.js        # Boots all registered restaurants
 │   ├── service-template.js    # Template for each restaurant
 │   └── registry.json     # Restaurant registry
