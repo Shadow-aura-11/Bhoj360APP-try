@@ -474,7 +474,7 @@ app.get('/api/restaurants/:id/stats', requireAgencyAuth, async (req, res) => {
 
 // PUT /api/restaurants/:id — Edit restaurant details
 app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
-  const { name, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone, blockedFeatures } = req.body;
+  const { name, active, online, pins, logo_url, description, logout_redirect_url, login_theme_color, location, contact_email, contact_phone, blockedFeatures, type } = req.body;
   const { id } = req.params;
 
   try {
@@ -486,6 +486,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
 
     const oldActive = entry.active;
     if (name !== undefined) entry.name = name;
+    if (type !== undefined) entry.type = type;
     if (active !== undefined) {
       entry.active = active;
       entry.online = active;
@@ -508,6 +509,7 @@ app.put('/api/restaurants/:id', requireAgencyAuth, async (req, res) => {
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (name !== undefined) config.name = name;
+      if (type !== undefined) config.type = type;
       if (active !== undefined) {
         config.active = active;
         config.online = active;

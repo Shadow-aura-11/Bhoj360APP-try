@@ -13,6 +13,7 @@ const Database = require('better-sqlite3');
 const REGISTRY_PATH = path.join(__dirname, 'registry.json');
 const RESTAURANTS_DIR = path.join(__dirname, '..', 'restaurants');
 const TEMPLATE_PATH = path.join(__dirname, 'service-template.js');
+const WMOS_TEMPLATE_PATH = path.join(__dirname, 'wmos-service-template.js');
 const BASE_PORT = 3100;
 const QR_SECRET_SALT = process.env.QR_SECRET_SALT || 'change-this-in-production';
 
@@ -50,6 +51,7 @@ function generateQrToken(restaurantId, tableNumber) {
 
 async function createRestaurant(options = {}) {
   const registry = readRegistry();
+  const type = options.type || 'restaurant';
 
   // 1. Generate unique ID
   let id;
@@ -129,6 +131,15 @@ async function createRestaurant(options = {}) {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL');
 
+  if (type === 'warehouse') {
+    const { initializeWmosSchema } = require('./wmos-schema');
+    initializeWmosSchema(db);
+
+    // Seed Warehouse Data
+    db.prepare('INSERT INTO locations (code, type, zone, aisle, rack, shelf, bin) VALUES (?, ?, ?, ?, ?, ?, ?)').run('DOCK-01', 'dock', 'Receiving', 'A', '1', '1', '1');
+    db.prepare('INSERT INTO items (sku, name, category) VALUES (?, ?, ?)').run('SKU-TEST-01', 'Industrial Forklift', 'Equipment');
+    db.prepare('INSERT INTO staff (username, name, role, pin) VALUES (?, ?, ?, ?)').run('wh-admin', 'Warehouse Admin', 'manager', options.pins?.admin || '1111');
+  } else {
   // Create tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS tables (
@@ -393,11 +404,13 @@ async function createRestaurant(options = {}) {
     venueInsert.run('Sneha Reddy', '+91-9876543221', 'Party', today, 'Dinner', 50, 'Birthday Party with cake cutting setup', 'Discussion');
   });
   seedVenues();
+  }
 
   db.close();
 
   // 6. Copy service template and inject config
-  let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+  const selectedTemplatePath = type === 'warehouse' ? WMOS_TEMPLATE_PATH : TEMPLATE_PATH;
+  let template = fs.readFileSync(selectedTemplatePath, 'utf8');
 
   // Inject restaurant-specific constants at the top
   const injection = `const RESTAURANT_ID = '${id}';\nconst PORT = ${port};\n`;
@@ -411,6 +424,7 @@ async function createRestaurant(options = {}) {
     id,
     name,
     port,
+    type,
     active: true,
     online: true,
     logo_url,

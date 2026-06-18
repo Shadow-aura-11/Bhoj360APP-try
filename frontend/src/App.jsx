@@ -20,6 +20,10 @@ const CouponsManager = lazy(() => import('./pages/admin/CouponsManager'));
 const MoneyManager = lazy(() => import('./pages/admin/MoneyManager'));
 const ExpensesManager = lazy(() => import('./pages/admin/ExpensesManager'));
 const InventoryManager = lazy(() => import('./pages/admin/InventoryManager'));
+const WMOSDashboard = lazy(() => import('./pages/warehouse/WMOSDashboard'));
+const WarehouseInventory = lazy(() => import('./pages/warehouse/InventoryManager'));
+const WarehouseOperations = lazy(() => import('./pages/warehouse/OperationsManager'));
+const WarehouseLogistics = lazy(() => import('./pages/warehouse/LogisticsManager'));
 const QRPrintPage = lazy(() => import('./components/QR/QRPrintPage'));
 const StaffMobileApps = lazy(() => import('./pages/admin/StaffMobileApps'));
 const WaiterDashboard = lazy(() => import('./pages/waiter/WaiterDashboard'));
@@ -294,6 +298,40 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <InventoryManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Warehouse Management Routes */}
+        <Route
+          path="/r/:restaurantId/warehouse"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'customer']}>
+              <WMOSDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/warehouse/inventory"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'operator', 'customer']}>
+              <WarehouseInventory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/warehouse/operations"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'operator', 'customer']}>
+              <WarehouseOperations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/r/:restaurantId/warehouse/logistics"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'operator', 'customer']}>
+              <WarehouseLogistics />
             </ProtectedRoute>
           }
         />
