@@ -13,7 +13,7 @@ async function verifyWMS() {
     // 1. Create a WMS Tenant
     const wmsConfig = await createRestaurant({
       name: 'Global Logistics Hub',
-      type: 'WMS',
+      vertical: 'wms',
       location: 'Chicago, IL',
       pins: { admin: 'wmsadmin' }
     });
