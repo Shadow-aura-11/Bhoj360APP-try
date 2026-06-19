@@ -21,8 +21,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function EventPlanner() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [events, setEvents] = useState([]);
@@ -305,7 +305,7 @@ export default function EventPlanner() {
   }
 
   return (
-    <DashboardShell title="Event Planner" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Event Planner" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

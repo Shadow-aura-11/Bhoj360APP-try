@@ -16,7 +16,7 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function PropertyManager() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -25,7 +25,7 @@ export default function PropertyManager() {
   const [formData, setFormData] = useState({ name: '', type: 'Residential', address: '', city: '', country: '' });
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
   const [unitFormData, setUnitFormData] = useState({ floor_id: '', unit_number: '', type: 'Apartment', rent: 0 });
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     fetchProperties();

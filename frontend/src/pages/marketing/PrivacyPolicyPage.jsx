@@ -7,8 +7,8 @@ import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function PrivacyPolicyPage() {
   useDocumentMetadata(
-    'Privacy Policy - Bhoj360 Restaurant POS Software',
-    'Read the privacy policy of Bhoj360. Learn how we handle, secure, and isolate your restaurant business data and customer information.'
+    'Privacy Policy - Multi-OS Platform Restaurant POS Software',
+    'Read the privacy policy of Multi-OS Platform. Learn how we handle, secure, and isolate your restaurant business data and customer information.'
   );
 
   const { lang } = useLanguage();
@@ -40,8 +40,8 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-6 text-sm font-light text-[rgba(245,240,235,0.75)] leading-relaxed">
             <p>
               {isHindi
-                ? "Bhoj360 में, हम आपकी गोपनीयता की रक्षा करने के लिए प्रतिबद्ध हैं। यह गोपनीयता नीति बताती है कि जब आप हमारे रेस्तरां प्रबंधन सॉफ्टवेयर का उपयोग करते हैं तो हम आपकी जानकारी कैसे एकत्र, उपयोग और सुरक्षित करते हैं।"
-                : "At Bhoj360, accessible from our marketing site and staff console, one of our main priorities is the privacy of our visitors and clients. This Privacy Policy document outlines the types of information collected and recorded by our platform and how we use it."
+                ? "Multi-OS Platform में, हम आपकी गोपनीयता की रक्षा करने के लिए प्रतिबद्ध हैं। यह गोपनीयता नीति बताती है कि जब आप हमारे रेस्तरां प्रबंधन सॉफ्टवेयर का उपयोग करते हैं तो हम आपकी जानकारी कैसे एकत्र, उपयोग और सुरक्षित करते हैं।"
+                : "At Multi-OS Platform, accessible from our marketing site and staff console, one of our main priorities is the privacy of our visitors and clients. This Privacy Policy document outlines the types of information collected and recorded by our platform and how we use it."
               }
             </p>
 
@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
             <p>
               {isHindi
                 ? "प्रत्येक रेस्तरां आउटलेट अपनी पृथक डेटाबेस फ़ाइल पर चलता है। हम आउटलेट के डेटाबेस को दूसरों के साथ साझा या एकीकृत नहीं करते हैं। आपके ग्राहकों की संपर्क जानकारी पूरी तरह से सुरक्षित है और केवल आपके स्टाफ डैशबोर्ड के भीतर ही सुलभ है।"
-                : "Because Bhoj360 employs a decentralized architecture, all transaction records, staff logs, and guest check details are kept inside isolated database containers per outlet. We do not sell or compile cross-outlet customer metrics to third parties."
+                : "Because Multi-OS Platform employs a decentralized architecture, all transaction records, staff logs, and guest check details are kept inside isolated database containers per outlet. We do not sell or compile cross-outlet customer metrics to third parties."
               }
             </p>
 

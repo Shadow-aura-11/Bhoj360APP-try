@@ -59,9 +59,9 @@ const ROLES = [
   },
 ];
 
-function QRModal({ role, restaurantName, restaurantId, onClose }) {
+function QRModal({ role, tenantName, tenantId, onClose }) {
   const roleParam = role.roleParam;
-  const fullUrl = `${window.location.origin}/r/${restaurantId}/login?role=${roleParam}`;
+  const fullUrl = `${window.location.origin}/r/${tenantId}/login?role=${roleParam}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=20&data=${encodeURIComponent(fullUrl)}`;
   const [copied, setCopied] = useState(false);
 
@@ -73,11 +73,11 @@ function QRModal({ role, restaurantName, restaurantId, onClose }) {
   };
 
   const whatsappMsg = encodeURIComponent(
-    `Hi! Please install the *${restaurantName} ${role.name}* app on your phone:\n👉 ${fullUrl}\n\nOpen this link on your phone and tap "Install" to add it to your home screen.`
+    `Hi! Please install the *${tenantName} ${role.name}* app on your phone:\n👉 ${fullUrl}\n\nOpen this link on your phone and tap "Install" to add it to your home screen.`
   );
-  const smsMsg = encodeURIComponent(`Install ${restaurantName} ${role.name}: ${fullUrl}`);
-  const emailSubject = encodeURIComponent(`Install ${restaurantName} ${role.name} App`);
-  const emailBody = encodeURIComponent(`Hi,\n\nPlease install the ${restaurantName} ${role.name} app:\n${fullUrl}\n\nOpen this link on your phone and tap "Install" to install the app.\n\nThanks`);
+  const smsMsg = encodeURIComponent(`Install ${tenantName} ${role.name}: ${fullUrl}`);
+  const emailSubject = encodeURIComponent(`Install ${tenantName} ${role.name} App`);
+  const emailBody = encodeURIComponent(`Hi,\n\nPlease install the ${tenantName} ${role.name} app:\n${fullUrl}\n\nOpen this link on your phone and tap "Install" to install the app.\n\nThanks`);
 
   return (
     <div
@@ -174,12 +174,12 @@ function QRModal({ role, restaurantName, restaurantId, onClose }) {
   );
 }
 
-function RoleCard({ role, restaurantName, restaurantId }) {
+function RoleCard({ role, tenantName, tenantId }) {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const fullUrl = `${window.location.origin}/r/${restaurantId}/login?role=${role.roleParam}`;
+  const fullUrl = `${window.location.origin}/r/${tenantId}/login?role=${role.roleParam}`;
   const qrThumbUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=10&data=${encodeURIComponent(fullUrl)}`;
 
   const handleCopy = () => {
@@ -190,7 +190,7 @@ function RoleCard({ role, restaurantName, restaurantId }) {
   };
 
   const whatsappMsg = encodeURIComponent(
-    `Hi! Please install the *${restaurantName} ${role.name}* app on your phone:\n👉 ${fullUrl}`
+    `Hi! Please install the *${tenantName} ${role.name}* app on your phone:\n👉 ${fullUrl}`
   );
 
   return (
@@ -279,8 +279,8 @@ function RoleCard({ role, restaurantName, restaurantId }) {
       {showModal && (
         <QRModal
           role={role}
-          restaurantName={restaurantName}
-          restaurantId={restaurantId}
+          tenantName={tenantName}
+          tenantId={tenantId}
           onClose={() => setShowModal(false)}
         />
       )}
@@ -289,9 +289,9 @@ function RoleCard({ role, restaurantName, restaurantId }) {
 }
 
 export default function StaffMobileApps() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
+  const [tenantName, setRestaurantName] = useState('Tenant');
 
   useEffect(() => {
     const fetchRestName = async () => {
@@ -308,11 +308,11 @@ export default function StaffMobileApps() {
         if (session.name) setRestaurantName(session.name);
       }
     };
-    if (restaurantId) fetchRestName();
-  }, [restaurantId]);
+    if (tenantId) fetchRestName();
+  }, [tenantId]);
 
   return (
-    <DashboardShell title="Staff Mobile Apps" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Staff Mobile Apps" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         {/* Header Card */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
@@ -351,8 +351,8 @@ export default function StaffMobileApps() {
             <RoleCard
               key={role.role}
               role={role}
-              restaurantName={restaurantName}
-              restaurantId={restaurantId}
+              tenantName={tenantName}
+              tenantId={tenantId}
             />
           ))}
         </div>

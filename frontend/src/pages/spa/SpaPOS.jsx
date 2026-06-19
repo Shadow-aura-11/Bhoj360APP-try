@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function SpaPOS() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [services, setServices] = useState([]);
   const [cart, setCart] = useState([]);
   const [customers, setCustomers] = useState([]);

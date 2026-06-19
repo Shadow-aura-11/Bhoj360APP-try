@@ -10,7 +10,7 @@ import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function BlogPage() {
   useDocumentMetadata(
-    'Bhoj360 Blog - Restaurant Industry Insights & Growth Strategies',
+    'Multi-OS Platform Blog - Restaurant Industry Insights & Growth Strategies',
     'Read the latest insights, tips, and trends on restaurant analytics, digital transformation, inventory control, and restaurant marketing campaigns.'
   );
 
@@ -52,12 +52,12 @@ export default function BlogPage() {
               {isHindi ? "समाचार और विचार" : "Insights & News"}
             </span>
             <h1 className="text-4xl md:text-6xl font-serif text-[#F5F0EB] leading-tight">
-              {isHindi ? "Bhoj360 ब्लॉग" : "The Bhoj360 Blog"}
+              {isHindi ? "Multi-OS Platform ब्लॉग" : "The Multi-OS Platform Blog"}
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi
                 ? "रेस्तरां संचालन, पीओएस नवाचारों और आतिथ्य प्रबंधन से संबंधित लेख पढ़ें।"
-                : "Operational strategies, tech design briefs, and industry updates compiled by the Bhoj360 core team."
+                : "Operational strategies, tech design briefs, and industry updates compiled by the Multi-OS Platform core team."
               }
             </p>
           </div>
@@ -89,7 +89,7 @@ export default function BlogPage() {
                     ) : (
                       <div className="h-44 bg-gradient-to-tr from-black/80 to-[#111111] rounded-xl flex items-center justify-center mb-4 border border-white/5 relative overflow-hidden">
                         <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
-                        <span className="text-[10px] font-mono text-[var(--color-amber)] tracking-[0.25em] uppercase">Bhoj360 INSIGHTS</span>
+                        <span className="text-[10px] font-mono text-[var(--color-amber)] tracking-[0.25em] uppercase">Multi-OS Platform INSIGHTS</span>
                       </div>
                     )}
                     

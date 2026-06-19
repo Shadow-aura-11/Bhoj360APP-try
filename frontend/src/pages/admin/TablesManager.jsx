@@ -15,10 +15,10 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
 export default function TablesManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
-  const { socket } = useSocket(restaurantId);
-  const { tables, loading, refreshTables } = useTables(restaurantId, socket);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
+  const { socket } = useSocket(tenantId);
+  const { tables, loading, refreshTables } = useTables(tenantId, socket);
 
   const [viewMode, setViewMode] = useState('floor'); // 'floor' | 'list'
   const [selectedTable, setSelectedTable] = useState(null);
@@ -94,7 +94,7 @@ export default function TablesManager() {
 
       await Promise.all(qrPromises);
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `restaurant-${restaurantId}-qrs.zip`);
+      saveAs(content, `restaurant-${tenantId}-qrs.zip`);
       toast.success('ZIP of all QR codes downloaded!');
     } catch (err) {
       console.error(err);
@@ -105,7 +105,7 @@ export default function TablesManager() {
   };
 
   return (
-    <DashboardShell title="Tables Manager" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Tables Manager" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         {/* Top Header Control bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
@@ -337,7 +337,7 @@ export default function TablesManager() {
           setQrTable(null);
         }}
         table={qrTable}
-        restaurantId={restaurantId}
+        tenantId={tenantId}
       />
 
       {/* Delete confirm */}

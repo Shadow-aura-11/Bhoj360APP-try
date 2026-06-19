@@ -26,8 +26,8 @@ import {
 
 export default function ShowcasePage() {
   useDocumentMetadata(
-    'Bhoj360 Showcase - Live Smart POS & Restaurant Analytics Dashboard',
-    'See Bhoj360 in active operations. Explore our cashier POS console, waiter terminals, kitchen display systems, and analytics dashboard.'
+    'Multi-OS Platform Showcase - Live Smart POS & Restaurant Analytics Dashboard',
+    'See Multi-OS Platform in active operations. Explore our cashier POS console, waiter terminals, kitchen display systems, and analytics dashboard.'
   );
 
   const { lang } = useLanguage();
@@ -267,11 +267,11 @@ export default function ShowcasePage() {
             {isHindi ? "सिस्टम इंटरफेस गैलरी" : "System Interface Gallery"}
           </span>
           <h1 className="text-4xl md:text-6xl font-serif text-[#F5F0EB] leading-[1.15] tracking-tight">
-            {isHindi ? "लाइव काम के दौरान वास्तविक समय प्रणालियां।" : "Visualizing Bhoj360 in active operations."}
+            {isHindi ? "लाइव काम के दौरान वास्तविक समय प्रणालियां।" : "Visualizing Multi-OS Platform in active operations."}
           </h1>
           <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed max-w-3xl">
             {isHindi
-              ? "Bhoj360 स्मार्ट पीओएस (Smart POS) और बिलिंग मशीन सॉफ्टवेयर के साथ रेस्तरां ऑर्डर मैनेजमेंट सिस्टम को लाइव देखें। हमारे व्यापक रेस्तरां एनालिटिक्स डैशबोर्ड के साथ संचालन और राजस्व पर नज़र रखें।"
+              ? "Multi-OS Platform स्मार्ट पीओएस (Smart POS) और बिलिंग मशीन सॉफ्टवेयर के साथ रेस्तरां ऑर्डर मैनेजमेंट सिस्टम को लाइव देखें। हमारे व्यापक रेस्तरां एनालिटिक्स डैशबोर्ड के साथ संचालन और राजस्व पर नज़र रखें।"
               : "Explore the actual interfaces customized for each role in your restaurant team. Designed for high speed, reliability, and real-time synchronization."
             }
           </p>
@@ -308,7 +308,7 @@ export default function ShowcasePage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
                 </div>
                 <div className="text-[11px] font-mono text-slate-400 bg-black/60 px-6 py-0.5 rounded-full max-w-md truncate">
-                  https://bhoj360.com/walkthrough/tour?frame={currentFrame + 1}&view={viewMode}
+                  https://multi-os-platform.com/walkthrough/tour?frame={currentFrame + 1}&view={viewMode}
                 </div>
                 {/* Mode Selector */}
                 <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 p-0.5 rounded-lg">
@@ -625,7 +625,7 @@ export default function ShowcasePage() {
                         <div className="dot-green"></div>
                       </div>
                       <div className="browser-address">
-                        https://bhoj360.com/showcase/{idx + 1}
+                        https://multi-os-platform.com/showcase/{idx + 1}
                       </div>
                     </div>
                     <div className="bg-[#F8F9FD] relative overflow-hidden aspect-[16/10] flex items-center justify-center p-4">
@@ -734,7 +734,7 @@ export default function ShowcasePage() {
               {isHindi ? "स्मार्ट स्वचालन" : "Powering Modern Restaurants"}
             </span>
             <h2 className="text-3xl md:text-5xl font-serif text-white max-w-2xl mx-auto leading-tight">
-              {isHindi ? "अपने डाइनिंग ऑपरेशन्स को आधुनिक बनाएं" : "Experience Bhoj360 in your own outlet"}
+              {isHindi ? "अपने डाइनिंग ऑपरेशन्स को आधुनिक बनाएं" : "Experience Multi-OS Platform in your own outlet"}
             </h2>
             <p className="text-sm text-slate-400 font-light max-w-xl mx-auto leading-relaxed">
               {isHindi

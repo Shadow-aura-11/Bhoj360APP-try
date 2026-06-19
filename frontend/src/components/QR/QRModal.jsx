@@ -4,12 +4,12 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../shared/ConfirmModal';
 
-export default function QRModal({ isOpen, onClose, table, restaurantId }) {
+export default function QRModal({ isOpen, onClose, table, tenantId }) {
   const [qrCode, setQrCode] = useState('');
   const [qrUrl, setQrUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   const fetchQR = async () => {
     if (!table) return;

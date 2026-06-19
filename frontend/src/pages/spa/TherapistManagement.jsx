@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function TherapistManagement() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [therapists, setTherapists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);

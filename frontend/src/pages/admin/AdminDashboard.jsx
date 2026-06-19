@@ -24,15 +24,15 @@ import {
 } from 'recharts';
 
 export default function AdminDashboard({ isEMS = false }) {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = isEMS ? tenantId : restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = isEMS ? tenantId : tenantId;
   const navigate = useNavigate();
   const api = createApi(currentId);
   const { socket, isConnected } = useSocket(currentId);
   
-  const { tables, loading: tablesLoading } = useTables(!isEMS ? restaurantId : null, socket);
-  const { orders, loading: ordersLoading } = useOrders(!isEMS ? restaurantId : null, socket);
-  const { reservations, loading: reservationsLoading, refreshReservations } = useReservations(!isEMS ? restaurantId : null, socket);
+  const { tables, loading: tablesLoading } = useTables(!isEMS ? tenantId : null, socket);
+  const { orders, loading: ordersLoading } = useOrders(!isEMS ? tenantId : null, socket);
+  const { reservations, loading: reservationsLoading, refreshReservations } = useReservations(!isEMS ? tenantId : null, socket);
   
   const [summary, setSummary] = useState({
     revenue: 0,
@@ -228,7 +228,7 @@ export default function AdminDashboard({ isEMS = false }) {
   }
 
   return (
-    <DashboardShell title="Overview" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Overview" tenantId={tenantId} role="admin">
       <div className="space-y-8">
         {/* KPI Row */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">

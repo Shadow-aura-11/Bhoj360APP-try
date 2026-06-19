@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function SpecializedPortals() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [role, setRole] = useState('therapist'); // 'therapist' or 'doctor'
   const [appointments, setAppointments] = useState([]);
 

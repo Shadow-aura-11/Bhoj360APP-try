@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 export default function CustomerFeedback() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 

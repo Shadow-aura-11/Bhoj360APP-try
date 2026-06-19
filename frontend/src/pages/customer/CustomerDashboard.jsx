@@ -8,13 +8,13 @@ import OrderTimeline from '../../components/Orders/OrderTimeline';
 import toast from 'react-hot-toast';
 
 export default function CustomerDashboard() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const api = createApi(restaurantId);
-  const { socket, isConnected } = useSocket(restaurantId);
+  const api = createApi(tenantId);
+  const { socket, isConnected } = useSocket(tenantId);
 
-  const [session, setSession] = useState(null); // { role, restaurantId, tableNumber, tableId, customerPhone, qrToken }
+  const [session, setSession] = useState(null); // { role, tenantId, tableNumber, tableId, customerPhone, qrToken }
   
   const urlTable = searchParams.get('table');
   const urlToken = searchParams.get('token');
@@ -35,7 +35,7 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState([]);
   const [notes, setNotes] = useState('');
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const [tenantName, setRestaurantName] = useState('Tenant');
   const [logoutRedirectUrl, setLogoutRedirectUrl] = useState('');
   const [theme, setTheme] = useState('classic');
   const [billingConfig, setBillingConfig] = useState(null);
@@ -153,12 +153,12 @@ export default function CustomerDashboard() {
   // Sync session state from storage
   useEffect(() => {
     const ses = JSON.parse(localStorage.getItem('session') || '{}');
-    if (ses.restaurantId === restaurantId && ses.role === 'customer') {
+    if (ses.tenantId === tenantId && ses.role === 'customer') {
       setSession(ses);
     } else {
       setSession(null);
     }
-  }, [restaurantId]);
+  }, [tenantId]);
 
   // Load menu items
   useEffect(() => {
@@ -185,7 +185,7 @@ export default function CustomerDashboard() {
     if (session) {
       loadMenu();
     }
-  }, [session, restaurantId]);
+  }, [session, tenantId]);
 
   // Fetch active order for customer by phone number
   const fetchActiveOrder = async () => {
@@ -295,7 +295,7 @@ export default function CustomerDashboard() {
 
       const newSession = {
         role: 'customer',
-        restaurantId,
+        tenantId,
         tableNumber: tableExists.number.toUpperCase(),
         tableId: tableExists.id,
         customerPhone: customerPhone.trim(),
@@ -332,7 +332,7 @@ export default function CustomerDashboard() {
 
       const newSession = {
         role: 'customer',
-        restaurantId,
+        tenantId,
         tableNumber: urlTable,
         tableId,
         customerPhone: cleanPhone,
@@ -644,7 +644,7 @@ export default function CustomerDashboard() {
       {/* Header bar */}
       <header className="h-16 flex items-center justify-between px-6 border-b theme-border-color theme-bg-color sticky top-0 z-20 shadow-sm flex-shrink-0">
         <div>
-          <span className="text-[9px] font-bold theme-primary-color tracking-widest block uppercase font-mono">{restaurantName}</span>
+          <span className="text-[9px] font-bold theme-primary-color tracking-widest block uppercase font-mono">{tenantName}</span>
           <h1 className="text-sm font-bold font-display theme-text-color">Table {activeOrder?.table_number || session.tableNumber}</h1>
         </div>
 

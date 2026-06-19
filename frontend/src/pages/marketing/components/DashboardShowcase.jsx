@@ -88,10 +88,10 @@ export default function DashboardShowcase() {
                     <span className="dot-green"></span>
                   </div>
                   <div className="browser-address">
-                    {activeTab === 'admin' && 'https://bhoj360.com/outlet/3101/admin'}
-                    {activeTab === 'waiter' && 'https://bhoj360.com/outlet/3101/waiter'}
-                    {activeTab === 'kitchen' && 'https://bhoj360.com/outlet/3101/kitchen'}
-                    {activeTab === 'guest' && 'https://bhoj360.com/r/outlet_3101/menu'}
+                    {activeTab === 'admin' && 'https://multi-os-platform.com/outlet/3101/admin'}
+                    {activeTab === 'waiter' && 'https://multi-os-platform.com/outlet/3101/waiter'}
+                    {activeTab === 'kitchen' && 'https://multi-os-platform.com/outlet/3101/kitchen'}
+                    {activeTab === 'guest' && 'https://multi-os-platform.com/r/outlet_3101/menu'}
                   </div>
                   <div className="w-12"></div>
                 </div>

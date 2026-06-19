@@ -37,8 +37,8 @@ const CATEGORY_COLORS = {
 };
 
 export default function ExpensesManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // Loading States
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function ExpensesManager() {
 
   useEffect(() => {
     loadData();
-  }, [restaurantId]);
+  }, [tenantId]);
 
   // Open modal for adding
   const handleOpenAdd = () => {
@@ -180,7 +180,7 @@ export default function ExpensesManager() {
   });
 
   return (
-    <DashboardShell title="Expenses & Cash Ledger" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Expenses & Cash Ledger" tenantId={tenantId} role="admin">
       <div className="space-y-6">
 
         {/* Top Control Panel */}

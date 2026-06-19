@@ -173,7 +173,7 @@ export default function Pricing() {
               <div className="mt-8">
                 {plan.name === 'Gold Plan' || plan.name === 'स्वर्ण योजना' ? (
                   <a
-                    href="mailto:sales@bhoj360.com?subject=Bhoj360%20Gold%20Plan%20Inquiry"
+                    href="mailto:sales@multi-os-platform.com?subject=Multi-OS Platform%20Gold%20Plan%20Inquiry"
                     className="w-full block py-4 text-center rounded font-semibold text-sm transition-all border border-white/15 bg-white/5 text-[#F5F0EB] hover:bg-white/10 hover:border-white/20 active:scale-95 animate-shimmer"
                   >
                     {plan.cta}

@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function AIAnalytics() {
-  const { id: restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { id: tenantId } = useParams();
+  const api = createApi(tenantId);
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [forecast, setForecast] = useState(null);

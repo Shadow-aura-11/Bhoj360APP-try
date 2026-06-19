@@ -25,7 +25,7 @@ const calculateTotalPayable = (order, discount, billingConfig) => {
   return taxableAmount + gstAmount + serviceChargeAmount;
 };
 
-const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
+const formatWhatsAppReceiptText = (order, discount, config, tenantName) => {
   if (!order) return '';
   const billingConfig = config?.billing;
   const subtotal = order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || order.total || 0;
@@ -41,10 +41,10 @@ const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
 
   const reviewLink = config?.google_review_url || 'https://google.com';
 
-  let text = `Dear Customer, your bill for Order #${order.id} at ${restaurantName} is ₹${finalTotal.toFixed(2)}. Thank you for dining with us! Kindly leave a Google review here: ${reviewLink}\n\n`;
+  let text = `Dear Customer, your bill for Order #${order.id} at ${tenantName} is ₹${finalTotal.toFixed(2)}. Thank you for dining with us! Kindly leave a Google review here: ${reviewLink}\n\n`;
   
   text += `--- DUPLICATE BILL ---\n`;
-  text += `${restaurantName.toUpperCase()}\n`;
+  text += `${tenantName.toUpperCase()}\n`;
   if (config?.printing?.bill_setting?.show_address && config?.location) {
     text += `${config.location}\n`;
   }
@@ -84,10 +84,10 @@ const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
 };
 
 export default function CashierDashboard() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
-  const { socket, isConnected } = useSocket(restaurantId);
+  const api = createApi(tenantId);
+  const { socket, isConnected } = useSocket(tenantId);
 
   const normalizeMethod = (method) => {
     if (!method) return 'cash';
@@ -152,9 +152,9 @@ export default function CashierDashboard() {
   }, []);
 
   const session = JSON.parse(localStorage.getItem('session') || '{}');
-  const restaurantName = session.name || 'Restaurant';
+  const tenantName = session.name || 'Tenant';
 
-  const { installPrompt, handleInstall } = usePWA(restaurantName, 'Cashier Portal', config?.logo_url);
+  const { installPrompt, handleInstall } = usePWA(tenantName, 'Cashier Portal', config?.logo_url);
 
   useEffect(() => {
     if (installPrompt) {
@@ -191,8 +191,8 @@ export default function CashierDashboard() {
     }
   }, [installPrompt]);
 
-  const { tables, refreshTables } = useTables(restaurantId, socket);
-  const { orders, refreshOrders } = useOrders(restaurantId, socket);
+  const { tables, refreshTables } = useTables(tenantId, socket);
+  const { orders, refreshOrders } = useOrders(tenantId, socket);
 
   const [activeTab, setActiveTab] = useState('requests'); // 'tables' | 'requests' | 'history'
   const [selectedTable, setSelectedTable] = useState(null);
@@ -443,7 +443,7 @@ export default function CashierDashboard() {
     if (!targetOrder) return;
 
     try {
-      const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, config, restaurantName);
+      const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, config, tenantName);
       await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
       window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       toast.success('Opening WhatsApp...');
@@ -546,7 +546,7 @@ export default function CashierDashboard() {
         ctx.font = 'bold 12px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const letter = (config?.name || restaurantName || 'R').charAt(0).toUpperCase();
+        const letter = (config?.name || tenantName || 'R').charAt(0).toUpperCase();
         ctx.fillText(letter, width / 2, currentY + circleSize / 2);
         currentY += circleSize + 8;
       }
@@ -556,7 +556,7 @@ export default function CashierDashboard() {
       ctx.font = 'bold 16px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(config?.name || restaurantName || 'RECEIPT', width / 2, currentY);
+      ctx.fillText(config?.name || tenantName || 'RECEIPT', width / 2, currentY);
       
       // Address & Info
       ctx.font = '10px monospace';
@@ -693,14 +693,14 @@ export default function CashierDashboard() {
       currentY += 15;
       ctx.font = '8px monospace';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText('Powered by Bhoj360', width / 2, currentY);
+      ctx.fillText('Powered by Multi-OS', width / 2, currentY);
 
       // Convert Canvas to PNG image data URI
       const imgData = canvas.toDataURL('image/png');
       const cleanBase64 = imgData.substring(imgData.indexOf(',') + 1);
 
       try {
-        const cleanRestaurantName = (config?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanRestaurantName = (config?.name || tenantName || 'Tenant').replace(/[^a-zA-Z0-9]/g, '_');
         const randomDigits = Math.floor(100000 + Math.random() * 900000);
         const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
@@ -708,14 +708,14 @@ export default function CashierDashboard() {
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}/r/${tenantId}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = config?.google_review_url || 'https://google.com';
         toast.success('Receipt image uploaded! Opening WhatsApp chat...', { id: toastId });
         await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
         
-        const messageText = `Dear Customer, thank you for dining with us at ${config?.name || restaurantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
+        const messageText = `Dear Customer, thank you for dining with us at ${config?.name || tenantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
         window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
       } catch (uploadErr) {
         console.error(uploadErr);
@@ -830,7 +830,7 @@ export default function CashierDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('session');
-    navigate(`/r/${restaurantId}/login?role=cashier`);
+    navigate(`/r/${tenantId}/login?role=cashier`);
   };
 
   const salesHistory = orders.filter(o => o.status === 'paid');
@@ -892,7 +892,7 @@ export default function CashierDashboard() {
             </div>
           )}
           
-          <div className="text-center font-bold text-[12px] uppercase mb-1">{config?.name || restaurantName}</div>
+          <div className="text-center font-bold text-[12px] uppercase mb-1">{config?.name || tenantName}</div>
           
           {config?.printing?.bill_setting?.show_address && config?.location && (
             <div className="text-center text-[8px] text-slate-800 leading-normal mb-1">{config.location}</div>
@@ -1015,7 +1015,7 @@ export default function CashierDashboard() {
           <div className="border-b border-dashed border-black mb-2"></div>
           <div className="text-center text-[8.5px] leading-normal space-y-1">
             <p>{config?.printing?.bill_setting?.custom_footer || 'Thank you! Visit again.'}</p>
-            <p className="text-[7px] text-slate-500">Powered by Bhoj360</p>
+            <p className="text-[7px] text-slate-500">Powered by Multi-OS</p>
           </div>
         </div>
       )}
@@ -1053,7 +1053,7 @@ export default function CashierDashboard() {
             )}
             
             <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', marginBottom: '4px' }}>
-              {config?.name || restaurantName}
+              {config?.name || tenantName}
             </div>
             
             {config?.printing?.bill_setting?.show_address && config?.location && (
@@ -1187,7 +1187,7 @@ export default function CashierDashboard() {
             <div style={{ borderBottom: '1px dashed #000000', marginBottom: '12px' }}></div>
             <div style={{ textAlign: 'center', fontSize: '10px', fontWeight: 'bold', lineHeight: '1.4' }}>
               <p>{config?.printing?.bill_setting?.custom_footer || 'Thank you! Visit again.'}</p>
-              <p style={{ fontSize: '8px', color: '#777777', marginTop: '4px', fontWeight: 'normal' }}>Powered by Bhoj360</p>
+              <p style={{ fontSize: '8px', color: '#777777', marginTop: '4px', fontWeight: 'normal' }}>Powered by Multi-OS</p>
             </div>
           </div>
         </div>
@@ -1197,7 +1197,7 @@ export default function CashierDashboard() {
         {/* PWA Install Banner */}
         <PWAInstallBanner
           role="cashier"
-          restaurantName={restaurantName}
+          tenantName={tenantName}
           installPrompt={installPrompt}
           handleInstall={handleInstall}
         />
@@ -1209,12 +1209,12 @@ export default function CashierDashboard() {
             <img src={agencySettings.logo_url} alt="Agency Logo" className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200" />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-display font-bold text-lg text-white shadow-md">
-              {restaurantName[0] || 'C'}
+              {tenantName[0] || 'C'}
             </div>
           )}
           <div>
             <h1 className="text-sm font-bold font-display tracking-wide uppercase text-blue-750 flex items-center gap-1.5">
-              <Landmark className="w-4.5 h-4.5" /> {restaurantName}
+              <Landmark className="w-4.5 h-4.5" /> {tenantName}
             </h1>
             <span className="text-[10px] text-slate-500 font-mono">
               Cashier Dashboard / POS
@@ -1406,7 +1406,7 @@ export default function CashierDashboard() {
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-450 uppercase font-semibold block">Restaurant Code</span>
-                  <span className="text-lg font-bold font-mono text-blue-600 mt-1 block truncate">{restaurantId}</span>
+                  <span className="text-lg font-bold font-mono text-blue-600 mt-1 block truncate">{tenantId}</span>
                 </div>
               </div>
 
@@ -1823,7 +1823,7 @@ export default function CashierDashboard() {
         isOpen={orderModalOpen}
         onClose={() => setOrderModalOpen(false)}
         onSubmit={handleOrderSubmit}
-        restaurantId={restaurantId}
+        tenantId={tenantId}
         tableId={selectedTable?.id}
         tableNumber={selectedTable?.number}
         existingOrderId={activeOrder?.id}

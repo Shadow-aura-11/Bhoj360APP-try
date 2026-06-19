@@ -3,7 +3,7 @@ import { MessageSquare } from 'lucide-react';
 
 export default function FloatingWhatsApp() {
   // Agency WhatsApp number: +91 8299443154
-  const whatsappUrl = "https://wa.me/918299443154?text=Hello%20Bhoj360%20Team%2C%20I%20am%20interested%20in%20your%20services.%20Please%20guide%20me.";
+  const whatsappUrl = "https://wa.me/918299443154?text=Hello%20Team%2C%20I%20am%20interested%20in%20the%20Multi-OS%20Platform.%20Please%20guide%20me.";
   
   return (
     <a

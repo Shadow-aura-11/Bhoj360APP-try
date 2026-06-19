@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-export function usePWA(restaurantName, roleName, logoUrl) {
+export function usePWA(tenantName, roleName, logoUrl) {
   const [installPrompt, setInstallPrompt] = useState(window.deferredPrompt || null);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    if (!restaurantName || !roleName || restaurantName === 'Restaurant') return;
+    if (!tenantName || !roleName || tenantName === 'Tenant') return;
 
     // Build absolute URL for the logo
     let absoluteLogoUrl = logoUrl;
@@ -21,8 +21,8 @@ export function usePWA(restaurantName, roleName, logoUrl) {
 
     // Create a dynamic PWA manifest matching the restaurant name and role
     const manifest = {
-      name: `${restaurantName} - ${roleName}`,
-      short_name: `${restaurantName} ${roleName}`,
+      name: `${tenantName} - ${roleName}`,
+      short_name: `${tenantName} ${roleName}`,
       start_url: window.location.origin + window.location.pathname,
       display: 'standalone',
       background_color: '#0f172a',
@@ -58,7 +58,7 @@ export function usePWA(restaurantName, roleName, logoUrl) {
     return () => {
       URL.revokeObjectURL(manifestURL);
     };
-  }, [restaurantName, roleName, logoUrl]);
+  }, [tenantName, roleName, logoUrl]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {

@@ -31,7 +31,7 @@ export default function Footer() {
             <Link to="/" className="flex items-center group cursor-pointer w-fit">
               <img 
                 src="/logo.png" 
-                alt="Bhoj360 Logo" 
+                alt="Multi-OS Platform Logo"
                 className="h-16 md:h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
               />
             </Link>

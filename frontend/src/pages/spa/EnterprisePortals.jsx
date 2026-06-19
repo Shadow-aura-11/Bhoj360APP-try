@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function EnterprisePortals() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [branches, setBranches] = useState([]);
   const [stats, setStats] = useState(null);
   const [activeTab, setActiveTab] = useState('owner'); // 'owner' or 'branch'

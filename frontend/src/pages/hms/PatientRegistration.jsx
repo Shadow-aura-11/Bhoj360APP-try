@@ -3,7 +3,7 @@ import { UserPlus, Save, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export default function PatientRegistration() {
-  const { restaurantId: hospitalId } = useParams();
+  const { tenantId: hospitalId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',

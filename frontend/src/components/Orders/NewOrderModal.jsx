@@ -7,7 +7,7 @@ export default function NewOrderModal({
   isOpen,
   onClose,
   onSubmit,
-  restaurantId,
+  tenantId,
   tableId,
   tableNumber,
   existingOrderId = null,
@@ -27,7 +27,7 @@ export default function NewOrderModal({
   const [mobileTab, setMobileTab] = useState('menu');
   const [showCategoryPopup, setShowCategoryPopup] = useState(false);
 
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   // Load menu items
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function NewOrderModal({
       setOrderType('dine-in');
       setMobileTab('menu');
     }
-  }, [restaurantId, isOpen, initialCustomerPhone]);
+  }, [tenantId, isOpen, initialCustomerPhone]);
 
   const addToCart = (item) => {
     setCart((prev) => {

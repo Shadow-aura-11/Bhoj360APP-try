@@ -18,13 +18,13 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 export default function LeaseManager() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [activeTab, setActiveTab] = useState('leases'); // 'leases' | 'tenants' | 'applications'
   const [leases, setLeases] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     fetchData();

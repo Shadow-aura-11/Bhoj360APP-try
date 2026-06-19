@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 export default function CustomerCRM() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(true);

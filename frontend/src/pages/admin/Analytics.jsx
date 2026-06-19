@@ -38,8 +38,8 @@ const KPICard = ({ label, value, sub, icon: Icon, color, trend, trendLabel }) =>
 );
 
 export default function Analytics() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week');
@@ -194,7 +194,7 @@ export default function Analytics() {
     }
   };
 
-  useEffect(() => { if (restaurantId) loadAnalytics(); }, [restaurantId, period]);
+  useEffect(() => { if (tenantId) loadAnalytics(); }, [tenantId, period]);
 
   const handleExportExcel = () => {
     try {
@@ -299,7 +299,7 @@ export default function Analytics() {
   };
 
   return (
-    <DashboardShell title="Analytics" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Analytics" tenantId={tenantId} role="admin">
       <div className="space-y-6">
 
         {/* Control Row */}

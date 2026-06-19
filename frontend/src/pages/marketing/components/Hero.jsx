@@ -17,20 +17,20 @@ export default function Hero({ onWatchDemo }) {
 
   const [logs, setLogs] = useState(
     isHindi ? [
-      { id: 1, time: '14:42', text: 'टेबल 4 ने ब्लैक ट्रफल टैगलीटेल ऑर्डर किया' },
-      { id: 2, time: '14:44', text: 'टेबल 1 का बिल भुगतान किया गया (₹25,999)' },
-      { id: 3, time: '14:45', text: 'टेबल 3 रिजर्वेशन बैठाया गया (श्री गुप्ता)' }
+      { id: 1, time: '14:42', text: 'जिम सदस्य (ID: GYM-402) ने चेक-इन किया' },
+      { id: 2, time: '14:44', text: 'प्रॉपर्टी P-10 के लिए किराया भुगतान प्राप्त हुआ (₹45,000)' },
+      { id: 3, time: '14:45', text: 'स्पा अपॉइंटमेंट पुष्ट: रिलैक्सेशन थेरेपी' }
     ] : [
-      { id: 1, time: '14:42', text: 'Table 4 ordered Black Truffle Tagliatelle' },
-      { id: 2, time: '14:44', text: 'Table 1 check settled ($342.50)' },
-      { id: 3, time: '14:45', text: 'Table 3 reservation seated (Mr. Sterling)' }
+      { id: 1, time: '14:42', text: 'Gym Member (ID: GYM-402) checked in' },
+      { id: 2, time: '14:44', text: 'Rent payment received for Unit P-10 ($2,450)' },
+      { id: 3, time: '14:45', text: 'Spa appointment confirmed: Deep Tissue' }
     ]
   );
 
   const [simStats, setSimStats] = useState({
-    occupancy: '66%',
-    revenueToday: isHindi ? '₹1,24,820' : '$14,820',
-    activeServers: isHindi ? '8 शिफ्ट पर' : '8 On Shift'
+    occupancy: '74%',
+    revenueToday: isHindi ? '₹2,84,320' : '$34,320',
+    activeServers: isHindi ? '12 वर्टिकल एक्टिव' : '12 Verticals Active'
   });
 
   // Simple simulator loop
@@ -44,36 +44,39 @@ export default function Hero({ onWatchDemo }) {
       let nextGuests = 0;
       let logMsg = '';
 
+      const verticals = ['Gym', 'Spa', 'Tenant', 'PMS', 'Retail'];
+      const v = verticals[Math.floor(Math.random() * verticals.length)];
+
       if (targetTable.status === 'available') {
         nextStatus = 'occupied';
         nextGuests = Math.floor(Math.random() * 4) + 1;
         logMsg = isHindi 
-          ? `टेबल ${targetTable.id} पर ग्राहक बैठे (${nextGuests} अतिथि)`
-          : `Table ${targetTable.id} is now seated (${nextGuests} guests)`;
+          ? `${v} वर्टिकल: नया सत्र शुरू हुआ (ID: #${targetTable.id})`
+          : `${v} Vertical: New session started (ID: #${targetTable.id})`;
       } else if (targetTable.status === 'occupied') {
         // either reserve it or free it
         if (Math.random() > 0.5) {
           nextStatus = 'reserved';
           nextGuests = 2;
           logMsg = isHindi
-            ? `टेबल ${targetTable.id} को 18:30 सीटिंग के लिए आरक्षित किया गया`
-            : `Table ${targetTable.id} reserved for 18:30 seating`;
+            ? `${v}: अगली बुकिंग के लिए शेड्यूल किया गया`
+            : `${v}: Scheduled for upcoming booking`;
         } else {
           nextStatus = 'available';
           nextGuests = 0;
           const bills = isHindi ? [9999, 15999, 6999, 25999, 12999] : [124, 210, 85, 345, 190];
           const billAmt = bills[Math.floor(Math.random() * bills.length)];
           logMsg = isHindi
-            ? `टेबल ${targetTable.id} खाली। बिल भुगतान: ₹${billAmt.toLocaleString('en-IN')}`
-            : `Table ${targetTable.id} cleared. Bill settled: $${billAmt}.00`;
+            ? `${v} ट्रांजैक्शन पूर्ण: ₹${billAmt.toLocaleString('en-IN')}`
+            : `${v} Transaction completed: $${billAmt}.00`;
         }
       } else {
         // reserved to occupied
         nextStatus = 'occupied';
         nextGuests = 2;
         logMsg = isHindi
-          ? `आरक्षण चेक-इन: टेबल ${targetTable.id} पर अतिथि बैठे`
-          : `Reservation check-in: Table ${targetTable.id} seated`;
+          ? `${v}: रिजर्वेशन चेक-इन`
+          : `${v}: Reservation check-in`;
       }
 
       // Update tables
@@ -133,9 +136,9 @@ export default function Hero({ onWatchDemo }) {
 
             {/* Display Headline H1 */}
             <h1 className="text-5xl md:text-7xl font-serif text-[#F5F0EB] leading-[1.08] tracking-tight">
-              {isHindi ? "रेस्तरां संचालन का" : "The Fine-Dining"}<br />
+              {isHindi ? "व्यवसाय संचालन का" : "The Enterprise"}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-amber)] to-amber-200 italic font-serif">
-                {isHindi ? "अल्टीमेट इंजन" : "Operating System"}
+                {isHindi ? "मल्टी-ओएस इंजन" : "Multi-OS Platform"}
               </span>
             </h1>
 
@@ -202,17 +205,17 @@ export default function Hero({ onWatchDemo }) {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
                   <span className="text-xs font-mono uppercase tracking-widest text-[#F5F0EB]/90">
-                    {isHindi ? "लाइव सीटिंग नेटवर्क" : "Live Seating Network"}
+                    {isHindi ? "लाइव नोड नेटवर्क" : "Live Node Network"}
                   </span>
                 </div>
-                <span className="text-xs font-mono text-[var(--color-amber)]">OUTLET #3101</span>
+                <span className="text-xs font-mono text-[var(--color-amber)]">TENANT #3101</span>
               </div>
 
               {/* Dynamic stats row */}
               <div className="grid grid-cols-3 gap-2 mb-6 text-center">
                 <div className="bg-black/40 border border-white/5 rounded-lg py-2.5">
                   <div className="text-[10px] font-mono text-[var(--color-text-muted)] uppercase">
-                    {isHindi ? "भरे स्थान" : "Occupancy"}
+                    {isHindi ? "लोड" : "Load"}
                   </div>
                   <div className="text-sm font-semibold font-mono text-emerald-400 mt-0.5">{simStats.occupancy}</div>
                 </div>

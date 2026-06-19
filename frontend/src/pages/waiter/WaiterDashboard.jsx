@@ -29,7 +29,7 @@ const calculateTotalPayable = (order, discount, billingConfig) => {
   return taxableAmount + gstAmount + serviceChargeAmount;
 };
 
-const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
+const formatWhatsAppReceiptText = (order, discount, config, tenantName) => {
   if (!order) return '';
   const billingConfig = config?.billing;
   const subtotal = order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || order.total || 0;
@@ -45,10 +45,10 @@ const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
 
   const reviewLink = config?.google_review_url || 'https://google.com';
 
-  let text = `Dear Customer, your bill for Order #${order.id} at ${restaurantName} is ₹${finalTotal.toFixed(2)}. Thank you for dining with us! Kindly leave a Google review here: ${reviewLink}\n\n`;
+  let text = `Dear Customer, your bill for Order #${order.id} at ${tenantName} is ₹${finalTotal.toFixed(2)}. Thank you for dining with us! Kindly leave a Google review here: ${reviewLink}\n\n`;
   
   text += `--- DUPLICATE BILL ---\n`;
-  text += `${restaurantName.toUpperCase()}\n`;
+  text += `${tenantName.toUpperCase()}\n`;
   if (config?.printing?.bill_setting?.show_address && config?.location) {
     text += `${config.location}\n`;
   }
@@ -88,10 +88,10 @@ const formatWhatsAppReceiptText = (order, discount, config, restaurantName) => {
 };
 
 export default function WaiterDashboard() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
-  const { socket, isConnected } = useSocket(restaurantId);
+  const api = createApi(tenantId);
+  const { socket, isConnected } = useSocket(tenantId);
 
   const normalizeMethod = (method) => {
     if (!method) return 'cash';
@@ -103,11 +103,11 @@ export default function WaiterDashboard() {
   };
 
   const session = JSON.parse(localStorage.getItem('session') || '{}');
-  const restaurantName = session.name || 'Restaurant';
+  const tenantName = session.name || 'Tenant';
 
-  const { tables, loading: tablesLoading, refreshTables } = useTables(restaurantId, socket);
-  const { orders, refreshOrders } = useOrders(restaurantId, socket);
-  const { reservations } = useReservations(restaurantId, socket);
+  const { tables, loading: tablesLoading, refreshTables } = useTables(tenantId, socket);
+  const { orders, refreshOrders } = useOrders(tenantId, socket);
+  const { reservations } = useReservations(tenantId, socket);
 
   const ordersRef = React.useRef(orders);
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function WaiterDashboard() {
   const [printOrder, setPrintOrder] = useState(null);
   const [receiptOrder, setReceiptOrder] = useState(null);
 
-  const { installPrompt, handleInstall } = usePWA(restaurantName, 'Waiter Portal', restaurantConfig?.logo_url);
+  const { installPrompt, handleInstall } = usePWA(tenantName, 'Waiter Portal', restaurantConfig?.logo_url);
 
   useEffect(() => {
     if (installPrompt) {
@@ -442,7 +442,7 @@ export default function WaiterDashboard() {
 
     try {
       // Format the bill as text and open WhatsApp directly
-      const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, restaurantConfig, restaurantName);
+      const msg = formatWhatsAppReceiptText(targetOrder, discountAmount, restaurantConfig, tenantName);
       await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
       window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       toast.success('Opening WhatsApp...');
@@ -544,7 +544,7 @@ export default function WaiterDashboard() {
         ctx.font = 'bold 12px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const letter = (restaurantConfig?.name || restaurantName || 'R').charAt(0).toUpperCase();
+        const letter = (restaurantConfig?.name || tenantName || 'R').charAt(0).toUpperCase();
         ctx.fillText(letter, width / 2, currentY + circleSize / 2);
         currentY += circleSize + 8;
       }
@@ -554,7 +554,7 @@ export default function WaiterDashboard() {
       ctx.font = 'bold 16px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(restaurantConfig?.name || restaurantName || 'RECEIPT', width / 2, currentY);
+      ctx.fillText(restaurantConfig?.name || tenantName || 'RECEIPT', width / 2, currentY);
       
       // Address & Info
       ctx.font = '10px monospace';
@@ -691,14 +691,14 @@ export default function WaiterDashboard() {
       currentY += 15;
       ctx.font = '8px monospace';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText('Powered by Bhoj360', width / 2, currentY);
+      ctx.fillText('Powered by Multi-OS', width / 2, currentY);
 
       // Convert Canvas to PNG image data URI
       const imgData = canvas.toDataURL('image/png');
       const cleanBase64 = imgData.substring(imgData.indexOf(',') + 1);
 
       try {
-        const cleanRestaurantName = (restaurantConfig?.name || restaurantName || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanRestaurantName = (restaurantConfig?.name || tenantName || 'Tenant').replace(/[^a-zA-Z0-9]/g, '_');
         const randomDigits = Math.floor(100000 + Math.random() * 900000);
         const { data: uploadRes } = await api.post('/orders/upload-image-bill', {
           base64Image: cleanBase64,
@@ -706,14 +706,14 @@ export default function WaiterDashboard() {
         });
 
         const baseURL = window.location.origin;
-        const publicPdfUrl = `${baseURL}/r/${restaurantId}${uploadRes.url}`;
+        const publicPdfUrl = `${baseURL}/r/${tenantId}${uploadRes.url}`;
 
         // WhatsApp redirection
         const reviewLink = restaurantConfig?.google_review_url || 'https://google.com';
         toast.success('Receipt image uploaded! Opening WhatsApp chat...', { id: toastId });
         await api.post(`/orders/${targetOrder.id}/send-whatsapp`, { phone: whatsappPhone }).catch(() => {});
         
-        const messageText = `Dear Customer, thank you for dining with us at ${restaurantConfig?.name || restaurantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
+        const messageText = `Dear Customer, thank you for dining with us at ${restaurantConfig?.name || tenantName}! 🌸\n\n📄 View/Download your receipt here: ${publicPdfUrl}\n\n⭐ We would love to hear your feedback! Please leave us a Google review here: ${reviewLink}`;
         window.open(`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
       } catch (uploadErr) {
         console.error(uploadErr);
@@ -1042,7 +1042,7 @@ export default function WaiterDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('session');
-    navigate(`/r/${restaurantId}/login?role=waiter`);
+    navigate(`/r/${tenantId}/login?role=waiter`);
   };
 
 
@@ -1053,7 +1053,7 @@ export default function WaiterDashboard() {
         {/* PWA Install Banner */}
       <PWAInstallBanner
         role="waiter"
-        restaurantName={restaurantName}
+        tenantName={tenantName}
         installPrompt={installPrompt}
         handleInstall={handleInstall}
       />
@@ -1065,12 +1065,12 @@ export default function WaiterDashboard() {
             <img src={agencySettings.logo_url} alt="Agency Logo" className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200" />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center font-display font-bold text-lg text-white shadow-md">
-              {restaurantName[0] || 'W'}
+              {tenantName[0] || 'W'}
             </div>
           )}
           <div>
             <h1 className="text-sm font-bold font-display tracking-wide uppercase text-amber-800">
-              {restaurantName}
+              {tenantName}
             </h1>
             <span className="text-[10px] text-slate-400 font-mono">
               Waiter Portal
@@ -1480,7 +1480,7 @@ export default function WaiterDashboard() {
         isOpen={orderModalOpen}
         onClose={() => setOrderModalOpen(false)}
         onSubmit={handleOrderSubmit}
-        restaurantId={restaurantId}
+        tenantId={tenantId}
         tableId={activeTable?.id}
         tableNumber={activeTable?.number}
         existingOrderId={activeOrder?.id}
@@ -2072,7 +2072,7 @@ export default function WaiterDashboard() {
             </div>
           )}
           
-          <div className="text-center font-bold text-[12px] uppercase mb-1">{restaurantConfig?.name || restaurantName}</div>
+          <div className="text-center font-bold text-[12px] uppercase mb-1">{restaurantConfig?.name || tenantName}</div>
           
           {restaurantConfig?.printing?.bill_setting?.show_address && restaurantConfig?.location && (
             <div className="text-center text-[8px] text-slate-800 leading-normal mb-1">{restaurantConfig.location}</div>
@@ -2195,7 +2195,7 @@ export default function WaiterDashboard() {
           <div className="border-b border-dashed border-black mb-2"></div>
           <div className="text-center text-[8.5px] leading-normal space-y-1">
             <p>{restaurantConfig?.printing?.bill_setting?.custom_footer || 'Thank you! Visit again.'}</p>
-            <p className="text-[7px] text-slate-500">Powered by Bhoj360</p>
+            <p className="text-[7px] text-slate-500">Powered by Multi-OS</p>
           </div>
         </div>
       )}
@@ -2205,7 +2205,7 @@ export default function WaiterDashboard() {
           {/* KITCHEN ORDER TICKET (KOT) */}
           <div>
               <div className="text-center border-b border-dashed border-black pb-2 mb-2">
-                <h2 className="font-bold text-sm uppercase">{restaurantName}</h2>
+                <h2 className="font-bold text-sm uppercase">{tenantName}</h2>
                 <p className="text-[10px] font-bold">KITCHEN ORDER TICKET (KOT)</p>
                 <p className="text-[10px] font-mono mt-0.5">
                   Order ID: #{printOrder.id}

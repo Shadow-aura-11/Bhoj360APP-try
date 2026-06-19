@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function PatientDetails() {
-  const { restaurantId, patientId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId, patientId } = useParams();
+  const api = createApi(tenantId);
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('history'); // 'history' | 'vitals' | 'visits'
@@ -32,7 +32,7 @@ export default function PatientDetails() {
   return (
     <div className="p-6 md:p-10 bg-slate-50 min-h-screen font-body">
       <div className="flex items-center gap-4 mb-8">
-        <Link to={`/r/${restaurantId}/hms/patients`} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+        <Link to={`/r/${tenantId}/hms/patients`} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
           <ArrowLeft className="w-5 h-5 text-slate-500" />
         </Link>
         <div>

@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { createSocket } from '../api/client';
 
-export function useSocket(restaurantId) {
+export function useSocket(tenantId) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!restaurantId) return;
-    const socket = createSocket(restaurantId);
+    if (!tenantId) return;
+    const socket = createSocket(tenantId);
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -25,7 +25,7 @@ export function useSocket(restaurantId) {
     return () => {
       socket.disconnect();
     };
-  }, [restaurantId]);
+  }, [tenantId]);
 
   return { socket: socketRef.current, isConnected };
 }

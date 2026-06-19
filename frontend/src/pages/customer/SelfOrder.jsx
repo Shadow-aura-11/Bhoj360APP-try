@@ -5,17 +5,17 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function SelfOrder() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   const table = searchParams.get('table');
   const token = searchParams.get('token');
 
   const [loading, setLoading] = useState(true);
   const [invalidToken, setInvalidToken] = useState(false);
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const [tenantName, setRestaurantName] = useState('Tenant');
   const [tableDetails, setTableDetails] = useState(null);
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -104,7 +104,7 @@ export default function SelfOrder() {
       }
     };
     validateToken();
-  }, [table, token, restaurantId]);
+  }, [table, token, tenantId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -115,7 +115,7 @@ export default function SelfOrder() {
 
     const newSession = {
       role: 'customer',
-      restaurantId,
+      tenantId,
       tableNumber: tableDetails ? tableDetails.number : table,
       tableId: tableDetails ? tableDetails.id : null,
       customerPhone: customerPhone.trim(),
@@ -125,7 +125,7 @@ export default function SelfOrder() {
 
     localStorage.setItem('session', JSON.stringify(newSession));
     toast.success('Welcome! Redirecting to menu...');
-    navigate(`/r/${restaurantId}/customer`);
+    navigate(`/r/${tenantId}/customer`);
   };
 
   if (loading) {
@@ -159,7 +159,7 @@ export default function SelfOrder() {
         <div className={`w-14 h-14 rounded-2xl ${style.badge} flex items-center justify-center mx-auto mb-4`}>
           <Utensils className="w-7 h-7 animate-pulse" />
         </div>
-        <h2 className="text-2xl font-black font-display leading-tight">Welcome to {restaurantName}</h2>
+        <h2 className="text-2xl font-black font-display leading-tight">Welcome to {tenantName}</h2>
         <p className="text-xs mt-2 mb-6 opacity-80">
           Table {table}. Please enter your phone number to view the menu, order food, call waiters, and pay.
         </p>

@@ -19,8 +19,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function CateringManager() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [orders, setOrders] = useState([]);
@@ -264,7 +264,7 @@ export default function CateringManager() {
   }
 
   return (
-    <DashboardShell title="Catering Management" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Catering Management" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

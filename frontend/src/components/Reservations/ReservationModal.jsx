@@ -8,7 +8,7 @@ export default function ReservationModal({
   onClose,
   onSubmit,
   reservation = null,
-  restaurantId,
+  tenantId,
 }) {
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -25,7 +25,7 @@ export default function ReservationModal({
 
   const [availableTables, setAvailableTables] = useState([]);
   const [searching, setSearching] = useState(false);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     if (reservation) {

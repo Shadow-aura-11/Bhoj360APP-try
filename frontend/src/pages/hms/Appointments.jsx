@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function Appointments() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -35,7 +35,7 @@ export default function Appointments() {
 
   useEffect(() => {
     fetchData();
-  }, [restaurantId]);
+  }, [tenantId]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -62,7 +62,7 @@ export default function Appointments() {
   return (
     <div className="p-6 md:p-10 bg-slate-50 min-h-screen font-body">
       <div className="flex items-center gap-4 mb-8">
-        <Link to={`/r/${restaurantId}/hms`} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+        <Link to={`/r/${tenantId}/hms`} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
           <ArrowLeft className="w-5 h-5 text-slate-500" />
         </Link>
         <div>

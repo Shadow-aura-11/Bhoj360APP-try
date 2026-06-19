@@ -34,7 +34,7 @@ const FEATURES_LIST = [
   { id: 'print-bill', label: 'Bill/Receipt Printing' },
   // Ordering
   { id: 'customer-ordering', label: 'Customer Self-Ordering' },
-  { id: 'takeaway', label: 'Takeaway Orders' },
+  { id: 'takeaway', label: 'Takeaway Data Nodes' },
   { id: 'order-addons', label: 'Item Add-ons' },
   // Communication & feedback
   { id: 'waiter-call', label: 'Waiter Call Button' },
@@ -50,8 +50,7 @@ const FEATURES_LIST = [
 
 export default function AgencyDashboard() {
   const navigate = useNavigate();
-  const [restaurants, setRestaurants] = useState([]);
-  const [emsTenants, setEmsTenants] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -67,7 +66,7 @@ export default function AgencyDashboard() {
   const [searchName, setSearchName] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
 
-  const filteredRestaurants = restaurants.filter((res) => {
+  const filteredTenants = tenants.filter((res) => {
     const nameMatch = (res.name || '').toLowerCase().includes(searchName.toLowerCase().trim());
     const locationMatch = (res.location || '').toLowerCase().includes(filterLocation.toLowerCase().trim());
     return nameMatch && locationMatch;
@@ -94,15 +93,12 @@ export default function AgencyDashboard() {
   const [loadingApplications, setLoadingApplications] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
 
-  // Delete confirmation state: { [restaurantId]: { countdown: number, timer: any } }
+  // Delete confirmation state: { [tenantId]: { countdown: number, timer: any } }
   const [deleteState, setDeleteState] = useState({});
 
-  // New restaurant creation form state
+  // New tenant creation form state
   const [formData, setFormData] = useState({
     name: '',
-    templateType: 'restaurant',
-    vertical: 'restaurant',
-    tenantType: 'restaurant',
     tableCount: 8,
     logo_url: '',
     description: '',
@@ -121,10 +117,10 @@ export default function AgencyDashboard() {
     blockedFeatures: [],
   });
 
-  const [newRestaurantResult, setNewRestaurantResult] = useState(null);
+  const [newTenantResult, setNewTenantResult] = useState(null);
 
-  // Edit restaurant state
-  const [editingRestaurant, setEditingRestaurant] = useState(null);
+  // Edit tenant state
+  const [editingTenant, setEditingTenant] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
     logo_url: '',
@@ -204,7 +200,7 @@ export default function AgencyDashboard() {
     title: '',
     summary: '',
     content: '',
-    author: 'Bhoj360 Team',
+    author: 'Multi-OS Team',
     image_url: ''
   });
 
@@ -232,7 +228,7 @@ export default function AgencyDashboard() {
       await agencyApi.post('/blogs', payload);
       toast.success(editingBlog ? 'Blog post updated!' : 'Blog post created!');
       setEditingBlog(null);
-      setBlogFormData({ title: '', summary: '', content: '', author: 'Bhoj360 Team', image_url: '' });
+      setBlogFormData({ title: '', summary: '', content: '', author: 'Multi-OS Team', image_url: '' });
       fetchBlogs();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to save blog');
@@ -247,7 +243,7 @@ export default function AgencyDashboard() {
       title: blog.title || '',
       summary: blog.summary || '',
       content: blog.content || '',
-      author: blog.author || 'Bhoj360 Team',
+      author: blog.author || 'Multi-OS Team',
       image_url: blog.image_url || ''
     });
   };
@@ -280,10 +276,10 @@ export default function AgencyDashboard() {
     e.preventDefault();
     try {
       setSubmitting(true);
-      await agencyApi.put(`/restaurants/${editingSubscription.id}/subscription`, subFormData);
+      await agencyApi.put(`/tenants/${editingSubscription.id}/subscription`, subFormData);
       toast.success('Subscription plan updated successfully!');
       setEditingSubscription(null);
-      fetchRestaurants();
+      fetchTenants();
     } catch (err) {
       console.error(err);
       toast.error('Failed to update subscription');
@@ -313,7 +309,7 @@ export default function AgencyDashboard() {
     }
     try {
       setSubmitting(true);
-      const { data } = await agencyApi.post(`/restaurants/${viewingPayments.id}/payments`, payFormData);
+      const { data } = await agencyApi.post(`/tenants/${viewingPayments.id}/payments`, payFormData);
       toast.success('Payment logged successfully!');
       
       // Update local state for viewingPayments
@@ -334,7 +330,7 @@ export default function AgencyDashboard() {
         date: new Date().toISOString().split('T')[0],
       });
       
-      fetchRestaurants();
+      fetchTenants();
     } catch (err) {
       console.error(err);
       toast.error('Failed to log payment');
@@ -345,14 +341,14 @@ export default function AgencyDashboard() {
 
   const handleSendInvoice = async (res) => {
     if (!res.contact_email) {
-      if (confirm('This restaurant does not have a contact email configured. Would you like to configure it now?')) {
+      if (confirm('This tenant does not have a contact email configured. Would you like to configure it now?')) {
         handleStartEdit(res);
       }
       return;
     }
     try {
       toast.loading('Sending invoice...', { id: 'send-invoice-toast' });
-      await agencyApi.post(`/restaurants/${res.id}/send-invoice`);
+      await agencyApi.post(`/tenants/${res.id}/send-invoice`);
       toast.success(`Invoice sent to ${res.contact_email}`, { id: 'send-invoice-toast' });
     } catch (err) {
       console.error(err);
@@ -362,14 +358,14 @@ export default function AgencyDashboard() {
 
   const handleSendReminder = async (res) => {
     if (!res.contact_email) {
-      if (confirm('This restaurant does not have a contact email registered. Would you like to configure it now?')) {
+      if (confirm('This tenant does not have a contact email registered. Would you like to configure it now?')) {
         handleStartEdit(res);
       }
       return;
     }
     try {
       toast.loading('Sending payment reminder...', { id: 'send-reminder-toast' });
-      await agencyApi.post(`/restaurants/${res.id}/send-reminder`);
+      await agencyApi.post(`/tenants/${res.id}/send-reminder`);
       toast.success(`Reminder sent to ${res.contact_email}`, { id: 'send-reminder-toast' });
     } catch (err) {
       console.error(err);
@@ -379,7 +375,7 @@ export default function AgencyDashboard() {
 
   const getPlanBreakdown = () => {
     const plans = {};
-    restaurants.forEach((r) => {
+    tenants.forEach((r) => {
       const sub = r.subscription || {};
       const status = (sub.status || '').toLowerCase();
       const planName = sub.planName || 'Bronze Plan';
@@ -406,7 +402,7 @@ export default function AgencyDashboard() {
     return plans;
   };
 
-  const filteredBillingRestaurants = restaurants.filter((res) => {
+  const filteredBillingTenants = tenants.filter((res) => {
     const sub = res.subscription || {};
     const nameMatch = (res.name || '').toLowerCase().includes(billingSearchName.toLowerCase().trim());
     const locationMatch = (res.location || '').toLowerCase().includes(billingFilterLocation.toLowerCase().trim());
@@ -436,7 +432,7 @@ export default function AgencyDashboard() {
     let activeCount = 0;
     let pastDueCount = 0;
 
-    restaurants.forEach((r) => {
+    tenants.forEach((r) => {
       const sub = r.subscription || {};
       const status = (sub.status || '').toLowerCase();
       const price = Number(sub.price) || 0;
@@ -470,26 +466,23 @@ export default function AgencyDashboard() {
 
   const billingStats = getBillingStats();
 
-  const fetchRestaurants = async () => {
+  const fetchTenants = async () => {
     try {
       setLoading(true);
-      const { data } = await agencyApi.get('/restaurants');
-      const list = data.restaurants || [];
-      setRestaurants(list);
-
-      const { data: emsData } = await agencyApi.get('/ems-tenants');
-      setEmsTenants(emsData.tenants || []);
+      const { data } = await agencyApi.get('/tenants');
+      const list = data.tenants || [];
+      setTenants(list);
 
       // Aggregate overall stats
       let activeCount = 0;
-      let totalOrders = 0;
+      let totalData Nodes = 0;
 
       const detailedPromises = list.map(async (r) => {
         if (!r.active) return r;
         try {
-          const statsRes = await agencyApi.get(`/restaurants/${r.id}/stats`);
+          const statsRes = await agencyApi.get(`/tenants/${r.id}/stats`);
           const summary = statsRes.data;
-          totalOrders += summary.ordersCount || 0;
+          totalData Nodes += summary.nodesCount || 0;
           if (r.online) activeCount++;
           return { ...r, stats: summary };
         } catch {
@@ -498,7 +491,7 @@ export default function AgencyDashboard() {
       });
 
       const resolved = await Promise.all(detailedPromises);
-      setRestaurants(resolved);
+      setTenants(resolved);
 
       // Compute total collected from subscriptions
       let totalSubsCollected = 0;
@@ -515,12 +508,12 @@ export default function AgencyDashboard() {
       setStats({
         total: list.length,
         active: activeCount || list.filter((x) => x.online).length,
-        orders: totalOrders,
+        orders: totalData Nodes,
         revenue: totalSubsCollected,
       });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load agency restaurants');
+      toast.error('Failed to load agency tenants');
     } finally {
       setLoading(false);
     }
@@ -670,31 +663,25 @@ export default function AgencyDashboard() {
   };
 
   useEffect(() => {
-    fetchRestaurants();
+    fetchTenants();
     fetchAgencySettings();
   }, [activeTab]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!formData.name) {
-      toast.error('Name is required');
+      toast.error('Tenant name is required');
       return;
     }
     try {
       setSubmitting(true);
-      if (formData.type === 'EMS') {
-         const { data } = await agencyApi.post('/ems-tenants', formData);
-         setNewRestaurantResult(data);
-         toast.success('EMS Tenant created successfully!');
-      } else {
-         const { data } = await agencyApi.post('/restaurants', formData);
-         setNewRestaurantResult(data);
-         toast.success('Restaurant created successfully!');
-      }
-      fetchRestaurants();
+      const { data } = await agencyApi.post('/tenants', formData);
+      setNewTenantResult(data);
+      toast.success('Tenant created successfully!');
+      fetchTenants();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create instance');
+      toast.error('Failed to create tenant');
     } finally {
       setSubmitting(false);
     }
@@ -704,7 +691,7 @@ export default function AgencyDashboard() {
     e.preventDefault();
     try {
       setSubmitting(true);
-      await agencyApi.put(`/restaurants/${editingRestaurant.id}`, {
+      await agencyApi.put(`/tenants/${editingTenant.id}`, {
         name: editFormData.name,
         logo_url: editFormData.logo_url,
         description: editFormData.description,
@@ -716,12 +703,12 @@ export default function AgencyDashboard() {
         pins: editFormData.pins,
         blockedFeatures: editFormData.blockedFeatures || [],
       });
-      toast.success('Restaurant updated successfully!');
-      setEditingRestaurant(null);
-      fetchRestaurants();
+      toast.success('Tenant updated successfully!');
+      setEditingTenant(null);
+      fetchTenants();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update restaurant details');
+      toast.error('Failed to update tenant details');
     } finally {
       setSubmitting(false);
     }
@@ -759,14 +746,14 @@ export default function AgencyDashboard() {
       // Confirmed - proceed with deletion
       clearInterval(existing.timer);
       setDeleteState(prev => { const s = { ...prev }; delete s[id]; return s; });
-      agencyApi.delete(`/restaurants/${id}`)
+      agencyApi.delete(`/tenants/${id}`)
         .then(() => {
           toast.success(`"${res.name}" deleted permanently`);
-          fetchRestaurants();
+          fetchTenants();
         })
         .catch((err) => {
           console.error(err);
-          toast.error('Failed to delete restaurant');
+          toast.error('Failed to delete tenant');
         });
       return;
     }
@@ -801,9 +788,9 @@ export default function AgencyDashboard() {
     const actionText = nextActive ? 'activate' : 'block/deactivate';
     if (confirm(`Are you sure you want to ${actionText} "${res.name}"?`)) {
       try {
-        await agencyApi.put(`/restaurants/${res.id}`, { active: nextActive });
+        await agencyApi.put(`/tenants/${res.id}`, { active: nextActive });
         toast.success(`Tenant ${nextActive ? 'activated' : 'blocked/stopped'}`);
-        fetchRestaurants();
+        fetchTenants();
       } catch (err) {
         console.error(err);
         toast.error('Failed to update tenant status');
@@ -814,9 +801,9 @@ export default function AgencyDashboard() {
   const handleToggleOnline = async (res) => {
     const nextOnline = !res.online;
     try {
-      await agencyApi.put(`/restaurants/${res.id}`, { online: nextOnline });
+      await agencyApi.put(`/tenants/${res.id}`, { online: nextOnline });
       toast.success(`Service status set to ${nextOnline ? 'ONLINE' : 'OFFLINE'}`);
-      fetchRestaurants();
+      fetchTenants();
     } catch (err) {
       console.error(err);
       toast.error('Failed to change service status');
@@ -824,7 +811,7 @@ export default function AgencyDashboard() {
   };
 
   const handleStartEdit = (res) => {
-    setEditingRestaurant(res);
+    setEditingTenant(res);
     setEditFormData({
       name: res.name || '',
       logo_url: res.logo_url || '',
@@ -848,16 +835,15 @@ export default function AgencyDashboard() {
   const handleCopy = (id) => {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
-    toast.success('Restaurant ID copied!');
+    toast.success('Tenant ID copied!');
     setTimeout(() => setCopiedId(''), 2000);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    setNewRestaurantResult(null);
+    setNewTenantResult(null);
     setFormData({
       name: '',
-      type: 'REST',
       tableCount: 8,
       logo_url: '',
       description: '',
@@ -887,14 +873,14 @@ export default function AgencyDashboard() {
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold font-display text-slate-905 tracking-wide">{agencyName || 'Restaurant Agency'}</h1>
+            <h1 className="text-2xl font-bold font-display text-slate-905 tracking-wide">{agencyName || 'Multi-OS Platform Agency'}</h1>
             <p className="text-xs text-slate-500 mt-0.5">SaaS Platform Operator Control Room</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => { fetchRestaurants(); fetchAgencySettings(); }}
+            onClick={() => { fetchTenants(); fetchAgencySettings(); }}
             className="p-2.5 bg-white hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-700 border border-slate-200 transition-colors shadow-xs"
             title="Refresh List"
           >
@@ -905,7 +891,7 @@ export default function AgencyDashboard() {
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-blue-500/10"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Restaurant</span>
+            <span>Add Tenant</span>
           </button>
           <button
             onClick={handleLogout}
@@ -997,38 +983,6 @@ export default function AgencyDashboard() {
 
       {activeTab === 'tenants' && (
         <>
-          {/* EMS SECTION */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold font-display text-slate-805 flex items-center gap-2">
-                Venue & Event Management Nodes (Standalone OS)
-              </h2>
-            </div>
-            {emsTenants.length === 0 ? (
-              <div className="text-center py-10 bg-indigo-50/50 border border-dashed border-indigo-200 rounded-3xl text-indigo-400">
-                No EMS tenants active. Click "Add Restaurant" and select EMS type.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {emsTenants.map((res) => (
-                  <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between mb-4">
-                      <span className="text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100">{res.id}</span>
-                      <span className="text-[10px] font-bold text-indigo-500 uppercase">EMS OS</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-1">{res.name}</h3>
-                    <p className="text-[10px] text-slate-400 mb-4">Port: {res.port} • Created: {new Date(res.createdAt).toLocaleDateString()}</p>
-                    <div className="flex gap-2">
-                      <a href={`/e/${res.id}/login`} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold text-center transition-all shadow-lg shadow-indigo-100">
-                        Open OS Dashboard
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Agency settings & global stats grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
@@ -1048,7 +1002,7 @@ export default function AgencyDashboard() {
                 onChange={(e) => setAgencyName(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 transition-colors"
               />
-              <p className="text-[9px] text-slate-400 mt-1">Shown as "Built by [Agency Name]" on restaurant login pages.</p>
+              <p className="text-[9px] text-slate-400 mt-1">Shown as "Built by [Agency Name]" on tenant login pages.</p>
             </div>
             {/* Agency Website URL */}
             <div>
@@ -1144,7 +1098,7 @@ export default function AgencyDashboard() {
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Orders Handled</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Data Nodes Handled</span>
               <p className="text-xl font-bold font-mono text-slate-800 mt-0.5">{stats.orders}</p>
             </div>
           </div>
@@ -1161,14 +1115,14 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
-      {/* Restaurants List */}
+      {/* Tenants List */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <h2 className="text-lg font-bold font-display text-slate-805 flex items-center gap-2">
           Registered SaaS Tenants
         </h2>
 
         {/* Search and Filter Inputs */}
-        {restaurants.length > 0 && (
+        {tenants.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
             <div className="relative w-full sm:w-60">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -1200,21 +1154,21 @@ export default function AgencyDashboard() {
             <div key={i} className="skeleton h-56 rounded-3xl bg-white border border-slate-200" />
           ))}
         </div>
-      ) : restaurants.length === 0 ? (
+      ) : tenants.length === 0 ? (
         <div className="text-center py-20 bg-white border border-dashed border-slate-200 rounded-3xl text-slate-450 max-w-xl mx-auto shadow-xs">
           <Building className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-          <p className="text-base font-semibold text-slate-600">No Restaurants Registered Yet</p>
-          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Click "Add Restaurant" to spin up a new isolated service and database instance.</p>
+          <p className="text-base font-semibold text-slate-600">No Tenants Registered Yet</p>
+          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Click "Add Tenant" to spin up a new isolated service and database instance.</p>
         </div>
-      ) : filteredRestaurants.length === 0 ? (
+      ) : filteredTenants.length === 0 ? (
         <div className="text-center py-20 bg-white border border-dashed border-slate-200 rounded-3xl text-slate-450 max-w-xl mx-auto shadow-xs">
           <Search className="w-12 h-12 mx-auto text-slate-300 mb-3" />
           <p className="text-base font-semibold text-slate-600">No Match Found</p>
-          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">No restaurants match your search query or location filter.</p>
+          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">No tenants match your search query or location filter.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRestaurants.map((res) => {
+          {filteredTenants.map((res) => {
             const isOnline = res.online;
             return (
               <div
@@ -1256,16 +1210,9 @@ export default function AgencyDashboard() {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
-                          {res.name}
-                        </h3>
-                        {res.tenantType === 'tms' && (
-                          <span className="bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 flex items-center gap-1">
-                            <Plane size={10} /> TMS
-                          </span>
-                        )}
-                      </div>
+                      <h3 className="text-lg font-bold font-display text-slate-800 tracking-tight truncate">
+                        {res.name}
+                      </h3>
                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-mono tracking-wider">
                         <span>Port: {res.port}</span>
                         {res.location && (
@@ -1290,21 +1237,21 @@ export default function AgencyDashboard() {
                   {/* Live Stats */}
                   <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
                     <div className="text-center">
-                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Today Sales</span>
+                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Total Revenue</span>
                       <p className="text-xs font-bold font-mono text-emerald-600 mt-0.5">
                         ₹{res.stats?.revenue || 0}
                       </p>
                     </div>
                     <div className="text-center border-x border-slate-100 px-1">
-                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Orders</span>
+                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Data Nodes</span>
                       <p className="text-xs font-bold font-mono text-slate-700 mt-0.5">
-                        {res.stats?.ordersCount || 0}
+                        {res.stats?.nodesCount || 0}
                       </p>
                     </div>
                     <div className="text-center">
-                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Turnover</span>
+                      <span className="text-[9px] text-slate-400 uppercase font-semibold">Efficiency</span>
                       <p className="text-xs font-bold font-mono text-indigo-650 mt-0.5">
-                        {res.stats?.tableTurnover || '0%'}
+                        {res.stats?.tableEfficiency || '0%'}
                       </p>
                     </div>
                   </div>
@@ -1341,8 +1288,7 @@ export default function AgencyDashboard() {
                       </button>
 
                       <a
-                        href={res.vertical === 'pms' ? `/r/${res.id}/admin/pms` : `/r/${res.id}/login`}
-                        href={res.tenantType === 'tms' ? `/t/${res.id}/login` : `/r/${res.id}/login`}
+                        href={`/r/${res.id}/login`}
                         className={`py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                           isOnline && res.active
                             ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm' 
@@ -1393,7 +1339,7 @@ export default function AgencyDashboard() {
                       className="w-full py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-red-100 bg-red-50/60 text-red-500 hover:bg-red-100 hover:text-red-700"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Restaurant</span>
+                      <span>Delete Tenant</span>
                     </button>
                   )}
                 </div>
@@ -1484,12 +1430,12 @@ export default function AgencyDashboard() {
           {/* Billing Search and Filters */}
           <div className="bg-white border border-slate-200 p-5 rounded-3xl grid grid-cols-1 sm:grid-cols-4 gap-4 shadow-sm">
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Search Restaurant</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Search Tenant</label>
               <input
                 type="text"
                 value={billingSearchName}
                 onChange={(e) => setBillingSearchName(e.target.value)}
-                placeholder="Restaurant name..."
+                placeholder="Tenant name..."
                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
@@ -1528,14 +1474,14 @@ export default function AgencyDashboard() {
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 font-display text-base">Subscription Plan Allocations</h3>
-              <p className="text-xs text-slate-400">Matching Tenants: {filteredBillingRestaurants.length} / {restaurants.length}</p>
+              <p className="text-xs text-slate-400">Matching Tenants: {filteredBillingTenants.length} / {tenants.length}</p>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="px-6 py-4">Restaurant</th>
+                    <th className="px-6 py-4">Tenant</th>
                     <th className="px-6 py-4">Subscription Plan</th>
                     <th className="px-6 py-4">Billing Rate</th>
                     <th className="px-6 py-4">Status</th>
@@ -1544,7 +1490,7 @@ export default function AgencyDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredBillingRestaurants.map((res) => {
+                  {filteredBillingTenants.map((res) => {
                     const subRaw = res.subscription || {};
                     const sub = {
                       planName: subRaw.planName || 'Bronze Plan',
@@ -1636,10 +1582,10 @@ export default function AgencyDashboard() {
                       </tr>
                     );
                   })}
-                  {filteredBillingRestaurants.length === 0 && (
+                  {filteredBillingTenants.length === 0 && (
                     <tr>
                       <td colSpan="6" className="py-12 text-center text-slate-450 bg-slate-50/50">
-                        No restaurant matching your criteria found.
+                        No tenant matching your criteria found.
                       </td>
                     </tr>
                   )}
@@ -1650,7 +1596,7 @@ export default function AgencyDashboard() {
         </div>
       )}
 
-      {/* Add Restaurant Modal */}
+      {/* Add Tenant Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs" onClick={handleCloseModal} />
@@ -1661,15 +1607,8 @@ export default function AgencyDashboard() {
               Spin up SaaS Tenant Node
             </h2>
 
-            {newRestaurantResult ? (
+            {newTenantResult ? (
               <div className="space-y-6 overflow-y-auto">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-800">
-                  <Info className="w-6 h-6 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm uppercase">Template: {newRestaurantResult.templateType || 'Standard'}</h4>
-                    <p className="text-xs text-slate-500">Industry-specific modules have been provisioned.</p>
-                  </div>
-                </div>
                 <div className="p-4 bg-emerald-50 border border-emerald-250 rounded-2xl flex items-center gap-3 text-emerald-800">
                   <CheckCircle className="w-6 h-6 flex-shrink-0" />
                   <div>
@@ -1684,12 +1623,12 @@ export default function AgencyDashboard() {
                       REST_ID (Required for login)
                     </span>
                     <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="font-mono font-bold text-blue-600">{newRestaurantResult.id}</span>
+                      <span className="font-mono font-bold text-blue-600">{newTenantResult.id}</span>
                       <button
-                        onClick={() => handleCopy(newRestaurantResult.id)}
+                        onClick={() => handleCopy(newTenantResult.id)}
                         className="ml-auto text-slate-500 hover:text-slate-700 transition-colors"
                       >
-                        {copiedId === newRestaurantResult.id ? <Check className="w-4.5 h-4.5 text-green-600" /> : <Copy className="w-4.5 h-4.5" />}
+                        {copiedId === newTenantResult.id ? <Check className="w-4.5 h-4.5 text-green-600" /> : <Copy className="w-4.5 h-4.5" />}
                       </button>
                     </div>
                   </div>
@@ -1701,23 +1640,23 @@ export default function AgencyDashboard() {
                     <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-700">
                       <div>
                         <span className="text-slate-400 text-[10px] block">ADMIN PIN</span>
-                        <span className="text-slate-800 font-bold">{newRestaurantResult.pins.admin}</span>
+                        <span className="text-slate-800 font-bold">{newTenantResult.pins.admin}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 text-[10px] block">WAITER PIN</span>
-                        <span className="text-slate-800 font-bold">{newRestaurantResult.pins.waiter}</span>
+                        <span className="text-slate-800 font-bold">{newTenantResult.pins.waiter}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 text-[10px] block">COUNTER PIN</span>
-                        <span className="text-slate-800 font-bold">{newRestaurantResult.pins.counter}</span>
+                        <span className="text-slate-800 font-bold">{newTenantResult.pins.counter}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 text-[10px] block">CASHIER PIN</span>
-                        <span className="text-slate-800 font-bold">{newRestaurantResult.pins.cashier}</span>
+                        <span className="text-slate-800 font-bold">{newTenantResult.pins.cashier}</span>
                       </div>
                       <div className="col-span-2 mt-2 pt-2 border-t border-slate-200/60">
                         <span className="text-slate-400 text-[10px] block">CUSTOMER PORTAL</span>
-                        <span className="text-slate-800 font-bold">Tables default seed ({newRestaurantResult.pins.customer})</span>
+                        <span className="text-slate-800 font-bold">Tables default seed ({newTenantResult.pins.customer})</span>
                       </div>
                     </div>
                   </div>
@@ -1734,53 +1673,9 @@ export default function AgencyDashboard() {
               </div>
             ) : (
               <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto pr-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Instance Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g. Punjabi Tadka or Global Retail"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Business Template
-                    </label>
-                    <select
-                      value={formData.templateType}
-                      onChange={(e) => setFormData(prev => ({ ...prev, templateType: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors font-bold"
-                    >
-                      <option value="restaurant">🍽️ Restaurant Management (HMS/PMS)</option>
-                      <option value="retail">🛍️ Retail POS & Inventory (RMS)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="hidden">
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Instance Type / OS
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="REST">Restaurant OS (POS + Tables)</option>
-                    <option value="EMS">Venue & Event Management OS</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Business Name *
+                    Tenant Name *
                   </label>
                   <input
                     type="text"
@@ -1790,51 +1685,6 @@ export default function AgencyDashboard() {
                     placeholder="e.g. Punjabi Tadka"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                   />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Instance Type
-                    </label>
-                    <select
-                      value={formData.tenantType}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tenantType: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    >
-                      <option value="restaurant">🍴 Restaurant POS</option>
-                      <option value="tms">✈️ Travel Management</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Instance Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g. Skyline Apartments"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Service Type
-                    </label>
-                    <select
-                      value={formData.vertical}
-                      onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    >
-                      <option value="restaurant">🍴 Restaurant (RMS)</option>
-                      <option value="pms">🏢 Property Management (PMS)</option>
-                    </select>
-                  </div>
-                      placeholder={formData.tenantType === 'tms' ? "e.g. Global Travel" : "e.g. Punjabi Tadka"}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
                 </div>
 
                 <div>
@@ -1859,7 +1709,7 @@ export default function AgencyDashboard() {
                       type="email"
                       value={formData.contact_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, contact_email: e.target.value }))}
-                      placeholder="owner@restaurant.com"
+                      placeholder="owner@tenant.com"
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors text-xs"
                     />
                   </div>
@@ -1877,26 +1727,24 @@ export default function AgencyDashboard() {
                   </div>
                 </div>
 
-                {formData.tenantType === 'restaurant' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                      Default Table Count
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="50"
-                      required={formData.tenantType === 'restaurant'}
-                      value={formData.tableCount}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
+                    Default Table Count
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    required
+                    value={formData.tableCount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tableCount: parseInt(e.target.value) || 8 }))}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Restaurant Logo
+                    Tenant Logo
                   </label>
                   <div className="flex gap-2 mb-2">
                     <input
@@ -1937,7 +1785,7 @@ export default function AgencyDashboard() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                    Restaurant Description / Information
+                    Tenant Description / Information
                   </label>
                   <textarea
                     rows="2"
@@ -1980,7 +1828,7 @@ export default function AgencyDashboard() {
                       className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-mono text-sm focus:outline-none focus:border-blue-500 transition-colors"
                     />
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-1.5">Background tint for the restaurant's login page (lighter colors recommended).</p>
+                  <p className="text-[9px] text-slate-400 mt-1.5">Background tint for the tenant's login page (lighter colors recommended).</p>
                 </div>
 
                 <div className="border-t border-slate-150 pt-4 mt-2">
@@ -1997,7 +1845,7 @@ export default function AgencyDashboard() {
                       className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-slate-850 text-base"
                       placeholder="e.g. admin123"
                     />
-                    <p className="text-[9px] text-slate-400 mt-1">Set the initial alphanumeric password for logging in to the Restaurant Admin portal.</p>
+                    <p className="text-[9px] text-slate-400 mt-1">Set the initial alphanumeric password for logging in to the Tenant Admin portal.</p>
                   </div>
                 </div>
 
@@ -2014,7 +1862,7 @@ export default function AgencyDashboard() {
                     disabled={submitting}
                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-505 text-white font-semibold text-sm rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm flex items-center gap-1.5"
                   >
-                    {submitting ? 'Creating instance...' : 'Register Restaurant'}
+                    {submitting ? 'Creating instance...' : 'Register Tenant'}
                   </button>
                 </div>
               </form>
@@ -2023,10 +1871,10 @@ export default function AgencyDashboard() {
         </div>
       )}
 
-      {/* Edit Restaurant Modal */}
-      {editingRestaurant && (
+      {/* Edit Tenant Modal */}
+      {editingTenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs" onClick={() => setEditingRestaurant(null)} />
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs" onClick={() => setEditingTenant(null)} />
 
           <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl animate-slide-up overflow-hidden max-h-[90vh] flex flex-col text-slate-800">
             <h2 className="text-xl font-bold font-display text-slate-900 mb-6 flex items-center gap-2">
@@ -2037,7 +1885,7 @@ export default function AgencyDashboard() {
             <form onSubmit={handleEditSubmit} className="space-y-4 overflow-y-auto pr-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                  Restaurant Name *
+                  Tenant Name *
                 </label>
                 <input
                   type="text"
@@ -2069,7 +1917,7 @@ export default function AgencyDashboard() {
                     type="email"
                     value={editFormData.contact_email}
                     onChange={(e) => setEditFormData(prev => ({ ...prev, contact_email: e.target.value }))}
-                    placeholder="owner@restaurant.com"
+                    placeholder="owner@tenant.com"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 transition-colors text-xs"
                   />
                 </div>
@@ -2089,7 +1937,7 @@ export default function AgencyDashboard() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                  Restaurant Logo
+                  Tenant Logo
                 </label>
                 <div className="flex gap-2 mb-2">
                   <input
@@ -2130,7 +1978,7 @@ export default function AgencyDashboard() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-450 uppercase tracking-wider mb-2">
-                  Restaurant Description / Information
+                  Tenant Description / Information
                 </label>
                 <textarea
                   rows="2"
@@ -2173,14 +2021,14 @@ export default function AgencyDashboard() {
                     className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-mono text-sm focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
-                <p className="text-[9px] text-slate-400 mt-1.5">Background tint for the restaurant's login page (lighter colors recommended).</p>
+                <p className="text-[9px] text-slate-400 mt-1.5">Background tint for the tenant's login page (lighter colors recommended).</p>
               </div>
 
               <div className="border-t border-slate-150 pt-4 mt-2">
                 <h4 className="text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
                   Feature Restrictions
                 </h4>
-                <p className="text-[9px] text-slate-400 mb-3">Select specific features to disable/block in this restaurant's portal.</p>
+                <p className="text-[9px] text-slate-400 mb-3">Select specific features to disable/block in this tenant's portal.</p>
                 <div className="grid grid-cols-2 gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl p-4">
                   {FEATURES_LIST.map((feat) => {
                     const isChecked = editFormData.blockedFeatures?.includes(feat.id);
@@ -2217,14 +2065,14 @@ export default function AgencyDashboard() {
                     onChange={(e) => setEditFormData(prev => ({ ...prev, pins: { ...prev.pins, admin: e.target.value } }))}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-slate-850 text-base"
                   />
-                  <p className="text-[9px] text-slate-400 mt-1">Set the alphanumeric password for logging in to the Restaurant Admin portal.</p>
+                  <p className="text-[9px] text-slate-400 mt-1">Set the alphanumeric password for logging in to the Tenant Admin portal.</p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setEditingRestaurant(null)}
+                  onClick={() => setEditingTenant(null)}
                   className="px-5 py-2.5 text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
                 >
                   Cancel
@@ -2891,7 +2739,7 @@ export default function AgencyDashboard() {
                   type="button"
                   onClick={() => {
                     setEditingBlog(null);
-                    setBlogFormData({ title: '', summary: '', content: '', author: 'Bhoj360 Team', image_url: '' });
+                    setBlogFormData({ title: '', summary: '', content: '', author: 'Multi-OS Team', image_url: '' });
                   }}
                   className="text-xs text-blue-600 hover:underline"
                 >
@@ -2904,7 +2752,7 @@ export default function AgencyDashboard() {
                 <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Post Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. How Bhoj360 Speeds Up Table Service"
+                  placeholder="e.g. How Multi-OS Speeds Up Table Service"
                   value={blogFormData.title}
                   onChange={(e) => setBlogFormData(p => ({ ...p, title: e.target.value }))}
                   required
@@ -2915,7 +2763,7 @@ export default function AgencyDashboard() {
                 <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Author</label>
                 <input
                   type="text"
-                  placeholder="e.g. Bhoj360 Team"
+                  placeholder="e.g. Multi-OS Team"
                   value={blogFormData.author}
                   onChange={(e) => setBlogFormData(p => ({ ...p, author: e.target.value }))}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 transition-colors"
@@ -2986,7 +2834,7 @@ export default function AgencyDashboard() {
                         <img src={blog.image_url} alt={blog.title} className="w-14 h-14 rounded-xl object-cover border border-slate-100" />
                       ) : (
                         <div className="w-14 h-14 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold uppercase">
-                          B360
+                          MOS
                         </div>
                       )}
                       <div>
@@ -3129,7 +2977,7 @@ export default function AgencyDashboard() {
 
                 <div className="pt-2 flex gap-3">
                   <a
-                    href={`mailto:${selectedApplication.email}?subject=Regarding%20your%20Bhoj360%20application%20for%20${encodeURIComponent(selectedApplication.role)}`}
+                    href={`mailto:${selectedApplication.email}?subject=Regarding%20your%20Multi-OS%20application%20for%20${encodeURIComponent(selectedApplication.role)}`}
                     className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs text-center rounded-xl transition-all shadow-xs"
                   >
                     Reply by Email
@@ -3178,7 +3026,7 @@ export default function AgencyDashboard() {
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <h1 style={{ margin: '0 0 5px 0', fontSize: '24px' }}>Subscription Payment History</h1>
             <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>
-              <strong>Restaurant:</strong> {viewingPayments.name} ({viewingPayments.id})
+              <strong>Tenant:</strong> {viewingPayments.name} ({viewingPayments.id})
             </p>
             {viewingPayments.location && (
               <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#555' }}>

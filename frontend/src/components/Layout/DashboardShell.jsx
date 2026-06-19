@@ -10,21 +10,21 @@ import toast from 'react-hot-toast';
 export default function DashboardShell({
   children,
   title,
-  restaurantId,
+  tenantId,
   role = 'admin',
   accent = '#6366f1',
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const [tenantName, setRestaurantName] = useState('Tenant');
   const [logoUrl, setLogoUrl] = useState('');
   const [isOnline, setIsOnline] = useState(true);
   const [blockedFeatures, setBlockedFeatures] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   const roleLabel = role === 'admin' ? 'Admin Portal' : role === 'waiter' ? 'Waiter App' : role === 'counter' ? 'Kitchen Display' : role === 'cashier' ? 'Cashier Terminal' : 'Staff App';
-  const { installPrompt, handleInstall } = usePWA(restaurantName, roleLabel, logoUrl);
+  const { installPrompt, handleInstall } = usePWA(tenantName, roleLabel, logoUrl);
 
   const getActiveFeature = () => {
     const path = location.pathname;
@@ -60,7 +60,7 @@ export default function DashboardShell({
         <div className="flex items-center justify-between gap-3 text-slate-800 w-full">
           <div className="flex flex-col gap-0.5 text-left">
             <span className="font-bold text-xs text-indigo-600">Install {roleLabel}</span>
-            <span className="text-[10px] text-slate-500">Install for persistent login & instant {restaurantName} access</span>
+            <span className="text-[10px] text-slate-500">Install for persistent login & instant {tenantName} access</span>
           </div>
           <button
             onClick={() => {
@@ -109,10 +109,10 @@ export default function DashboardShell({
         setIsOnline(false);
       }
     };
-    if (restaurantId) {
+    if (tenantId) {
       fetchConfig();
     }
-  }, [restaurantId]);
+  }, [tenantId]);
 
   // Sync online state based on browser online status
   useEffect(() => {
@@ -126,17 +126,17 @@ export default function DashboardShell({
     }, 10000);
 
     return () => clearInterval(pingInterval);
-  }, [restaurantId]);
+  }, [tenantId]);
 
   const handleLogout = () => {
     localStorage.removeItem('session');
-    navigate(`/r/${restaurantId}/login?role=${role || 'admin'}`);
+    navigate(`/r/${tenantId}/login?role=${role || 'admin'}`);
   };
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-800 font-body">
       <Sidebar
-        restaurantId={restaurantId}
+        tenantId={tenantId}
         role={role}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -156,7 +156,7 @@ export default function DashboardShell({
             </button>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold font-display tracking-wide truncate max-w-[160px] sm:max-w-xs text-slate-800">
-                {restaurantName}
+                {tenantName}
               </h2>
               <span className="h-4 w-px bg-slate-200 hidden sm:inline" />
               <h3 className="text-sm font-semibold text-slate-500 hidden sm:inline">
@@ -200,7 +200,7 @@ export default function DashboardShell({
         {/* PWA Install Banner - shown after login */}
         <PWAInstallBanner
           role={role}
-          restaurantName={restaurantName}
+          tenantName={tenantName}
           installPrompt={installPrompt}
           handleInstall={handleInstall}
         />

@@ -389,8 +389,8 @@ const SUBJECTS = [
 
 export default function ContactPage() {
   useDocumentMetadata(
-    'Contact Bhoj360 - Request a Demo or Get Smart POS Support',
-    'Get in touch with Bhoj360 sales and support teams. Request a personalized live demo or ask questions about our cloud-based restaurant management software.'
+    'Contact Multi-OS - Request a Demo or Get Smart POS Support',
+    'Get in touch with Multi-OS sales and support teams. Request a personalized live demo or ask questions about our cloud-based restaurant management software.'
   );
 
   const { lang } = useLanguage();

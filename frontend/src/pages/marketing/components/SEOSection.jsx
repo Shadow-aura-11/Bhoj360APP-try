@@ -7,38 +7,38 @@ export default function SEOSection() {
     {
       id: 'pos',
       title: 'Cloud POS & Billing Machine Software',
-      keywords: ['Bhoj360', 'Restaurant POS', 'Restaurant Management Software', 'Cloud POS', 'Android POS', 'Restaurant Billing Software', 'Billing Machine Software', 'Smart POS', 'Point of Sale Software', 'POS System', 'Best Restaurant POS Software', 'Cloud-based Restaurant POS', 'Restaurant Billing Software India'],
-      content: 'Bhoj360 is recognized as the best restaurant POS software designed to drive restaurant digital transformation. As a comprehensive cloud-based restaurant POS and billing machine software, it replaces slow legacy systems with a smart POS point of sale software. Designed specifically as a high-performance restaurant billing software India, it offers seamless compatibility for Android POS devices and desktop terminals. Bring absolute speed and security to your counter with a modern cloud POS system that works offline and synchronizes in real time.'
+      keywords: ['Multi-OS Platform', 'Enterprise OS', 'Enterprise Management Software', 'Cloud POS', 'Android POS', 'Restaurant Billing Software', 'Billing Machine Software', 'Smart POS', 'Point of Sale Software', 'POS System', 'Best Restaurant POS Software', 'Cloud-based Restaurant POS', 'Restaurant Billing Software India'],
+      content: 'Multi-OS Platform is recognized as the best restaurant POS software designed to drive restaurant digital transformation. As a comprehensive cloud-based restaurant POS and billing machine software, it replaces slow legacy systems with a smart POS point of sale software. Designed specifically as a high-performance restaurant billing software India, it offers seamless compatibility for Android POS devices and desktop terminals. Bring absolute speed and security to your counter with a modern cloud POS system that works offline and synchronizes in real time.'
     },
     {
       id: 'ops',
-      title: 'Restaurant Operations & Table Management',
-      keywords: ['Restaurant Billing', 'Order Management', 'Table Management', 'Kitchen Management', 'Menu Management', 'Inventory Management', 'Stock Management', 'Restaurant Operations', 'Shift Management', 'Employee Management', 'Settlements', 'Transaction History', 'Credit Management', 'Petty Cash Management', 'Restaurant Table Management System', 'Restaurant Order Management System'],
-      content: 'Manage the complete lifecycle of restaurant operations with automated tools. Our advanced restaurant table management system and restaurant order management system coordinate guest bookings, floor layouts, and live order management. From kitchen management pipelines (KDS) and menu management controls to shift management, employee management, and front-of-house table management, Bhoj360 keeps everything in sync. Handle daily financial settlements, track complete transaction history, manage credit management databases, and oversee petty cash management directly from the dashboard.'
+      title: 'Enterprise Operations & Table Management',
+      keywords: ['Restaurant Billing', 'Order Management', 'Table Management', 'Kitchen Management', 'Menu Management', 'Inventory Management', 'Stock Management', 'Enterprise Operations', 'Shift Management', 'Employee Management', 'Settlements', 'Transaction History', 'Credit Management', 'Petty Cash Management', 'Restaurant Table Management System', 'Restaurant Order Management System'],
+      content: 'Manage the complete lifecycle of restaurant operations with automated tools. Our advanced restaurant table management system and restaurant order management system coordinate guest bookings, floor layouts, and live order management. From kitchen management pipelines (KDS) and menu management controls to shift management, employee management, and front-of-house table management, Multi-OS Platform keeps everything in sync. Handle daily financial settlements, track complete transaction history, manage credit management databases, and oversee petty cash management directly from the dashboard.'
     },
     {
       id: 'digital',
       title: 'Digital Restaurant & Contactless Ordering',
       keywords: ['QR Menu', 'QR Code Ordering', 'Digital Menu', 'Contactless Ordering', 'Mobile Storefront', 'Online Ordering', 'Restaurant Website', 'Food Ordering System', 'Delivery Management', 'Takeaway Management', 'Dine-in Management', 'QR Menu Solution for Restaurants'],
-      content: 'Launch contactless ordering and online ordering in minutes. Bhoj360 offers a premium QR menu solution for restaurants that enables instant QR code ordering and digital menu browsing. Allow guests to place orders directly from their tables with contactless ordering, or build a custom mobile storefront and restaurant website to accept direct takeaway management and delivery management orders. Our unified food ordering system aggregates dine-in management, takeaway, and delivery pipelines into a single digital screen.'
+      content: 'Launch contactless ordering and online ordering in minutes. Multi-OS Platform offers a premium QR menu solution for restaurants that enables instant QR code ordering and digital menu browsing. Allow guests to place orders directly from their tables with contactless ordering, or build a custom mobile storefront and restaurant website to accept direct takeaway management and delivery management orders. Our unified food ordering system aggregates dine-in management, takeaway, and delivery pipelines into a single digital screen.'
     },
     {
       id: 'analytics',
       title: 'Analytics, Customer Retention & Growth',
       keywords: ['Restaurant Analytics', 'Business Insights', 'Sales Reports', 'Revenue Tracking', 'Customer Database', 'Loyalty Programs', 'Customer Engagement', 'Marketing Campaigns', 'Customer Retention', 'Restaurant Growth', 'Restaurant Analytics Dashboard', 'Restaurant Loyalty Program Software'],
-      content: 'Make data-driven decisions using our advanced restaurant analytics dashboard. Bhoj360 tracks live revenue tracking, aggregates sales reports, and translates raw metrics into actionable business insights. Build a structured customer database to launch automated loyalty programs, execute marketing campaigns, and drive customer engagement. With custom restaurant loyalty program software, you can boost customer retention and accelerate restaurant growth.'
+      content: 'Make data-driven decisions using our advanced restaurant analytics dashboard. Multi-OS Platform tracks live revenue tracking, aggregates sales reports, and translates raw metrics into actionable business insights. Build a structured customer database to launch automated loyalty programs, execute marketing campaigns, and drive customer engagement. With custom restaurant loyalty program software, you can boost customer retention and accelerate restaurant growth.'
     },
     {
       id: 'inventory',
       title: 'Real-time Inventory & Back-office Control',
       keywords: ['Real-time Inventory', 'Inventory Tracking', 'Purchase Management', 'Food Cost Control', 'Variance Analysis', 'Waste Reduction', 'Automated Workflows', 'Stock Alerts', 'Restaurant Inventory Management Software'],
-      content: 'Eliminate ingredient leaks and optimize margins using our restaurant inventory management software. Bhoj360 provides real-time inventory tracking, purchase management workflows, and food cost control analysis. Monitor variance analysis, ensure waste reduction, and configure automated workflows with smart stock alerts. Safeguard your stock management operations with a system that alerts you when stock levels run low.'
+      content: 'Eliminate ingredient leaks and optimize margins using our restaurant inventory management software. Multi-OS Platform provides real-time inventory tracking, purchase management workflows, and food cost control analysis. Monitor variance analysis, ensure waste reduction, and configure automated workflows with smart stock alerts. Safeguard your stock management operations with a system that alerts you when stock levels run low.'
     },
     {
       id: 'industry',
       title: 'Hospitality Technology & Automation',
-      keywords: ['Restaurant Software', 'Cafe Management Software', 'Bar Management Software', 'Food & Beverage Management', 'Restaurant Technology', 'Hospitality Technology', 'Restaurant Automation', 'Cloud Restaurant Management'],
-      content: 'Bhoj360 is the ultimate hospitality technology platform. Whether you operate a quick-service cafe requiring cafe management software, a high-volume bar needing bar management software, or a fine-dining group managing complex food & beverage management operations, our restaurant automation tools adapt to your business. Lead the cloud restaurant management shift with a system built for absolute reliability.'
+      keywords: ['Restaurant Software', 'Cafe Management Software', 'Bar Management Software', 'Food & Beverage Management', 'Restaurant Technology', 'Hospitality Technology', 'Restaurant Automation', 'Cloud Enterprise Management'],
+      content: 'Multi-OS Platform is the ultimate hospitality technology platform. Whether you operate a quick-service cafe requiring cafe management software, a high-volume bar needing bar management software, or a fine-dining group managing complex food & beverage management operations, our restaurant automation tools adapt to your business. Lead the cloud restaurant management shift with a system built for absolute reliability.'
     }
   ];
 
@@ -56,10 +56,10 @@ export default function SEOSection() {
             Resource Center
           </span>
           <h2 className="text-3xl md:text-5xl font-serif text-[#F5F0EB]">
-            The Complete Guide to Cloud Restaurant Management
+            The Complete Guide to Cloud Enterprise Management
           </h2>
           <p className="text-[rgba(245,240,235,0.6)] font-light text-base leading-relaxed">
-            Discover how Bhoj360 integrates smart POS technology, real-time inventory tracking, and contactless QR ordering systems to automate restaurant operations and drive growth.
+            Discover how Multi-OS Platform integrates smart POS technology, real-time inventory tracking, and contactless QR ordering systems to automate restaurant operations and drive growth.
           </p>
         </div>
 

@@ -20,8 +20,8 @@ import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function LandingPage() {
   useDocumentMetadata(
-    'Bhoj360 - Cloud Restaurant POS & Management Software Platform',
-    'Looking for the best restaurant POS software? Bhoj360 is a cloud-based restaurant billing, table, menu, and real-time inventory management software designed to automate operations.'
+    'Multi-OS SaaS Platform - Enterprise Management ecosystem',
+    'Experience the ultimate multi-vertical management platform. From Restaurants and Retail to Gyms, Spas, Hospitals, and Manufacturing - provision isolated node instances for your entire business portfolio.'
   );
   
   const [isDemoOpen, setIsDemoOpen] = useState(false);

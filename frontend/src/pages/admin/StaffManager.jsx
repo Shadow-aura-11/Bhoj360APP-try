@@ -6,8 +6,8 @@ import DashboardShell from '../../components/Layout/DashboardShell';
 import toast from 'react-hot-toast';
 
 export default function StaffManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // States
   const [adminPin, setAdminPin] = useState('');
@@ -122,7 +122,7 @@ export default function StaffManager() {
   };
 
   return (
-    <DashboardShell title="Staff & Terminal Management" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Staff & Terminal Management" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         
         {/* Top Section: Master Passwords + Add Staff */}

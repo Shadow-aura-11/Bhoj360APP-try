@@ -19,8 +19,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function MarketingCRM() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [contacts, setContacts] = useState([]);
@@ -201,7 +201,7 @@ export default function MarketingCRM() {
   }
 
   return (
-    <DashboardShell title="Marketing & CRM" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Marketing & CRM" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

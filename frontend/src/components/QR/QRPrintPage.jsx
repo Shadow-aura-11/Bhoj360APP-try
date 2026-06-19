@@ -34,9 +34,9 @@ const sizeConfigs = {
 };
 
 export default function QRPrintPage() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
   const [tables, setTables] = useState([]);
   const [qrs, setQrs] = useState({});
   const [selectedTableIds, setSelectedTableIds] = useState([]);
@@ -77,8 +77,8 @@ export default function QRPrintPage() {
         setLoading(false);
       }
     };
-    if (restaurantId) loadTables();
-  }, [restaurantId]);
+    if (tenantId) loadTables();
+  }, [tenantId]);
 
   const handlePrint = () => {
     window.print();
@@ -104,7 +104,7 @@ export default function QRPrintPage() {
       });
       
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `restaurant-${restaurantId}-selected-tables-qrs.zip`);
+      saveAs(content, `restaurant-${tenantId}-selected-tables-qrs.zip`);
       toast.success(`${tablesToDownload.length} QR Codes packaged and downloaded successfully!`);
     } catch (err) {
       console.error(err);

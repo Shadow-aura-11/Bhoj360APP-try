@@ -5,11 +5,11 @@ import { createApi } from '../api/client';
 import { usePWA } from '../hooks/usePWA';
 
 export default function PWAInstallLanding({ roleName, targetPath }) {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
-  const [restaurantName, setRestaurantName] = useState('Restaurant');
+  const [tenantName, setRestaurantName] = useState('Tenant');
   const [logoUrl, setLogoUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -28,10 +28,10 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
         setLoading(false);
       }
     };
-    if (restaurantId) {
+    if (tenantId) {
       fetchConfig();
     }
-  }, [restaurantId]);
+  }, [tenantId]);
 
   useEffect(() => {
     // Force open in Chrome on Android if in-app browser (like WhatsApp, Instagram) is detected
@@ -45,10 +45,10 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
     }
   }, []);
 
-  const { installPrompt, handleInstall } = usePWA(restaurantName, `${roleName} App`, logoUrl);
+  const { installPrompt, handleInstall } = usePWA(tenantName, `${roleName} App`, logoUrl);
 
   const handleLoginRedirect = () => {
-    navigate(`/r/${restaurantId}/login?redirect=${encodeURIComponent(targetPath)}`);
+    navigate(`/r/${tenantId}/login?redirect=${encodeURIComponent(targetPath)}`);
   };
 
   const handleInstallClick = async () => {
@@ -90,7 +90,7 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
 
   // Skip blocking render to prevent fullscreen spinner delays.
   const displayLogo = logoUrl;
-  const displayRestName = loading ? 'Loading...' : restaurantName;
+  const displayRestName = loading ? 'Loading...' : tenantName;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col items-center justify-center p-6 font-body">
@@ -155,7 +155,7 @@ export default function PWAInstallLanding({ roleName, targetPath }) {
       </div>
 
       <div className="mt-8 text-slate-600 text-[10px] font-mono tracking-widest uppercase">
-        Powered by Bhoj360 App Suite
+        Powered by Multi-OS App Suite
       </div>
     </div>
   );

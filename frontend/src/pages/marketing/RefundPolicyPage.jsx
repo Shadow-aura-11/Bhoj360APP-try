@@ -7,8 +7,8 @@ import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function RefundPolicyPage() {
   useDocumentMetadata(
-    'Refund Policy - Bhoj360 Cloud Restaurant Software',
-    'Review the refund and subscription cancellation terms for Bhoj360 software services, packages, and custom agency offerings.'
+    'Refund Policy - Multi-OS Platform Cloud Restaurant Software',
+    'Review the refund and subscription cancellation terms for Multi-OS Platform software services, packages, and custom agency offerings.'
   );
 
   const { lang } = useLanguage();
@@ -40,8 +40,8 @@ export default function RefundPolicyPage() {
           <div className="space-y-6 text-sm font-light text-[rgba(245,240,235,0.75)] leading-relaxed">
             <p>
               {isHindi
-                ? "Bhoj360 में, हम पारदर्शी व्यापारिक व्यवहार में विश्वास करते हैं। हमारे रेस्तरां प्रबंधन सदस्यता के संबंध में हमारी रद्दीकरण और धनवापसी नीति नीचे दी गई है।"
-                : "At Bhoj360, we believe in transparent business transactions. This Cancellation & Refund Policy outlines the terms governing your SaaS subscriptions and outlet node instances."
+                ? "Multi-OS Platform में, हम पारदर्शी व्यापारिक व्यवहार में विश्वास करते हैं। हमारे रेस्तरां प्रबंधन सदस्यता के संबंध में हमारी रद्दीकरण और धनवापसी नीति नीचे दी गई है।"
+                : "At Multi-OS Platform, we believe in transparent business transactions. This Cancellation & Refund Policy outlines the terms governing your SaaS subscriptions and outlet node instances."
               }
             </p>
 
@@ -61,7 +61,7 @@ export default function RefundPolicyPage() {
             <p>
               {isHindi
                 ? "चूंकि हमारी सेवाएं एकमुश्त सेटअप और तत्काल कंटेनर प्रावधान प्रदान करती हैं, इसलिए हम पहले से उपयोग की जा चुकी बिलिंग अवधियों के लिए आंशिक या पूर्ण रिफंड जारी नहीं करते हैं। नए सक्रिय खातों के लिए 7 दिन की मनी-बैक गारंटी उपलब्ध है।"
-                : "Because Bhoj360 incurs direct server computing costs when provisioning node containers instantly, we do not offer refunds on active billing periods. However, new clients are eligible for a 7-day money-back guarantee if the platform fails to meet operational standards."
+                : "Because Multi-OS Platform incurs direct server computing costs when provisioning node containers instantly, we do not offer refunds on active billing periods. However, new clients are eligible for a 7-day money-back guarantee if the platform fails to meet operational standards."
               }
             </p>
 
@@ -70,8 +70,8 @@ export default function RefundPolicyPage() {
             </h2>
             <p>
               {isHindi
-                ? "किसी भी बिलिंग विसंगति या विवाद के लिए, कृपया support@bhoj360.com पर तुरंत हमारी सहायता टीम से संपर्क करें। हम 3 व्यावसायिक दिनों के भीतर आपकी समस्या का समाधान करेंगे।"
-                : "For any billing errors, duplicate charges, or dispute claims, please contact our support desk at support@bhoj360.com immediately. Verified billing errors will be refunded back to the original payment source within 5-7 business days."
+                ? "किसी भी बिलिंग विसंगति या विवाद के लिए, कृपया support@multi-os-platform.com पर तुरंत हमारी सहायता टीम से संपर्क करें। हम 3 व्यावसायिक दिनों के भीतर आपकी समस्या का समाधान करेंगे।"
+                : "For any billing errors, duplicate charges, or dispute claims, please contact our support desk at support@multi-os-platform.com immediately. Verified billing errors will be refunded back to the original payment source within 5-7 business days."
               }
             </p>
           </div>

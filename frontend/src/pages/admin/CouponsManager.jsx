@@ -6,8 +6,8 @@ import DashboardShell from '../../components/Layout/DashboardShell';
 import toast from 'react-hot-toast';
 
 export default function CouponsManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // States
   const [coupons, setCoupons] = useState([]);
@@ -145,7 +145,7 @@ export default function CouponsManager() {
   };
 
   return (
-    <DashboardShell title="Coupons & Discount Codes" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Coupons & Discount Codes" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

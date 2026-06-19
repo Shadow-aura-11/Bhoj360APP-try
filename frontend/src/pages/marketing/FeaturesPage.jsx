@@ -21,8 +21,8 @@ import {
 
 export default function FeaturesPage() {
   useDocumentMetadata(
-    'Bhoj360 Features - Cloud POS, Table & Inventory Management Tools',
-    'Discover the powerful restaurant automation tools built into Bhoj360. Features include split billing, dynamic UPI QR codes, interactive floorplans, and real-time inventory tracking.'
+    'Multi-OS Platform Features - Cloud POS, Table & Inventory Management Tools',
+    'Discover the powerful restaurant automation tools built into Multi-OS Platform. Features include split billing, dynamic UPI QR codes, interactive floorplans, and real-time inventory tracking.'
   );
 
   const { lang } = useLanguage();
@@ -119,8 +119,8 @@ export default function FeaturesPage() {
   // 3. FAQ data
   const faqs = isHindi ? [
     {
-      q: "क्या Bhoj360 के लिए विशेष हार्डवेयर की आवश्यकता है?",
-      a: "नहीं। Bhoj360 आधुनिक वेब तकनीक का उपयोग करके बनाया गया है और किसी भी स्मार्टफोन, टैबलेट, लैपटॉप या डेस्कटॉप पर आसानी से चलता है। प्रिंटिंग के लिए, यह सिस्टम प्रिंट लेआउट के माध्यम से मानक थर्मल प्रिंटर के साथ एकीकृत होता है।"
+      q: "क्या Multi-OS Platform के लिए विशेष हार्डवेयर की आवश्यकता है?",
+      a: "नहीं। Multi-OS Platform आधुनिक वेब तकनीक का उपयोग करके बनाया गया है और किसी भी स्मार्टफोन, टैबलेट, लैपटॉप या डेस्कटॉप पर आसानी से चलता है। प्रिंटिंग के लिए, यह सिस्टम प्रिंट लेआउट के माध्यम से मानक थर्मल प्रिंटर के साथ एकीकृत होता है।"
     },
     {
       q: "क्यूआर मेनू ऑर्डरिंग फ्लो कैसे काम करता है?",
@@ -132,12 +132,12 @@ export default function FeaturesPage() {
     },
     {
       q: "क्या स्थानीय कैशियर के लिए ऑफलाइन सहायता है?",
-      a: "Bhoj360 को तेज़ लोड समय के लिए अनुकूलित किया गया है और यह एक प्रोग्रेसिव वेब एप्लिकेशन (PWA) के रूप में काम करता है। यदि आपका इंटरनेट क्षण भर के लिए चला जाता है, तो सक्रिय टेबल और कार्ट डेटा को ऑर्डर हानि से बचाने के लिए इन-मेमोरी में रखा जाता है।"
+      a: "Multi-OS Platform को तेज़ लोड समय के लिए अनुकूलित किया गया है और यह एक प्रोग्रेसिव वेब एप्लिकेशन (PWA) के रूप में काम करता है। यदि आपका इंटरनेट क्षण भर के लिए चला जाता है, तो सक्रिय टेबल और कार्ट डेटा को ऑर्डर हानि से बचाने के लिए इन-मेमोरी में रखा जाता है।"
     }
   ] : [
     {
-      q: "Does Bhoj360 require special hardware?",
-      a: "No. Bhoj360 is built using modern web technology and runs smoothly on any smartphone, tablet, laptop, or desktop. For printing, it integrates with standard thermal printers via system print layouts."
+      q: "Does Multi-OS Platform require special hardware?",
+      a: "No. Multi-OS Platform is built using modern web technology and runs smoothly on any smartphone, tablet, laptop, or desktop. For printing, it integrates with standard thermal printers via system print layouts."
     },
     {
       q: "How does the QR menu ordering flow work?",
@@ -149,7 +149,7 @@ export default function FeaturesPage() {
     },
     {
       q: "Is there offline support for local cashiers?",
-      a: "Bhoj360 is optimized for fast load times and operates as a Progressive Web Application (PWA). If your internet drops momentarily, active tables and cart data are retained in-memory to prevent order loss."
+      a: "Multi-OS Platform is optimized for fast load times and operates as a Progressive Web Application (PWA). If your internet drops momentarily, active tables and cart data are retained in-memory to prevent order loss."
     }
   ];
 
@@ -186,8 +186,8 @@ export default function FeaturesPage() {
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed max-w-3xl">
               {isHindi
-                ? "Bhoj360 ऑर्डर मैनेजमेंट, टेबल मैनेजमेंट, किचन मैनेजमेंट और रियल-टाइम इन्वेंट्री को एकीकृत करने के लिए स्वचालित वर्कफ़्लो प्रदान करता है। हमारे ऑल-इन-वन रेस्तरां सॉफ़्टवेयर के साथ परिचालन को सुव्यवस्थित करें।"
-                : "Bhoj360 provides automated workflows that integrate order management, table management, menu management, and real-time analytics. Streamline your operations with our premium QR dining solution."
+                ? "Multi-OS Platform ऑर्डर मैनेजमेंट, टेबल मैनेजमेंट, किचन मैनेजमेंट और रियल-टाइम इन्वेंट्री को एकीकृत करने के लिए स्वचालित वर्कफ़्लो प्रदान करता है। हमारे ऑल-इन-वन रेस्तरां सॉफ़्टवेयर के साथ परिचालन को सुव्यवस्थित करें।"
+                : "Multi-OS Platform provides automated workflows that integrate order management, table management, menu management, and real-time analytics. Streamline your operations with our premium QR dining solution."
               }
             </p>
           </div>
@@ -300,7 +300,7 @@ export default function FeaturesPage() {
                       <div className="dot-green"></div>
                     </div>
                     <div className="browser-address">
-                      https://bhoj360.com/features/{activeTab}
+                      https://multi-os-platform.com/features/{activeTab}
                     </div>
                   </div>
                   <div className="bg-[#F8F9FD] relative overflow-hidden aspect-[16/10] flex items-center justify-center p-4">
@@ -442,7 +442,7 @@ export default function FeaturesPage() {
             <p className="text-sm text-slate-400 font-light max-w-xl mx-auto leading-relaxed">
               {isHindi
                 ? "आज ही शामिल हों और ऑर्डर की गति बढ़ाएं, टेबल का टर्नओवर सुधारे और भुगतान को सहज बनाएं।"
-                : "Join restaurant operators using Bhoj360 to speed up checkout, automate reviews, and provide contactless table ordering."
+                : "Join restaurant operators using Multi-OS Platform to speed up checkout, automate reviews, and provide contactless table ordering."
               }
             </p>
             <div className="pt-4">

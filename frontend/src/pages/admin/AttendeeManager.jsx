@@ -18,8 +18,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function AttendeeManager() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [events, setEvents] = useState([]);
@@ -210,7 +210,7 @@ export default function AttendeeManager() {
   }
 
   return (
-    <DashboardShell title="Attendee Management" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Attendee Management" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

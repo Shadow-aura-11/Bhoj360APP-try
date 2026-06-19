@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { createApi } from '../api/client';
 import toast from 'react-hot-toast';
 
-export function useTables(restaurantId, socket) {
+export function useTables(tenantId, socket) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   const fetchTables = useCallback(async () => {
     try {
@@ -17,13 +17,13 @@ export function useTables(restaurantId, socket) {
     } finally {
       setLoading(false);
     }
-  }, [restaurantId]);
+  }, [tenantId]);
 
   useEffect(() => {
-    if (restaurantId) {
+    if (tenantId) {
       fetchTables();
     }
-  }, [restaurantId, fetchTables]);
+  }, [tenantId, fetchTables]);
 
   useEffect(() => {
     if (!socket) return;

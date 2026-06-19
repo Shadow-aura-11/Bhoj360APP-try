@@ -14,15 +14,15 @@ import toast from 'react-hot-toast';
 import { format, addDays, subDays, parseISO } from 'date-fns';
 
 export default function ReservationsManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
-  const { socket } = useSocket(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
+  const { socket } = useSocket(tenantId);
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   
-  const { tables } = useTables(restaurantId, socket);
-  const { reservations, loading, refreshReservations } = useReservations(restaurantId, socket, formattedDate);
+  const { tables } = useTables(tenantId, socket);
+  const { reservations, loading, refreshReservations } = useReservations(tenantId, socket, formattedDate);
 
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'list'
   const [resModalOpen, setResModalOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function ReservationsManager() {
   };
 
   return (
-    <DashboardShell title="Reservations" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Reservations" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         {/* Upper Header Control Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
@@ -373,7 +373,7 @@ export default function ReservationsManager() {
         }}
         onSubmit={handleAddOrEditSubmit}
         reservation={editReservation}
-        restaurantId={restaurantId}
+        tenantId={tenantId}
       />
 
       {/* Cancellation confirm */}

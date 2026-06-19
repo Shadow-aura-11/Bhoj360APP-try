@@ -18,12 +18,12 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 export default function MaintenanceManager() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [requests, setRequests] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveTab] = useState('requests'); // 'requests' | 'vendors'
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     fetchData();

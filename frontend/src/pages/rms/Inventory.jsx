@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Package, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw, Barchart, Filter } from 'lucide-react';
+import { Package, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw, BarChart, Filter } from 'lucide-react';
 import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function Inventory() {
-  const { id: restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { id: tenantId } = useParams();
+  const api = createApi(tenantId);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
 

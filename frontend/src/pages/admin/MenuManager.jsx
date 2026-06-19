@@ -21,9 +21,9 @@ const PHOTO_PRESETS = [
 ];
 
 export default function MenuManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
-  const { socket } = useSocket(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
+  const { socket } = useSocket(tenantId);
 
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -96,8 +96,8 @@ export default function MenuManager() {
   };
 
   useEffect(() => {
-    if (restaurantId) fetchMenu();
-  }, [restaurantId]);
+    if (tenantId) fetchMenu();
+  }, [tenantId]);
 
   // Sync menu changes in real-time
   useEffect(() => {
@@ -400,7 +400,7 @@ export default function MenuManager() {
   };
 
   return (
-    <DashboardShell title="Menu Manager" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Menu Manager" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         {/* Header Action Bar */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">

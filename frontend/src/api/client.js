@@ -18,38 +18,35 @@ agencyApi.interceptors.request.use((config) => {
 agencyApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/') {
+    if (error.response?.status === 401 && window.location.pathname.startsWith('/app')) {
       localStorage.removeItem('agency_token');
-      window.location.href = '/';
+      window.location.href = '/app/login';
     }
     return Promise.reject(error);
   }
 );
 
 export function createApi(tenantId) {
-  const isEMS = window.location.pathname.startsWith('/e/');
-  const prefix = isEMS ? 'e' : 'r';
+  const path = window.location.pathname;
+  let prefix = 'r';
+
+  if (path.startsWith('/gym/')) prefix = 'gym';
+  else if (path.startsWith('/t/')) prefix = 't';
+  else if (path.startsWith('/e/')) prefix = 'e';
+
   const instance = axios.create({ baseURL: `${GATEWAY}/${prefix}/${tenantId}` });
+
   instance.interceptors.request.use((config) => {
-    const sessionStr = isEMS ? localStorage.getItem('ems_session') : localStorage.getItem('session');
-    const session = JSON.parse(sessionStr || '{}');
-    if (session.role && (session.restaurantId === tenantId || session.tenantId === tenantId)) {
-export function createApi(restaurantId) {
-  const prefix = restaurantId.startsWith('GYM-') ? 'gym' : 'r';
-export function createApi(restaurantId, type = 'restaurant') {
-  const prefix = type === 'tms' ? 't' : 'r';
-  const instance = axios.create({ baseURL: `${GATEWAY}/${prefix}/${restaurantId}` });
-  instance.interceptors.request.use((config) => {
-    const session = JSON.parse(localStorage.getItem('session') || '{}');
-    if (session.role && (session.restaurantId === restaurantId || session.gymId === restaurantId)) {
+    const sessionKey = prefix === 'e' ? 'ems_session' : 'session';
+    const session = JSON.parse(localStorage.getItem(sessionKey) || '{}');
+
+    // Check if session belongs to this tenant
+    const sid = session.tenantId || session.tenantId || session.gymId;
+    if (session.role && sid === tenantId) {
       config.headers['x-role'] = session.role;
       config.headers['x-pin'] = session.pin;
-      if (session.employeeId) {
-        config.headers['x-employee-id'] = session.employeeId;
-      }
-      if (session.username) {
-        config.headers['x-username'] = session.username;
-      }
+      if (session.employeeId) config.headers['x-employee-id'] = session.employeeId;
+      if (session.username) config.headers['x-username'] = session.username;
     }
     return config;
   });
@@ -57,16 +54,15 @@ export function createApi(restaurantId, type = 'restaurant') {
 }
 
 export function createSocket(tenantId) {
-  const isEMS = window.location.pathname.startsWith('/e/');
-  const prefix = isEMS ? 'e' : 'r';
-  // Use current origin and connect to the tenantId namespace endpoint via gateway
+  const path = window.location.pathname;
+  let prefix = 'r';
+
+  if (path.startsWith('/gym/')) prefix = 'gym';
+  else if (path.startsWith('/t/')) prefix = 't';
+  else if (path.startsWith('/e/')) prefix = 'e';
+
   const socket = io(window.location.origin, {
     path: `/${prefix}/${tenantId}/socket.io`,
-export function createSocket(restaurantId) {
-  const prefix = restaurantId.startsWith('GYM-') ? 'gym' : 'r';
-  // Use current origin and connect to the restaurantId namespace endpoint via gateway
-  const socket = io(window.location.origin, {
-    path: `/${prefix}/${restaurantId}/socket.io`,
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,

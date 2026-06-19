@@ -31,10 +31,10 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function PMSDashboard() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     fetchStats();
@@ -94,7 +94,7 @@ export default function PMSDashboard() {
         {statCards.map((stat, idx) => (
           <Link
             key={idx}
-            to={`/r/${restaurantId}/admin/pms/${stat.link}`}
+            to={`/r/${tenantId}/admin/pms/${stat.link}`}
             className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex items-center justify-between mb-4">
@@ -215,19 +215,19 @@ export default function PMSDashboard() {
             Quick Actions
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <Link to={`/r/${restaurantId}/admin/pms/properties`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
+            <Link to={`/r/${tenantId}/admin/pms/properties`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
               <Building className="w-6 h-6 mx-auto mb-2 text-blue-500" />
               <span className="text-xs font-bold text-slate-700">Add Property</span>
             </Link>
-            <Link to={`/r/${restaurantId}/admin/pms/leases`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
+            <Link to={`/r/${tenantId}/admin/pms/leases`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
               <Users className="w-6 h-6 mx-auto mb-2 text-purple-500" />
               <span className="text-xs font-bold text-slate-700">Onboard Tenant</span>
             </Link>
-            <Link to={`/r/${restaurantId}/admin/pms/billing`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
+            <Link to={`/r/${tenantId}/admin/pms/billing`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
               <FileText className="w-6 h-6 mx-auto mb-2 text-rose-500" />
               <span className="text-xs font-bold text-slate-700">Raise Invoice</span>
             </Link>
-            <Link to={`/r/${restaurantId}/admin/pms/maintenance`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
+            <Link to={`/r/${tenantId}/admin/pms/maintenance`} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors text-center">
               <Wrench className="w-6 h-6 mx-auto mb-2 text-orange-500" />
               <span className="text-xs font-bold text-slate-700">Work Order</span>
             </Link>

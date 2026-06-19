@@ -45,11 +45,14 @@ export default function Nav() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center group cursor-pointer">
-          <img 
-            src="/logo.png" 
-            alt="Bhoj360 Logo" 
-            className="h-16 md:h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
-          />
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-xl font-serif">M</span>
+            </div>
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-amber-200 font-serif">
+              Multi-OS
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation links */}

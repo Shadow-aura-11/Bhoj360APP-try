@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function SpaDashboard() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [stats, setStats] = useState(null);
   const [aiInsights, setAiInsights] = useState(null);
   const [loading, setLoading] = useState(true);

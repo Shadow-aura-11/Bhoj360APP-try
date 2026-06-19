@@ -8,7 +8,7 @@
  *
  * Props:
  *  - role: 'admin' | 'waiter' | 'counter' | 'cashier'
- *  - restaurantName: string
+ *  - tenantName: string
  *  - accentColor: hex string (optional)
  *  - installPrompt: the deferred prompt event from usePWA
  *  - handleInstall: function from usePWA
@@ -27,7 +27,7 @@ const ROLE_CONFIG = {
 const DISMISS_KEY = (role) => `pwa_banner_dismissed_${role}`;
 const INSTALLED_KEY = 'pwa_installed';
 
-export default function PWAInstallBanner({ role, restaurantName, installPrompt, handleInstall }) {
+export default function PWAInstallBanner({ role, tenantName, installPrompt, handleInstall }) {
   const cfg = ROLE_CONFIG[role] || ROLE_CONFIG.waiter;
   const [dismissed, setDismissed] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -106,7 +106,7 @@ export default function PWAInstallBanner({ role, restaurantName, installPrompt, 
           </div>
           <div className="min-w-0">
             <p className="font-bold text-xs leading-none mb-0.5" style={{ color: cfg.text }}>
-              Install {restaurantName} {cfg.label}
+              Install {tenantName} {cfg.label}
             </p>
             <p className="text-[10px] text-slate-500 leading-snug">
               Add to home screen for instant access & persistent login

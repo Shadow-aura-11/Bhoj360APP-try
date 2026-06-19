@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 import { format, addDays, startOfWeek, addWeeks, subWeeks } from 'date-fns';
 
 export default function AppointmentBooking() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [appointments, setAppointments] = useState([]);
   const [therapists, setTherapists] = useState([]);
   const [services, setServices] = useState([]);

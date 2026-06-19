@@ -7,8 +7,8 @@ import useDocumentMetadata from '../../hooks/useDocumentMetadata';
 
 export default function AboutPage() {
   useDocumentMetadata(
-    'About Bhoj360 - Next-Gen Cloud Restaurant Management Technology',
-    'Learn how Bhoj360 is architecting the future of dining. Explore our cloud restaurant management technology, decentralized node architecture, and core values.'
+    'About Multi-OS Platform - Next-Gen Cloud Enterprise Management Technology',
+    'Learn how Multi-OS Platform is architecting the future of dining. Explore our cloud restaurant management technology, decentralized node architecture, and core values.'
   );
 
   const { lang } = useLanguage();
@@ -39,15 +39,15 @@ export default function AboutPage() {
           {/* Header */}
           <div className="space-y-4">
             <span className="text-[11px] font-mono tracking-[0.25em] text-[var(--color-amber)] uppercase block">
-              {isHindi ? "हमारे बारे में" : "About Bhoj360"}
+              {isHindi ? "हमारे बारे में" : "About Multi-OS Platform"}
             </span>
             <h1 className="text-4xl md:text-6xl font-serif text-[#F5F0EB] leading-tight">
               {isHindi ? "रेस्तरां संचालन को नया रूप दे रहे हैं।" : "Architecting the future of dining."}
             </h1>
             <p className="text-[rgba(245,240,235,0.7)] text-lg md:text-xl font-light leading-relaxed">
               {isHindi 
-                ? "Bhoj360 एक अगली पीढ़ी का रेस्तरां ऑटोमेशन और प्रौद्योगिकी मंच है, जिसे भारतीय आतिथ्य उद्योग के लिए ग्राउंड-अप से डिजाइन किया गया है। हम केवल एक सॉफ्टवेयर नहीं हैं, हम आधुनिक रेस्तरां के डिजिटल रूपांतरण के लिए एक पूर्ण परिचालन इंजन हैं।"
-                : "Bhoj360 is a next-generation restaurant automation and hospitality technology platform engineered from the ground up to drive restaurant digital transformation using decentralized, isolated node architecture."
+                ? "Multi-OS Platform एक अगली पीढ़ी का रेस्तरां ऑटोमेशन और प्रौद्योगिकी मंच है, जिसे भारतीय आतिथ्य उद्योग के लिए ग्राउंड-अप से डिजाइन किया गया है। हम केवल एक सॉफ्टवेयर नहीं हैं, हम आधुनिक रेस्तरां के डिजिटल रूपांतरण के लिए एक पूर्ण परिचालन इंजन हैं।"
+                : "Multi-OS Platform is a next-generation restaurant automation and hospitality technology platform engineered from the ground up to drive restaurant digital transformation using decentralized, isolated node architecture."
               }
             </p>
           </div>
@@ -62,8 +62,8 @@ export default function AboutPage() {
               </h2>
               <p className="text-sm text-[rgba(245,240,235,0.65)] leading-relaxed font-light">
                 {isHindi
-                  ? "पारंपरिक प्रणालियों के विपरीत जहां एकल सर्वर क्रैश होने से हजारों रेस्तरां प्रभावित होते हैं, Bhoj360 प्रत्येक आउटलेट के लिए एक अलग, अलग कंटेनर डेटाबेस प्रदान करता है। इससे उच्च गति सिंक और शून्य डाउनटाइम सुरक्षा सुनिश्चित होती है।"
-                  : "Unlike monolithic systems where a single database outage compromises thousands of outlets, Bhoj360 provisions isolated node instances for every restaurant. This guarantees lightning-fast synchronizations, independent backups, and maximum security."
+                  ? "पारंपरिक प्रणालियों के विपरीत जहां एकल सर्वर क्रैश होने से हजारों रेस्तरां प्रभावित होते हैं, Multi-OS Platform प्रत्येक आउटलेट के लिए एक अलग, अलग कंटेनर डेटाबेस प्रदान करता है। इससे उच्च गति सिंक और शून्य डाउनटाइम सुरक्षा सुनिश्चित होती है।"
+                  : "Unlike monolithic systems where a single database outage compromises thousands of outlets, Multi-OS Platform provisions isolated node instances for every restaurant. This guarantees lightning-fast synchronizations, independent backups, and maximum security."
                 }
               </p>
             </div>
@@ -110,8 +110,8 @@ export default function AboutPage() {
             <div className="glass-card-dark rounded-2xl p-8 border border-white/5 bg-black/40 space-y-6">
               <p className="text-sm text-[rgba(245,240,235,0.7)] leading-relaxed font-light">
                 {isHindi 
-                  ? "Bhoj360 का मूल इसके उन्नत नोड ऑर्केस्ट्रेशन पर आधारित है। प्रत्येक रेस्तरां आउटलेट को अपना स्वयं का लिनक्स-आधारित नोड.जेएस वातावरण और स्थानीय एम्बेडेड डेटाबेस मिलता है। यह डेटाबेस मुख्य गेटवे के साथ स्वचालित रूप से सिंक होता है।"
-                  : "At the core of Bhoj360 is our proprietary node orchestration model. When you boot an outlet on Bhoj360, our gateway provisions an isolated micro-service terminal with its own sandboxed configurations, active socket listeners, and independent local database sync capabilities."
+                  ? "Multi-OS Platform का मूल इसके उन्नत नोड ऑर्केस्ट्रेशन पर आधारित है। प्रत्येक रेस्तरां आउटलेट को अपना स्वयं का लिनक्स-आधारित नोड.जेएस वातावरण और स्थानीय एम्बेडेड डेटाबेस मिलता है। यह डेटाबेस मुख्य गेटवे के साथ स्वचालित रूप से सिंक होता है।"
+                  : "At the core of Multi-OS Platform is our proprietary node orchestration model. When you boot an outlet on Multi-OS Platform, our gateway provisions an isolated micro-service terminal with its own sandboxed configurations, active socket listeners, and independent local database sync capabilities."
                 }
               </p>
               
@@ -148,7 +148,7 @@ export default function AboutPage() {
             </h3>
             <p className="text-sm text-[rgba(245,240,235,0.7)] max-w-2xl mx-auto leading-relaxed font-light">
               {isHindi
-                ? "हमारा लक्ष्य तकनीक को रेस्तरां के लिए सरल, तेज़ और विश्वसनीय बनाना है ताकि आप डाइनिंग अनुभव पर ध्यान केंद्रित कर सकें, जबकि Bhoj360 बाकी सब संभालता है।"
+                ? "हमारा लक्ष्य तकनीक को रेस्तरां के लिए सरल, तेज़ और विश्वसनीय बनाना है ताकि आप डाइनिंग अनुभव पर ध्यान केंद्रित कर सकें, जबकि Multi-OS Platform बाकी सब संभालता है।"
                 : "To empower hospitality businesses with absolute operational sovereignty, minimizing checkout friction, and building beautiful, robust software tools that restaurant staffs actually enjoy using."
               }
             </p>

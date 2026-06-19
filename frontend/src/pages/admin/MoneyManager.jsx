@@ -21,8 +21,8 @@ import toast from 'react-hot-toast';
 import { parseOrderDate } from '../../utils/date';
 
 export default function MoneyManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // States
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,7 @@ export default function MoneyManager() {
   };
 
   return (
-    <DashboardShell title="Money Management & Attribution" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Money Management & Attribution" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         
         {/* Date Filter Panel */}

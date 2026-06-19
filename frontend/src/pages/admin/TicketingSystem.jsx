@@ -17,8 +17,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function TicketingSystem() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [events, setEvents] = useState([]);
@@ -311,7 +311,7 @@ export default function TicketingSystem() {
   }
 
   return (
-    <DashboardShell title="Ticketing System" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Ticketing System" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

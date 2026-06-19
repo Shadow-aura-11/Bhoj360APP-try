@@ -14,16 +14,16 @@ import PWAInstallBanner from '../../components/PWAInstallBanner';
 
 
 export default function CounterDashboard() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
-  const api = createApi(restaurantId);
-  const { socket, isConnected } = useSocket(restaurantId);
+  const api = createApi(tenantId);
+  const { socket, isConnected } = useSocket(tenantId);
 
   const session = JSON.parse(localStorage.getItem('session') || '{}');
-  const restaurantName = session.name || 'Restaurant';
+  const tenantName = session.name || 'Tenant';
 
-  const { tables } = useTables(restaurantId, socket);
-  const { orders, refreshOrders } = useOrders(restaurantId, socket);
+  const { tables } = useTables(tenantId, socket);
+  const { orders, refreshOrders } = useOrders(tenantId, socket);
 
   const ordersRef = useRef(orders);
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function CounterDashboard() {
   const [printerSettings, setPrinterSettings] = useState({ enabled: false, size: '80mm' });
   const [printOrder, setPrintOrder] = useState(null);
 
-  const { installPrompt, handleInstall } = usePWA(restaurantName, 'Kitchen Portal', agencySettings.logo_url);
+  const { installPrompt, handleInstall } = usePWA(tenantName, 'Kitchen Portal', agencySettings.logo_url);
 
   useEffect(() => {
     if (installPrompt) {
@@ -448,7 +448,7 @@ export default function CounterDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('session');
-    navigate(`/r/${restaurantId}/login?role=counter`);
+    navigate(`/r/${tenantId}/login?role=counter`);
   };
 
   // Filter orders into columns
@@ -480,7 +480,7 @@ export default function CounterDashboard() {
         {/* PWA Install Banner */}
       <PWAInstallBanner
         role="counter"
-        restaurantName={restaurantName}
+        tenantName={tenantName}
         installPrompt={installPrompt}
         handleInstall={handleInstall}
       />
@@ -492,12 +492,12 @@ export default function CounterDashboard() {
             <img src={agencySettings.logo_url} alt="Agency Logo" className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200" />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-rose-600 flex items-center justify-center font-display font-bold text-lg text-white shadow-md">
-              {restaurantName[0] || 'C'}
+              {tenantName[0] || 'C'}
             </div>
           )}
           <div>
             <h1 className="text-sm font-bold font-display tracking-wide uppercase text-rose-700 flex items-center gap-1.5">
-              <ChefHat className="w-4 h-4" /> {restaurantName}
+              <ChefHat className="w-4 h-4" /> {tenantName}
             </h1>
             <span className="text-[10px] text-slate-500 font-mono">
               KITCHEN DISPLAY SYSTEM
@@ -777,7 +777,7 @@ export default function CounterDashboard() {
       {printOrder && (
         <div id="print-kot-section" className="text-black bg-white p-2">
           <div className="text-center border-b border-dashed border-black pb-2 mb-2">
-            <h2 className="font-bold text-sm uppercase">{restaurantName}</h2>
+            <h2 className="font-bold text-sm uppercase">{tenantName}</h2>
             <p className="text-[10px]">KITCHEN ORDER TICKET (KOT)</p>
             <p className="text-[10px] font-mono mt-0.5">
               Order ID: #{printOrder.id}

@@ -23,8 +23,8 @@ import toast from 'react-hot-toast';
 const UNITS = ['kg', 'ltr', 'pcs', 'grams', 'boxes', 'bottles', 'cans', 'packets', 'bags'];
 
 export default function InventoryManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // UI Tabs: 'stock' | 'logs'
   const [activeTab, setActiveTab] = useState('stock');
@@ -84,7 +84,7 @@ export default function InventoryManager() {
 
   useEffect(() => {
     loadData();
-  }, [restaurantId]);
+  }, [tenantId]);
 
   // Open add item modal
   const handleOpenAdd = () => {
@@ -235,7 +235,7 @@ export default function InventoryManager() {
   });
 
   return (
-    <DashboardShell title="Inventory Management" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Inventory Management" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         
         {/* Top Control Card */}

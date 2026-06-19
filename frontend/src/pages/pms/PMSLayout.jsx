@@ -11,15 +11,15 @@ import {
 } from 'lucide-react';
 
 export default function PMSLayout() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const navigate = useNavigate();
 
   const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: `/r/${restaurantId}/admin/pms` },
-    { label: 'Properties', icon: Building, path: `/r/${restaurantId}/admin/pms/properties` },
-    { label: 'Leases', icon: Users, path: `/r/${restaurantId}/admin/pms/leases` },
-    { label: 'Billing', icon: DollarSign, path: `/r/${restaurantId}/admin/pms/billing` },
-    { label: 'Maintenance', icon: Wrench, path: `/r/${restaurantId}/admin/pms/maintenance` },
+    { label: 'Dashboard', icon: LayoutDashboard, path: `/r/${tenantId}/admin/pms` },
+    { label: 'Properties', icon: Building, path: `/r/${tenantId}/admin/pms/properties` },
+    { label: 'Leases', icon: Users, path: `/r/${tenantId}/admin/pms/leases` },
+    { label: 'Billing', icon: DollarSign, path: `/r/${tenantId}/admin/pms/billing` },
+    { label: 'Maintenance', icon: Wrench, path: `/r/${tenantId}/admin/pms/maintenance` },
   ];
 
   return (
@@ -42,7 +42,7 @@ export default function PMSLayout() {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === `/r/${restaurantId}/admin/pms`}
+              end={item.path === `/r/${tenantId}/admin/pms`}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
                   isActive
@@ -60,7 +60,7 @@ export default function PMSLayout() {
 
         <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-800">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Current Node</p>
-            <p className="text-xs font-bold text-slate-200 truncate">{restaurantId}</p>
+            <p className="text-xs font-bold text-slate-200 truncate">{tenantId}</p>
         </div>
       </aside>
 

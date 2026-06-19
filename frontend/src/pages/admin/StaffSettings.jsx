@@ -33,8 +33,8 @@ import toast from 'react-hot-toast';
 import { compressImage } from '../../utils/image';
 
 export default function StaffSettings({ isEMS = false }) {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = isEMS ? tenantId : restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = isEMS ? tenantId : tenantId;
   const api = createApi(currentId);
 
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'billing' | 'printing' | 'integrations' | 'staff' | 'customers'
@@ -521,7 +521,7 @@ export default function StaffSettings({ isEMS = false }) {
   }
 
   return (
-    <DashboardShell title="Platform Configurations & Settings" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Platform Configurations & Settings" tenantId={tenantId} role="admin">
       <div className="space-y-6">
         
         {/* Navigation Tabs */}
@@ -585,7 +585,7 @@ export default function StaffSettings({ isEMS = false }) {
                 <form onSubmit={handleSaveConfig} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Restaurant Name</label>
+                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Tenant Name</label>
                       <input 
                         type="text"
                         value={config.name}
@@ -631,7 +631,7 @@ export default function StaffSettings({ isEMS = false }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Restaurant Logo</label>
+                    <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Tenant Logo</label>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <input 
                         type="text"
@@ -753,7 +753,7 @@ export default function StaffSettings({ isEMS = false }) {
                   </div>
                 </div>
                 <p className="text-[9px] text-slate-400 mt-6 leading-relaxed">
-                  Bhoj360 platform licenses are managed by the main agency. For billing changes, please contact support.
+                  Multi-OS platform licenses are managed by the main agency. For billing changes, please contact support.
                 </p>
               </div>
             </div>

@@ -18,10 +18,10 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 
 export default function BillingManager() {
-  const { restaurantId } = useParams();
+  const { tenantId } = useParams();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const api = createApi(restaurantId);
+  const api = createApi(tenantId);
 
   useEffect(() => {
     fetchInvoices();

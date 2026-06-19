@@ -20,39 +20,39 @@ import {
   Building
 } from 'lucide-react';
 
-export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFeatures = [] }) {
+export default function Sidebar({ tenantId, role, isOpen, onClose, blockedFeatures = [] }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('session');
-    navigate(`/r/${restaurantId}/login?role=${role || 'admin'}`);
+    navigate(`/r/${tenantId}/login?role=${role || 'admin'}`);
     if (onClose) onClose();
   };
 
   const navItems = [
-    { id: 'overview', label: 'Overview', path: `/r/${restaurantId}/admin`, icon: LayoutDashboard, end: true },
-    { id: 'tables', label: 'Tables', path: `/r/${restaurantId}/admin/tables`, icon: Grid },
-    { id: 'reservations', label: 'Reservations', path: `/r/${restaurantId}/admin/reservations`, icon: CalendarCheck },
-    { id: 'events', label: 'Event Planner', path: `/r/${restaurantId}/admin/events`, icon: CalendarCheck },
-    { id: 'ticketing', label: 'Ticketing', path: `/r/${restaurantId}/admin/ticketing`, icon: Ticket },
-    { id: 'attendees', label: 'Attendees', path: `/r/${restaurantId}/admin/attendees`, icon: Users },
-    { id: 'venues', label: 'Venue Bookings', path: `/r/${restaurantId}/admin/venues`, icon: Building },
-    { id: 'vendors', label: 'Vendors', path: `/r/${restaurantId}/admin/vendors`, icon: MapPin },
-    { id: 'catering', label: 'Catering', path: `/r/${restaurantId}/admin/catering`, icon: UtensilsCrossed },
-    { id: 'marketing', label: 'Marketing & CRM', path: `/r/${restaurantId}/admin/marketing`, icon: Users },
-    { id: 'accounting', label: 'Accounting', path: `/r/${restaurantId}/admin/accounting`, icon: Receipt },
-    { id: 'outlets', label: 'Outlets & Delivery', path: `/r/${restaurantId}/admin/outlets`, icon: MapPin },
-    { id: 'menu', label: 'Menu Manager', path: `/r/${restaurantId}/admin/menu`, icon: UtensilsCrossed },
-    { id: 'staff', label: 'Staff Management', path: `/r/${restaurantId}/admin/staff`, icon: Users },
-    { id: 'customers', label: 'Customers Directory', path: `/r/${restaurantId}/admin/customers`, icon: Users },
-    { id: 'coupons', label: 'Coupons & Discounts', path: `/r/${restaurantId}/admin/coupons`, icon: Ticket },
-    { id: 'money', label: 'Money Management', path: `/r/${restaurantId}/admin/money`, icon: Wallet },
-    { id: 'expenses', label: 'Expenses Manager', path: `/r/${restaurantId}/admin/expenses`, icon: Receipt },
-    { id: 'inventory', label: 'Inventory Manager', path: `/r/${restaurantId}/admin/inventory`, icon: Boxes },
-    { id: 'analytics', label: 'Analytics', path: `/r/${restaurantId}/admin/analytics`, icon: BarChart3 },
-    { id: 'qr', label: 'Print QR Codes', path: `/r/${restaurantId}/admin/print-qr`, icon: QrCode },
-    { id: 'staff-apps', label: 'Staff Mobile Apps', path: `/r/${restaurantId}/admin/staff-apps`, icon: Smartphone },
-    { id: 'settings', label: 'Settings', path: `/r/${restaurantId}/admin/settings`, icon: Settings },
+    { id: 'overview', label: 'Overview', path: `/r/${tenantId}/admin`, icon: LayoutDashboard, end: true },
+    { id: 'tables', label: 'Tables', path: `/r/${tenantId}/admin/tables`, icon: Grid },
+    { id: 'reservations', label: 'Reservations', path: `/r/${tenantId}/admin/reservations`, icon: CalendarCheck },
+    { id: 'events', label: 'Event Planner', path: `/r/${tenantId}/admin/events`, icon: CalendarCheck },
+    { id: 'ticketing', label: 'Ticketing', path: `/r/${tenantId}/admin/ticketing`, icon: Ticket },
+    { id: 'attendees', label: 'Attendees', path: `/r/${tenantId}/admin/attendees`, icon: Users },
+    { id: 'venues', label: 'Venue Bookings', path: `/r/${tenantId}/admin/venues`, icon: Building },
+    { id: 'vendors', label: 'Vendors', path: `/r/${tenantId}/admin/vendors`, icon: MapPin },
+    { id: 'catering', label: 'Catering', path: `/r/${tenantId}/admin/catering`, icon: UtensilsCrossed },
+    { id: 'marketing', label: 'Marketing & CRM', path: `/r/${tenantId}/admin/marketing`, icon: Users },
+    { id: 'accounting', label: 'Accounting', path: `/r/${tenantId}/admin/accounting`, icon: Receipt },
+    { id: 'outlets', label: 'Outlets & Delivery', path: `/r/${tenantId}/admin/outlets`, icon: MapPin },
+    { id: 'menu', label: 'Menu Manager', path: `/r/${tenantId}/admin/menu`, icon: UtensilsCrossed },
+    { id: 'staff', label: 'Staff Management', path: `/r/${tenantId}/admin/staff`, icon: Users },
+    { id: 'customers', label: 'Customers Directory', path: `/r/${tenantId}/admin/customers`, icon: Users },
+    { id: 'coupons', label: 'Coupons & Discounts', path: `/r/${tenantId}/admin/coupons`, icon: Ticket },
+    { id: 'money', label: 'Money Management', path: `/r/${tenantId}/admin/money`, icon: Wallet },
+    { id: 'expenses', label: 'Expenses Manager', path: `/r/${tenantId}/admin/expenses`, icon: Receipt },
+    { id: 'inventory', label: 'Inventory Manager', path: `/r/${tenantId}/admin/inventory`, icon: Boxes },
+    { id: 'analytics', label: 'Analytics', path: `/r/${tenantId}/admin/analytics`, icon: BarChart3 },
+    { id: 'qr', label: 'Print QR Codes', path: `/r/${tenantId}/admin/print-qr`, icon: QrCode },
+    { id: 'staff-apps', label: 'Staff Mobile Apps', path: `/r/${tenantId}/admin/staff-apps`, icon: Smartphone },
+    { id: 'settings', label: 'Settings', path: `/r/${tenantId}/admin/settings`, icon: Settings },
   ];
 
   const visibleNavItems = navItems.filter((item) => {
@@ -72,7 +72,7 @@ export default function Sidebar({ restaurantId, role, isOpen, onClose, blockedFe
           </div>
           <div>
             <h1 className="font-display font-bold text-base leading-tight text-slate-800">
-              Agency Suite
+              Multi-OS Suite
             </h1>
             <span className="text-[10px] text-indigo-600 font-mono tracking-widest uppercase font-bold">
               {role} portal

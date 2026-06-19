@@ -20,8 +20,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function VendorManager() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [vendors, setVendors] = useState([]);
@@ -295,7 +295,7 @@ export default function VendorManager() {
   }
 
   return (
-    <DashboardShell title="Vendor Management" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Vendor Management" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );

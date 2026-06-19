@@ -3,8 +3,8 @@ import React from 'react';
 export default function Features() {
   const featureList = [
     {
-      title: "Multi-Outlet Node Architecture",
-      desc: "Each restaurant executes as an isolated microservice with its own storage, ensuring zero single-point failure risks across your network.",
+      title: "Multi-OS Node Architecture",
+      desc: "Each business vertical executes as an isolated microservice with its own storage, ensuring enterprise-grade stability and zero single-point failure risks.",
       tag: "INFRASTRUCTURE",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,9 +13,9 @@ export default function Features() {
       )
     },
     {
-      title: "Real-time Seating Simulator",
-      desc: "An active digital twin of your floor plans. Dynamic socket updates let operators monitor guests, order stages, and bill requests live.",
-      tag: "SEATING SYSTEMS",
+      title: "Cross-Industry Management",
+      desc: "Native support for Restaurants, Retail, Gyms, Spas, Hospitals, and Manufacturing. Specialized workflows for every business type.",
+      tag: "MULTI-VERTICAL",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -54,7 +54,7 @@ export default function Features() {
     },
     {
       title: "Consolidated Group Analytics",
-      desc: "Aggregate receipts, observe table dwell indexes, track food preparation durations, and print financial audits in seconds.",
+      desc: "Aggregate performance metrics, financial audits, and operational insights across your entire multi-vertical portfolio in real-time.",
       tag: "INTELLIGENCE",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,10 +74,10 @@ export default function Features() {
             Architectural Blueprint
           </span>
           <h2 className="text-4xl md:text-5xl font-serif text-[#F5F0EB]">
-            Engineered for culinary high-performance groups.
+            Engineered for high-performance enterprise groups.
           </h2>
           <p className="text-[rgba(245,240,235,0.6)] font-light text-lg">
-            Say goodbye to scattered tablet systems and separate booking softwares. Bhoj360 coordinates the entire service cycle in a single, robust platform.
+            Say goodbye to fragmented SaaS tools. Our Multi-OS ecosystem coordinates your entire business lifecycle in a single, robust platform.
           </p>
         </div>
 

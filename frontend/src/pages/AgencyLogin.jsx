@@ -567,7 +567,7 @@ export default function AgencyLogin() {
               </svg>
             </div>
             <p className="al-brand-name">Agency Dashboard</p>
-            <p className="al-brand-sub">Restaurant Management Platform</p>
+            <p className="al-brand-sub">Multi-OS SaaS Platform</p>
           </div>
 
           {/* Step indicator (only for password/OTP steps) */}

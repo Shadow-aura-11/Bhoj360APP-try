@@ -6,8 +6,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function OutletsDeliveryManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   const [outlets, setOutlets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ export default function OutletsDeliveryManager() {
   };
 
   return (
-    <DashboardShell title="Outlets & Delivery" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Outlets & Delivery" tenantId={tenantId} role="admin">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Simple Page Header */}

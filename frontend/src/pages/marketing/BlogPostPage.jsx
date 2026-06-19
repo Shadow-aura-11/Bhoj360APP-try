@@ -17,8 +17,8 @@ export default function BlogPostPage() {
   const [loading, setLoading] = useState(true);
 
   useDocumentMetadata(
-    blog ? `${blog.title} - Bhoj360 Blog` : 'Loading Article... - Bhoj360 Blog',
-    blog ? blog.excerpt || 'Read this article on Bhoj360 Blog.' : 'Loading article details...'
+    blog ? `${blog.title} - Multi-OS Platform Blog` : 'Loading Article... - Multi-OS Platform Blog',
+    blog ? blog.excerpt || 'Read this article on Multi-OS Platform Blog.' : 'Loading article details...'
   );
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function BlogPostPage() {
               {/* Header Info */}
               <div className="space-y-4">
                 <span className="text-[10px] font-mono text-[var(--color-amber)] uppercase tracking-widest block">
-                  Bhoj360 Insights
+                  Multi-OS Platform Insights
                 </span>
                 <h1 className="text-4xl md:text-5xl font-serif text-[#F5F0EB] leading-tight">
                   {blog.title}

@@ -5,8 +5,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function HMSDashboard() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
   const [stats, setStats] = useState({ totalPatients: 0, appointmentsToday: 0, revenueToday: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +22,7 @@ export default function HMSDashboard() {
       }
     };
     fetchStats();
-  }, [restaurantId]);
+  }, [tenantId]);
 
   const modules = [
     { title: 'Patients', icon: Users, count: stats.totalPatients, color: 'bg-blue-500', path: 'patients' },

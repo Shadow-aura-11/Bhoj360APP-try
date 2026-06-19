@@ -6,8 +6,8 @@ import DashboardShell from '../../components/Layout/DashboardShell';
 import toast from 'react-hot-toast';
 
 export default function CustomerDirectory() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   // States
   const [customers, setCustomers] = useState([]);
@@ -43,7 +43,7 @@ export default function CustomerDirectory() {
   });
 
   return (
-    <DashboardShell title="Customer & Guest Directory" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Customer & Guest Directory" tenantId={tenantId} role="admin">
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         
         {/* Search & Refresh Actions */}

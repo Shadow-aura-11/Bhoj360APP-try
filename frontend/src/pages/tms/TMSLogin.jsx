@@ -45,7 +45,7 @@ export default function TMSLogin() {
       if (employee) {
         localStorage.setItem('session', JSON.stringify({
           role: employee.role,
-          restaurantId: tenantId, // Using restaurantId key for compatibility with ProtectedRoute
+          tenantId: tenantId, // Using tenantId key for compatibility with ProtectedRoute
           employeeId: employee.employee_id,
           name: employee.name,
           tenantType: 'tms'

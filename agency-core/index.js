@@ -13,10 +13,8 @@ const http = require('http');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-const { createRestaurant } = require('./restaurant-factory');
+const { createTenant } = require('./tenant-factory');
 const emsFactory = require('../venue-event/factory');
-const { createGym } = require('./gms-factory');
-const { createHospital } = require('./hms-factory');
 const { startAll } = require('./startup');
 
 const PORT = process.env.AGENCY_PORT || 3000;
@@ -415,31 +413,14 @@ app.get('/api/restaurants', requireAgencyAuth, async (req, res) => {
   }
 });
 
-// POST /api/restaurants — Create a new restaurant or gym
+// POST /api/restaurants — Create a new microservice tenant (Universal)
 app.post('/api/restaurants', requireAgencyAuth, async (req, res) => {
   try {
-    const { type } = req.body;
-    let config;
-    if (type === 'gym') {
-      config = await createGym(req.body);
-    } else {
-      config = await createRestaurant(req.body);
-    }
+    const config = await createTenant(req.body);
     res.status(201).json(config);
   } catch (err) {
     console.error('[Agency] Error creating tenant:', err.message);
     res.status(500).json({ error: err.message || 'Failed to create tenant' });
-  }
-});
-
-// POST /api/hospitals — Create a new hospital (HMS)
-app.post('/api/hospitals', requireAgencyAuth, async (req, res) => {
-  try {
-    const config = await createHospital(req.body);
-    res.status(201).json(config);
-  } catch (err) {
-    console.error('[Agency] Error creating hospital:', err.message);
-    res.status(500).json({ error: err.message || 'Failed to create hospital' });
   }
 });
 

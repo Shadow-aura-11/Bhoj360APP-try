@@ -6,8 +6,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function VenueReservationsManager() {
-  const { restaurantId } = useParams();
-  const api = createApi(restaurantId);
+  const { tenantId } = useParams();
+  const api = createApi(tenantId);
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -230,7 +230,7 @@ export default function VenueReservationsManager() {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <DashboardShell title="Venue Bookings" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Venue Bookings" tenantId={tenantId} role="admin">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Simple Page Header */}

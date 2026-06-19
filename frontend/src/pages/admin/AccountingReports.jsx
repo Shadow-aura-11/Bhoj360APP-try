@@ -20,8 +20,8 @@ import { createApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
 export default function AccountingReports() {
-  const { restaurantId, tenantId } = useParams();
-  const currentId = tenantId || restaurantId;
+  const { tenantId, tenantId } = useParams();
+  const currentId = tenantId || tenantId;
   const api = createApi(currentId);
 
   const [summary, setSummary] = useState(null);
@@ -198,7 +198,7 @@ export default function AccountingReports() {
   }
 
   return (
-    <DashboardShell title="Accounting & Reports" restaurantId={restaurantId} role="admin">
+    <DashboardShell title="Accounting & Reports" tenantId={tenantId} role="admin">
       {content}
     </DashboardShell>
   );
